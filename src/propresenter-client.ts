@@ -69,6 +69,20 @@ export class ProPresenterClient extends EventEmitter {
   }
 
   /**
+   * Get the host address
+   */
+  get host(): string {
+    return this.config.host;
+  }
+
+  /**
+   * Get the port number
+   */
+  get port(): number {
+    return this.config.port;
+  }
+
+  /**
    * Test connection by fetching version info
    */
   async connect(): Promise<{ version: string; name: string; platform: string }> {

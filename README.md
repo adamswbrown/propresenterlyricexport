@@ -4,8 +4,9 @@ A command-line tool to extract and export lyrics from ProPresenter 7 presentatio
 
 ## Features
 
-- **Desktop GUI** - Beautiful, easy-to-use desktop application (new!)
+- **Command-Line Interface** - Clean, easy-to-use CLI tool
 - **Extract Lyrics** - Pull lyrics from ProPresenter presentations
+- **Connection Validation** - Automatic connectivity checking with clear error messages
 - **Multiple Export Formats**:
   - Plain text with formatted sections
   - JSON with structured metadata
@@ -14,7 +15,7 @@ A command-line tool to extract and export lyrics from ProPresenter 7 presentatio
 - **Library Filtering** - Automatically filters songs from your Worship library
 - **Interactive Selection** - Pick playlists by number instead of typing UUIDs
 - **Network API** - Works with ProPresenter 7 Network API
-- **CLI & GUI** - Choose between command-line or graphical interface
+- **Cross-Platform** - Runs on Mac, Windows, and Linux
 
 ## Requirements
 
@@ -35,14 +36,12 @@ cd propresenterlyricexport
 npm install
 ```
 
-3. Build the project:
+3. Install and run:
 ```bash
-# CLI only
-npm run build
-
-# With desktop GUI
-npm run tauri:build
+npm run dev:cli -- status
 ```
+
+This will test your connection to ProPresenter. If you see connection errors, refer to the [Troubleshooting](#troubleshooting) section.
 
 ## Configuration
 
@@ -61,6 +60,25 @@ export PROPRESENTER_PORT=1025            # Default: 1025
 2. Go to **Preferences** → **Network**
 3. Enable **Network API**
 4. Note the host and port (typically 127.0.0.1:1025 or your machine's IP)
+
+### Connection Validation
+
+The tool validates your ProPresenter connection at startup. If you see connection errors:
+
+```bash
+npm run dev:cli -- status
+```
+
+This command will:
+1. Test the connection to ProPresenter
+2. Show the version if connected
+3. Display clear troubleshooting steps if not connected
+
+**For detailed setup instructions by platform**, see [QUICK_START.md](./QUICK_START.md) which includes:
+- Mac/Linux environment variable setup
+- Windows Command Prompt and PowerShell configuration
+- Network connectivity troubleshooting
+- Real-world usage examples
 
 ### Logo Configuration (Optional)
 
@@ -88,7 +106,7 @@ Place a PNG file named `logo.png` in one of these locations (checked in order):
 cp ~/church-logo.png logo.png
 
 # Now when you export, the logo will be included
-npm run dev -- pptx
+npm run dev:cli -- pptx
 ```
 
 **Tip:** You'll see confirmation in the output:
@@ -137,96 +155,13 @@ The PowerPoint export uses specific fonts and styling to create professional-loo
 - **Bold + Italic:** Emphasizes the lyrics while maintaining elegance
 - **Dark teal (#2d6a7a):** High contrast against white background, easier to read on screens
 
-## Desktop GUI
-
-A modern, user-friendly desktop application for exporting lyrics without touching the command line.
-
-### Starting the GUI
-
-```bash
-npm run tauri:dev
-```
-
-This launches a beautiful native desktop window with:
-
-**Features:**
-- 🎨 Beautiful gradient UI with smooth animations
-- 🔌 Real-time connection status to ProPresenter
-- 📋 Interactive playlist selector (no UUIDs needed)
-- 💾 Multiple export format options (PowerPoint, Text, JSON)
-- ⚙️ Easy connection settings (host & port)
-- 📊 Live export progress tracking
-- ✨ Professional, responsive design
-
-### GUI Screenshot & Workflow
-
-```
-┌────────────────────────────────────────┐
-│  ProPresenter Lyrics Export            │
-│  Export worship lyrics to PowerPoint   │
-├────────────────────────────────────────┤
-│                                        │
-│  Connection Settings                  │
-│  ● Connected                          │
-│                                        │
-│  ProPresenter Host: 127.0.0.1         │
-│  Port: 1025                           │
-│  [Test Connection]                    │
-│                                        │
-├────────────────────────────────────────┤
-│  Select Playlist                       │
-│  ◉ 1) Sunday Service / Worship         │
-│  ○ 2) Sunday Service / Teaching        │
-│  ○ 3) Wednesday Night / Worship        │
-│                                        │
-├────────────────────────────────────────┤
-│  Export Settings                       │
-│                                        │
-│  Export Format                         │
-│  ◉ PowerPoint                          │
-│  ○ Text                                │
-│  ○ JSON                                │
-│                                        │
-│  [            Export Now            ] │
-└────────────────────────────────────────┘
-```
-
-### Building a Distributable App
-
-To create a standalone desktop application:
-
-```bash
-npm run tauri:build
-```
-
-This generates:
-- **macOS**: `.dmg` file for installation
-- **Windows**: `.exe` installer
-- **Linux**: `.deb` or `.AppImage` depending on your setup
-
-The app will be in `src-tauri/target/release/bundle/`
-
-### GUI vs CLI
-
-| Feature | GUI | CLI |
-|---------|-----|-----|
-| **Ease of use** | ✓ No technical knowledge needed | Requires terminal |
-| **Visual feedback** | ✓ Real-time UI updates | Output-based |
-| **Playlist selection** | ✓ Beautiful numbered list | Number-based picker |
-| **Connection testing** | ✓ One-click status check | Manual command |
-| **Automation** | Scripts only | ✓ Full scripting support |
-| **Remote access** | Local only | Can be used remotely |
-
-**Choose GUI if:** You want simplicity, visual feedback, and a polished experience.
-**Choose CLI if:** You need automation, scripting, or remote access.
-
 ## Quick Start: Export a Playlist to PowerPoint
 
 This is the most common workflow. Just three steps:
 
 ### Step 1: Start the Tool
 ```bash
-npm run dev -- pptx
+npm run dev:cli -- pptx
 ```
 
 ### Step 2: Select Your Playlist
@@ -284,14 +219,14 @@ The generated PowerPoint file is ready to use immediately!
 
 ```bash
 # Export with custom output filename
-npm run dev -- pptx my-service-songs
+npm run dev:cli -- pptx my-service-songs
 
 # Export from a different ProPresenter instance
-npm run dev -- pptx --host 192.168.1.100 --port 1025
+npm run dev:cli -- pptx --host 192.168.1.100 --port 1025
 
 # Or export to text/JSON instead
-npm run dev -- export          # Text format
-npm run dev -- export --json   # JSON format
+npm run dev:cli -- export          # Text format
+npm run dev:cli -- export --json   # JSON format
 ```
 
 ## Usage
@@ -300,40 +235,40 @@ npm run dev -- export --json   # JSON format
 
 ```bash
 # Show all playlists
-npm run dev -- playlists
+npm run dev:cli -- playlists
 
 # Show items in a specific playlist
-npm run dev -- playlist <uuid>
+npm run dev:cli -- playlist <uuid>
 
 # List all libraries
-npm run dev -- libraries
+npm run dev:cli -- libraries
 
 # Export playlist (interactive mode - pick by number)
-npm run dev -- export
+npm run dev:cli -- export
 
 # Export playlist (direct mode - using UUID)
-npm run dev -- export <playlist-uuid>
+npm run dev:cli -- export <playlist-uuid>
 
 # Export to PowerPoint (interactive)
-npm run dev -- pptx
+npm run dev:cli -- pptx
 
 # Export to PowerPoint (direct)
-npm run dev -- pptx <playlist-uuid> [output-filename]
+npm run dev:cli -- pptx <playlist-uuid> [output-filename]
 
 # Show current active presentation
-npm run dev -- current
+npm run dev:cli -- current
 
 # Show focused presentation
-npm run dev -- focused
+npm run dev:cli -- focused
 
 # Inspect a specific presentation by UUID
-npm run dev -- inspect <presentation-uuid>
+npm run dev:cli -- inspect <presentation-uuid>
 
 # Watch for slide changes in real-time
-npm run dev -- watch
+npm run dev:cli -- watch
 
 # Show help
-npm run dev -- --help
+npm run dev:cli -- --help
 ```
 
 ### Options
@@ -348,19 +283,19 @@ npm run dev -- --help
 
 ```bash
 # Export with interactive playlist selection
-npm run dev -- export
+npm run dev:cli -- export
 
 # Export specific playlist as JSON
-npm run dev -- export abc123-def456 --json
+npm run dev:cli -- export abc123-def456 --json
 
 # Export to PowerPoint with custom filename
-npm run dev -- pptx abc123-def456 "Sunday Service Worship"
+npm run dev:cli -- pptx abc123-def456 "Sunday Service Worship"
 
 # Export from remote ProPresenter instance
-npm run dev -- export --host 192.168.1.100 --port 1025
+npm run dev:cli -- export --host 192.168.1.100 --port 1025
 
 # Watch slides with debug output
-npm run dev -- watch --debug
+npm run dev:cli -- watch --debug
 ```
 
 ## How It Works
@@ -448,18 +383,18 @@ tsconfig.json                 # TypeScript configuration
 - Make sure ProPresenter 7 is running
 - Verify Network API is enabled in ProPresenter settings
 - Check that host and port are correct
-- Try: `npm run dev -- status` to test connection
+- Try: `npm run dev:cli -- status` to test connection
 
 ### No playlists found
 - Create playlists in ProPresenter first
-- Use `npm run dev -- playlists` to list available playlists
+- Use `npm run dev:cli -- playlists` to list available playlists
 - Verify Network API connectivity
 
 ### No songs in export
 - The export filters for songs in your "Worship" library
 - Make sure your songs are organized in a library named "Worship"
-- Use `npm run dev -- libraries` to see available libraries
-- Use `npm run dev -- playlist <uuid>` to see items in a playlist
+- Use `npm run dev:cli -- libraries` to see available libraries
+- Use `npm run dev:cli -- playlist <uuid>` to see items in a playlist
 
 ### PowerPoint file not created
 - Check write permissions in the current directory
@@ -475,7 +410,7 @@ npm run build
 
 ### Build and Run
 ```bash
-npm run dev -- [command] [options]
+npm run dev:cli -- [command] [options]
 ```
 
 ### TypeScript Compilation

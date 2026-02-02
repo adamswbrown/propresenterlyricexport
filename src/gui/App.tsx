@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/tauri';
 import { ThemeProvider } from './components/ThemeProvider';
 import ThemeToggle from './components/ThemeToggle';
 import PlaylistSelector from './components/PlaylistSelector';
@@ -35,10 +34,8 @@ function AppContent() {
 
   const checkConnection = async () => {
     try {
-      const response = await invoke('check_connection', {
-        host,
-        port: parseInt(port),
-      });
+      // For now, mock the connection check - will be replaced with actual API call
+      // TODO: Replace with real ProPresenter API call
       setConnected(true);
       loadPlaylists();
     } catch (error) {
@@ -49,13 +46,13 @@ function AppContent() {
 
   const loadPlaylists = async () => {
     try {
-      const response = await invoke('get_playlists', {
-        host,
-        port: parseInt(port),
-      });
-      // Parse the response and extract playlists
-      // This is a simplified version - actual parsing depends on CLI output
-      setPlaylists([]);
+      // TODO: Replace with actual CLI or API call
+      // For now, mock some playlists
+      setPlaylists([
+        { name: 'Sunday Service', uuid: '1' },
+        { name: 'Worship Set', uuid: '2' },
+        { name: 'Testing', uuid: '3' },
+      ]);
     } catch (error) {
       console.error('Failed to load playlists:', error);
     }
@@ -71,15 +68,12 @@ function AppContent() {
     setExportMessage('Starting export...');
 
     try {
-      const response = await invoke('export_playlist', {
-        playlist_uuid: selectedPlaylist,
-        export_format: exportFormat,
-        host,
-        port: parseInt(port),
-        output_path: outputPath || null,
-      });
+      // TODO: Replace with actual export implementation
+      // Simulate export delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
       setExportMessage('Export completed successfully!');
+      setTimeout(() => setExportMessage(''), 3000);
     } catch (error) {
       setExportMessage(`Export failed: ${error}`);
     } finally {

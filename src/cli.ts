@@ -66,44 +66,59 @@ function parseArgs(argv: string[]): CLIOptions {
 
 function printHelp(): void {
   console.log(`
-ProPresenter Words CLI
-======================
-
-Extract lyrics from ProPresenter presentations.
+╔════════════════════════════════════════════════════════════╗
+║         ProPresenter Words CLI - Lyrics Extraction         ║
+╚════════════════════════════════════════════════════════════╝
 
 USAGE:
-  npm run dev -- <command> [options]
+  npm run dev:cli -- <command> [options]
 
 COMMANDS:
   status              Show connection status and current state
-  playlists           List all playlists
-  playlist <uuid>     Show items in a specific playlist
-  libraries           List all libraries
-  current             Show the currently active presentation lyrics
-  focused             Show the focused presentation lyrics
-  inspect <uuid>      Get full lyrics from a presentation by UUID
-  export [uuid]       Export all song lyrics from a playlist
-  pptx [uuid] [out]   Export playlist to PowerPoint file
-  watch               Watch for slide changes in real-time
+  playlists           List all available playlists
+  export              Export lyrics from a playlist (interactive)
+  export <uuid>       Export lyrics from specific playlist UUID
+  pptx                Export playlist to PowerPoint (interactive)
+  pptx <uuid> [out]   Export specific playlist to PowerPoint
+  libraries           List all available libraries
+  current             Show currently active presentation
+  focused             Show focused presentation
+  inspect <uuid>      Get full details of a presentation
+  watch               Watch for real-time slide changes
 
 OPTIONS:
-  --host, -h <host>   ProPresenter host (default: 127.0.0.1)
+  --host, -h <addr>   ProPresenter host (default: 127.0.0.1)
   --port, -p <port>   ProPresenter port (default: 1025)
-  --json, -j          Output as JSON instead of text
-  --debug, -d         Show raw API responses
-  --help              Show this help message
+  --json, -j          Output results as JSON
+  --debug, -d         Show detailed error information
+  --help              Display this help message
 
-ENVIRONMENT:
-  PROPRESENTER_HOST   Default host
-  PROPRESENTER_PORT   Default port
+CONNECTION SETTINGS:
+  Set these environment variables to avoid typing host/port:
+    PROPRESENTER_HOST=192.168.1.100
+    PROPRESENTER_PORT=1025
 
 EXAMPLES:
-  npm run dev -- status
-  npm run dev -- export                              (interactive mode)
-  npm run dev -- export abc123-def456                (direct export)
-  npm run dev -- current --host 192.168.1.100
-  npm run dev -- inspect abc123-def456 --json
-  npm run dev -- watch
+
+  # Check connection status
+  npm run dev:cli -- status
+
+  # List all playlists
+  npm run dev:cli -- playlists
+
+  # Export with interactive selection
+  npm run dev:cli -- export
+
+  # Export specific playlist to PowerPoint
+  npm run dev:cli -- pptx abc123-def456 my-service
+
+  # Connect to different host
+  npm run dev:cli -- status --host 192.168.1.100 --port 1025
+
+  # Get JSON output
+  npm run dev:cli -- playlists --json
+
+For more help, see: https://github.com/adamswbrown/propresenterlyricexport
 `);
 }
 
@@ -590,6 +605,35 @@ async function selectPlaylist(client: ProPresenterClient): Promise<string> {
   });
 }
 
+/**
+ * Validate connection to ProPresenter before running any command
+ * Fails fast with clear error messages if connection cannot be established
+ */
+async function validateConnection(client: ProPresenterClient): Promise<void> {
+  try {
+    const version = await client.connect();
+    console.log(`✓ Connected to ProPresenter ${version.version}`);
+  } catch (error: any) {
+    console.error('\n❌ Connection Failed\n');
+    console.error(`Unable to connect to ProPresenter at ${client.host}:${client.port}`);
+    console.error(`Error: ${error.message}\n`);
+
+    console.log('Troubleshooting:');
+    console.log('  1. Make sure ProPresenter 7 is running');
+    console.log('  2. Enable Network API in ProPresenter settings:');
+    console.log('     - Go to Settings → Network');
+    console.log('     - Enable "Network API"');
+    console.log('  3. Verify host and port are correct:');
+    console.log(`     - Currently using: ${client.host}:${client.port}`);
+    console.log('  4. Check firewall settings allow connections');
+    console.log('  5. Use --host and --port flags to specify custom address\n');
+    console.log('Example:');
+    console.log('  npm run dev:cli -- status --host 192.168.1.100 --port 1025\n');
+
+    process.exit(1);
+  }
+}
+
 async function main(): Promise<void> {
   const options = parseArgs(process.argv);
 
@@ -604,6 +648,9 @@ async function main(): Promise<void> {
   });
 
   console.log(`Connecting to ProPresenter at ${options.host}:${options.port}...`);
+
+  // Validate connection before running any command
+  await validateConnection(client);
 
   try {
     switch (options.command) {
@@ -669,21 +716,26 @@ async function main(): Promise<void> {
         break;
 
       default:
-        console.error(`Unknown command: ${options.command}`);
+        console.error(`❌ Unknown command: "${options.command}"\n`);
         printHelp();
         process.exit(1);
     }
+
+    console.log('\n✓ Complete');
   } catch (error: any) {
-    console.error(`\nError: ${error.message}`);
+    console.error(`\n❌ Error: ${error.message}`);
+
     if (options.debug && error.stack) {
+      console.error('\nStack trace:');
       console.error(error.stack);
     }
-    if (error.message.includes('ECONNREFUSED') || error.message.includes('ETIMEDOUT')) {
-      console.log('\nMake sure:');
-      console.log('  1. ProPresenter 7 is running');
-      console.log('  2. Network API is enabled in ProPresenter settings');
-      console.log('  3. The host and port are correct');
+
+    if (error.message.includes('ENOTFOUND')) {
+      console.error('Host not found. Check the hostname/IP address.');
+    } else if (error.message.includes('EACCES')) {
+      console.error('Permission denied. Check ProPresenter access settings.');
     }
+
     process.exit(1);
   }
 

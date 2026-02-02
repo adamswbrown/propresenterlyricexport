@@ -8,6 +8,7 @@ export default defineConfig({
     strictPort: false,
   },
   build: {
-    outDir: 'dist-gui',
+    outDir: 'dist',
+    emptyOutDir: false,
   },
 });
