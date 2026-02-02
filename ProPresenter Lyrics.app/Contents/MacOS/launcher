@@ -1,0 +1,16 @@
+#!/bin/bash
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Find and launch the CLI executable
+if [ -x "$SCRIPT_DIR/propresenter-lyrics" ]; then
+  # If no arguments provided, show help
+  if [ $# -eq 0 ]; then
+    "$SCRIPT_DIR/propresenter-lyrics" --help
+  else
+    "$SCRIPT_DIR/propresenter-lyrics" "$@"
+  fi
+else
+  echo "Error: propresenter-lyrics executable not found"
+  exit 1
+fi
