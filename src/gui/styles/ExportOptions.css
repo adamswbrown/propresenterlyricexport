@@ -106,3 +106,35 @@
 .format-info strong {
   color: var(--text);
 }
+
+/* Dark mode */
+:root.dark .format-option {
+  background: var(--bg-dark);
+  border-color: var(--border-dark);
+  color: var(--text-dark);
+}
+
+:root.dark .format-option:hover {
+  background: rgba(102, 126, 234, 0.1);
+  border-color: var(--primary);
+}
+
+:root.dark .input-group {
+  border-color: var(--border-dark);
+}
+
+:root.dark .input-group input {
+  background: var(--bg-dark);
+  color: var(--text-dark);
+  border-color: var(--border-dark);
+}
+
+:root.dark .input-group input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+:root.dark .format-info {
+  background: rgba(102, 126, 234, 0.1);
+  border-left-color: var(--primary);
+}

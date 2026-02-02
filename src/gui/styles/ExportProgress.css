@@ -80,3 +80,20 @@
 .export-progress.success .progress-message {
   color: var(--success);
 }
+
+/* Dark mode */
+:root.dark .export-progress {
+  background: var(--bg-dark);
+  border-color: var(--border-dark);
+  color: var(--text-dark);
+}
+
+:root.dark .export-progress.error {
+  background: rgba(245, 101, 101, 0.1);
+  border-color: var(--error);
+}
+
+:root.dark .export-progress.success {
+  background: rgba(72, 187, 120, 0.1);
+  border-color: var(--success);
+}

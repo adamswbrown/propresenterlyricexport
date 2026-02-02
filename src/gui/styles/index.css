@@ -1,4 +1,5 @@
 :root {
+  /* Light mode colors */
   --primary: #667eea;
   --primary-dark: #764ba2;
   --secondary: #2d6a7a;
@@ -9,6 +10,23 @@
   --bg-light: #f7fafc;
   --border: #e2e8f0;
   --shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.06);
+
+  /* Dark mode colors (same names, override in .dark) */
+  --bg-dark: #1a202c;
+  --text-dark: #e2e8f0;
+  --border-dark: #2d3748;
+}
+
+:root.dark {
+  /* Dark mode overrides */
+  --text: #e2e8f0;
+  --text-light: #a0aec0;
+  --bg-light: #2d3748;
+  --border: #4a5568;
+  --bg-dark: #1a202c;
+  --text-dark: #e2e8f0;
+  --border-dark: #2d3748;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 * {
@@ -31,6 +49,11 @@ body {
   color: var(--text);
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   min-height: 100vh;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+:root.dark body {
+  background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
 }
 
 button {

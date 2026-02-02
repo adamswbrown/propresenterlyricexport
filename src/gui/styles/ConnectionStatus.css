@@ -77,3 +77,15 @@
   background: #1f4d5a;
   transform: translateY(-1px);
 }
+
+/* Dark mode */
+:root.dark .input-group input {
+  background: var(--bg-dark);
+  color: var(--text-dark);
+  border-color: var(--border-dark);
+}
+
+:root.dark .input-group input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}

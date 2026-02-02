@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/tauri';
+import { ThemeProvider } from './components/ThemeProvider';
+import ThemeToggle from './components/ThemeToggle';
 import PlaylistSelector from './components/PlaylistSelector';
 import ExportOptions from './components/ExportOptions';
 import ConnectionStatus from './components/ConnectionStatus';
 import ExportProgress from './components/ExportProgress';
+import LogoUploader from './components/LogoUploader';
 import './styles/App.css';
 
 interface Playlist {
@@ -11,7 +14,9 @@ interface Playlist {
   uuid: string;
 }
 
-export default function App() {
+interface AppContentProps {}
+
+function AppContent() {
   const [host, setHost] = useState('127.0.0.1');
   const [port, setPort] = useState('1025');
   const [connected, setConnected] = useState(false);
@@ -19,6 +24,7 @@ export default function App() {
   const [selectedPlaylist, setSelectedPlaylist] = useState<string | null>(null);
   const [exportFormat, setExportFormat] = useState<'pptx' | 'text' | 'json'>('pptx');
   const [outputPath, setOutputPath] = useState('');
+  const [logoPath, setLogoPath] = useState('');
   const [exporting, setExporting] = useState(false);
   const [exportMessage, setExportMessage] = useState('');
 
@@ -83,6 +89,8 @@ export default function App() {
 
   return (
     <div className="app-container">
+      <ThemeToggle />
+
       <header className="app-header">
         <h1>ProPresenter Lyrics Export</h1>
         <p>Export worship lyrics to PowerPoint and more</p>
@@ -117,6 +125,9 @@ export default function App() {
                 onFormatChange={setExportFormat}
                 onOutputPathChange={setOutputPath}
               />
+              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
+                <LogoUploader onLogoSelect={setLogoPath} />
+              </div>
             </div>
 
             {exporting && (
@@ -136,5 +147,13 @@ export default function App() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }

@@ -80,3 +80,28 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Dark mode */
+:root.dark .panel {
+  background: var(--bg-dark);
+  border: 1px solid var(--border-dark);
+  color: var(--text-dark);
+}
+
+:root.dark .app-header {
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+:root.dark input[type='text'],
+:root.dark input[type='number'] {
+  background: var(--bg-dark);
+  color: var(--text-dark);
+  border-color: var(--border-dark);
+}
+
+:root.dark input[type='text']:focus,
+:root.dark input[type='number']:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
