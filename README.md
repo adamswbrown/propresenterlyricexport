@@ -56,6 +56,80 @@ export PROPRESENTER_PORT=1025            # Default: 1025
 3. Enable **Network API**
 4. Note the host and port (typically 127.0.0.1:1025 or your machine's IP)
 
+## Quick Start: Export a Playlist to PowerPoint
+
+This is the most common workflow. Just three steps:
+
+### Step 1: Start the Tool
+```bash
+npm run dev -- pptx
+```
+
+### Step 2: Select Your Playlist
+The tool connects to ProPresenter and displays all available playlists:
+
+```
+Connecting to ProPresenter at 127.0.0.1:1025...
+
+Fetching Worship library songs...
+  Found 45 songs in Worship library
+
+Available Playlists:
+====================
+
+  1) Sunday Service / Worship
+  2) Sunday Service / Teaching
+  3) Sunday Service / Prayer
+  4) Wednesday Night / Worship
+  5) Youth Group / Worship
+
+Select a playlist (enter number): 1
+
+Selected: Sunday Service / Worship
+```
+
+### Step 3: Watch the Export
+The tool automatically:
+1. Fetches all songs from the selected playlist
+2. Extracts lyrics from each presentation
+3. Generates a PowerPoint file with styled slides
+4. Saves it with a timestamped filename
+
+```
+Exporting 8 songs to PowerPoint...
+
+  ✓ Great Is Thy Faithfulness
+  ✓ In Christ Alone
+  ✓ Jesus Paid It All
+  ✓ What A Beautiful Name
+  ✓ Living Hope
+  ✓ Goodness of God
+  ✓ Cornerstone
+  ✓ Graves into Gardens
+
+Generating PowerPoint...
+  Using logo: /Users/adambrown/Developer/ProPresenterWords/logo.png
+
+✓ PowerPoint saved to: service-lyrics-1738689234523.pptx
+  8 songs, slides formatted for print/display
+```
+
+The generated PowerPoint file is ready to use immediately!
+
+### Options for This Workflow
+
+```bash
+# Export with custom output filename
+npm run dev -- pptx my-service-songs
+
+# Export from a different ProPresenter instance
+npm run dev -- pptx --host 192.168.1.100 --port 1025
+
+# Or export to text/JSON instead
+npm run dev -- export          # Text format
+npm run dev -- export --json   # JSON format
+```
+
 ## Usage
 
 ### Basic Commands
