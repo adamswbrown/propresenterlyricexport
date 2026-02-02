@@ -71,7 +71,7 @@ function printHelp(): void {
 ╚════════════════════════════════════════════════════════════╝
 
 USAGE:
-  npm run dev:cli -- <command> [options]
+  npm start -- <command> [options]
 
 COMMANDS:
   status              Show connection status and current state
@@ -101,22 +101,22 @@ CONNECTION SETTINGS:
 EXAMPLES:
 
   # Check connection status
-  npm run dev:cli -- status
+  npm start -- status
 
   # List all playlists
-  npm run dev:cli -- playlists
+  npm start -- playlists
 
   # Export with interactive selection
-  npm run dev:cli -- export
+  npm start -- export
 
   # Export specific playlist to PowerPoint
-  npm run dev:cli -- pptx abc123-def456 my-service
+  npm start -- pptx abc123-def456 my-service
 
   # Connect to different host
-  npm run dev:cli -- status --host 192.168.1.100 --port 1025
+  npm start -- status --host 192.168.1.100 --port 1025
 
   # Get JSON output
-  npm run dev:cli -- playlists --json
+  npm start -- playlists --json
 
 For more help, see: https://github.com/adamswbrown/propresenterlyricexport
 `);
@@ -628,7 +628,7 @@ async function validateConnection(client: ProPresenterClient): Promise<void> {
     console.log('  4. Check firewall settings allow connections');
     console.log('  5. Use --host and --port flags to specify custom address\n');
     console.log('Example:');
-    console.log('  npm run dev:cli -- status --host 192.168.1.100 --port 1025\n');
+    console.log('  npm start -- status --host 192.168.1.100 --port 1025\n');
 
     process.exit(1);
   }
@@ -665,7 +665,7 @@ async function main(): Promise<void> {
       case 'playlist':
         if (options.args.length === 0) {
           console.error('Error: playlist command requires a UUID');
-          console.log('Usage: npm run dev -- playlist <uuid>');
+          console.log('Usage: npm start -- playlist <uuid>');
           process.exit(1);
         }
         await showPlaylistContents(client, options.args[0], options.format);
@@ -676,13 +676,11 @@ async function main(): Promise<void> {
         break;
 
       case 'current':
-        await client.connect();
         const active = await client.getActivePresentation();
         await showPresentation(client, active, 'Active', options.format, options.debug);
         break;
 
       case 'focused':
-        await client.connect();
         const focused = await client.getFocusedPresentation();
         await showPresentation(client, focused, 'Focused', options.format, options.debug);
         break;
@@ -690,7 +688,7 @@ async function main(): Promise<void> {
       case 'inspect':
         if (options.args.length === 0) {
           console.error('Error: inspect command requires a UUID');
-          console.log('Usage: npm run dev -- inspect <uuid>');
+          console.log('Usage: npm start -- inspect <uuid>');
           process.exit(1);
         }
         await inspectPresentation(client, options.args[0], options.format, options.debug);
