@@ -22,7 +22,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "pptxgenjs": "^3.12.0",
+    "pptxgenjs": "^3.11.0",
     "renewedvision-propresenter": "^7.7.2"
   },
   "devDependencies": {
