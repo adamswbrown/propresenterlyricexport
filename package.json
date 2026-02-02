@@ -11,7 +11,9 @@
     "dev:gui": "vite",
     "electron": "electron .",
     "electron:dev": "concurrently \"npm run dev:gui\" \"wait-on http://localhost:5173 && npm run electron\"",
-    "electron:build": "npm run build && electron-builder"
+    "electron:build": "npm run build && electron-builder",
+    "build:cli": "tsc",
+    "build:exe": "npm run build:cli && pkg dist/cli.js --output propresenter-lyrics --targets node18-win-x64,node18-macos-x64,node18-macos-arm64,node18-linux-x64 --options max-old-space-size=4096"
   },
   "keywords": [
     "propresenter",
@@ -36,6 +38,7 @@
     "electron": "^30.5.1",
     "electron-builder": "^26.7.0",
     "electron-is-dev": "^3.0.1",
+    "pkg": "^5.8.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "ts-node": "^10.9.2",
