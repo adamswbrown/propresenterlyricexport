@@ -97,6 +97,40 @@ Generating PowerPoint...
   No logo found (place logo.png in project root to include it)
 ```
 
+### Font Configuration
+
+The PowerPoint export uses specific fonts and styling to create professional-looking slide presentations:
+
+**Font Details:**
+- **Font Family:** Red Hat Display
+- **Regular Slides:** 44pt, Bold, Italic
+- **Title Slides:** 54pt, Bold, Italic
+- **Color:** Dark teal (#2d6a7a)
+- **Layout:** 16:9 widescreen (1920×1080)
+
+**What you need to know:**
+
+1. **Red Hat Display Font**
+   - Red Hat Display is an open-source font (recommended for modern, clean look)
+   - If you don't have it installed, PowerPoint will automatically substitute it with a similar sans-serif font
+   - [Download Red Hat Display](https://fonts.google.com/specimen/Red+Hat+Display) if you want consistent rendering across devices
+
+2. **Font Installation (Optional)**
+   - **Windows:** Download the .ttf files and right-click → Install
+   - **macOS:** Download and double-click to install in Font Book
+   - **Linux:** Place .ttf files in `~/.fonts/` directory
+
+3. **If font isn't installed**
+   - PowerPoint will use a fallback font (usually Arial or Calibri)
+   - The layout and styling remain the same
+   - Text will be readable, just styled differently
+
+**Why these choices?**
+- **Red Hat Display:** Modern, professional, highly readable on projectors
+- **44pt/54pt:** Large enough for projection in church/venue settings
+- **Bold + Italic:** Emphasizes the lyrics while maintaining elegance
+- **Dark teal (#2d6a7a):** High contrast against white background, easier to read on screens
+
 ## Quick Start: Export a Playlist to PowerPoint
 
 This is the most common workflow. Just three steps:
