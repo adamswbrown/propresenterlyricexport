@@ -46,7 +46,7 @@ The setup script will:
 propresenter-lyrics status
 ```
 
-You're ready to go! See [detailed setup instructions](./DISTRIBUTION.md) for your platform.
+You're ready to go! See [detailed setup instructions](./docs/DISTRIBUTION.md) for your platform.
 
 ## Requirements
 
@@ -318,7 +318,7 @@ Structured data with metadata:
 
 ## Platform-Specific Setup
 
-For detailed setup instructions, see [DISTRIBUTION.md](./DISTRIBUTION.md) which includes:
+For detailed setup instructions, see [DISTRIBUTION.md](./docs/DISTRIBUTION.md) which includes:
 - macOS ARM64, Intel setup
 - Windows installation and PATH configuration
 - Troubleshooting for each platform
@@ -326,7 +326,7 @@ For detailed setup instructions, see [DISTRIBUTION.md](./DISTRIBUTION.md) which 
 
 ## Development
 
-Want to contribute or run from source? See [DEVELOPING.md](./DEVELOPING.md) for:
+Want to contribute or run from source? See [DEVELOPING.md](./docs/DEVELOPING.md) for:
 - Installation from source (Node.js required)
 - Development commands (`npm start --` equivalents)
 - Building executables
@@ -349,11 +349,11 @@ MIT
 
 ## Contributing
 
-Contributions are welcome! Please see [DEVELOPING.md](./DEVELOPING.md) for development setup and guidelines.
+Contributions are welcome! Please see [DEVELOPING.md](./docs/DEVELOPING.md) for development setup and guidelines.
 
 ## Support
 
 For issues, questions, or suggestions:
 - Check [Troubleshooting](#troubleshooting) above
-- Review [DISTRIBUTION.md](./DISTRIBUTION.md) for platform-specific help
+- Review [DISTRIBUTION.md](./docs/DISTRIBUTION.md) for platform-specific help
 - Open an issue on [GitHub](https://github.com/adamswbrown/propresenterlyricexport/issues)
