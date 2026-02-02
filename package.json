@@ -1,7 +1,7 @@
 {
   "name": "propresenterwords",
   "version": "1.0.0",
-  "description": "Extract and export worship song lyrics from ProPresenter 7 playlists as text, JSON, or PowerPoint. Cross-platform CLI with standalone executables for macOS, Windows, and Linux.",
+  "description": "Extract and export worship song lyrics from ProPresenter 7 playlists as text, JSON, or PowerPoint. Cross-platform CLI with standalone executables for macOS and Windows.",
   "bin": {
     "propresenter-lyrics": "dist/cli.js"
   },
@@ -9,7 +9,7 @@
     "start": "ts-node src/cli.ts",
     "dev": "ts-node src/cli.ts",
     "build": "tsc",
-    "build:exe": "npm run build && mkdir -p executables && pkg dist/cli.js --output executables/propresenter-lyrics --targets node18-win-x64,node18-macos-x64,node18-macos-arm64,node18-linux-x64 --assets logo.png --options max-old-space-size=4096",
+    "build:exe": "npm run build && mkdir -p executables && pkg dist/cli.js --output executables/propresenter-lyrics --targets node18-win-x64,node18-macos-x64,node18-macos-arm64 --assets logo.png --options max-old-space-size=4096",
     "build:macos": "scripts/build-macos-app.sh",
     "build:macos:dmg": "scripts/create-dmg.sh"
   },
