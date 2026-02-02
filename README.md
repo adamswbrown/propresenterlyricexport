@@ -69,7 +69,7 @@ export PROPRESENTER_PORT=1025            # Default: 1025
 The tool validates your ProPresenter connection at startup. If you see connection errors:
 
 ```bash
-npm run dev:cli -- status
+npm start -- status
 ```
 
 This command will:
@@ -197,14 +197,229 @@ The generated PowerPoint file is ready to use immediately!
 
 ```bash
 # Export with custom output filename
-npm run dev:cli -- pptx my-service-songs
+npm start -- pptx my-service-songs
 
 # Export from a different ProPresenter instance
-npm run dev:cli -- pptx --host 192.168.1.100 --port 1025
+npm start -- pptx --host 192.168.1.100 --port 1025
 
 # Or export to text/JSON instead
-npm run dev:cli -- export          # Text format
-npm run dev:cli -- export --json   # JSON format
+npm start -- export          # Text format
+npm start -- export --json   # JSON format
+```
+
+## Example Outputs
+
+### Check Connection Status
+
+```bash
+$ npm start -- status
+```
+
+Output:
+```
+Connecting to ProPresenter at 192.168.68.58:61166...
+✓ Connected to ProPresenter 7.11.0
+
+ProPresenter Connection Status
+==============================
+Connected:  Yes
+Name:       Adams-MacBook-Pro
+Version:    7.11.0
+Platform:   mac
+
+Current Slide:
+  (none)
+
+Active Presentation:
+  Unnamed
+
+✓ Complete
+```
+
+### Interactive Playlist Export to PowerPoint
+
+```bash
+$ npm start -- pptx
+```
+
+Output:
+```
+Connecting to ProPresenter at 192.168.68.58:61166...
+✓ Connected to ProPresenter 7.11.0
+
+Available Playlists:
+====================
+
+  1) TO CREATE A NEW SERVICE USE - CREATE FROM TEMPLATE
+  2) St Andrew's AM - Aug 3rd
+  3) Praise Team Practice
+  4) Blossom Event
+  5) Alpha 2026
+
+Select a playlist (enter number): 2
+
+Selected: St Andrew's AM - Aug 3rd
+
+Fetching Worship library songs...
+  Found 50 songs in Worship library
+
+Fetching playlist: 7D078D3C-CC1B-417D-A9E6-6991FA73028D
+
+Exporting 3 songs to PowerPoint...
+
+  ✓ Cornerstone
+  ✓ I Will Offer Up My Life
+  ✓ Sovereign Over Us
+
+Generating PowerPoint...
+  No logo found (place logo.png in project root to include it)
+
+✓ PowerPoint saved to: service-lyrics-1707408942153.pptx
+  3 songs, slides formatted for print/display
+
+✓ Complete
+```
+
+### Export to Text Format
+
+```bash
+$ npm start -- export 3
+```
+
+Output:
+```
+Connecting to ProPresenter at 192.168.68.58:61166...
+✓ Connected to ProPresenter 7.11.0
+
+Fetching Worship library songs...
+  Found 50 songs in Worship library
+
+Fetching playlist: 3
+
+Exporting lyrics for 1 songs...
+
+  ✓ Living Hope
+
+============================================================
+
+=== Living Hope ===
+(15 lyric slides)
+
+[Verse 1]
+How great the chasm that lay between us
+How high the mountain I could not climb
+
+In desperation I turned to heaven
+And spoke Your name into the night
+
+[Chorus]
+Hallelujah praise the One who set me free
+Hallelujah death has lost its grip on me
+
+You have broken every chain
+There's salvation in Your name
+Jesus Christ my living hope
+
+============================================================
+
+Exported 1 songs from playlist.
+
+✓ Complete
+```
+
+### Export to JSON Format
+
+```bash
+$ npm start -- export 3 --json
+```
+
+Output:
+```json
+[
+  {
+    "title": "Living Hope",
+    "uuid": "abc123-def456-789xyz",
+    "sections": [
+      {
+        "name": "Verse 1",
+        "slides": [
+          {
+            "text": "How great the chasm that lay between us\nHow high the mountain I could not climb",
+            "isLyric": true
+          }
+        ]
+      },
+      {
+        "name": "Chorus",
+        "slides": [
+          {
+            "text": "Hallelujah praise the One who set me free\nHallelujah death has lost its grip on me",
+            "isLyric": true
+          }
+        ]
+      }
+    ]
+  }
+]
+```
+
+### List Available Playlists
+
+```bash
+$ npm start -- playlists
+```
+
+Output:
+```
+Connecting to ProPresenter at 192.168.68.58:61166...
+✓ Connected to ProPresenter 7.11.0
+
+Available Playlists:
+====================
+
+  1) TO CREATE A NEW SERVICE USE - CREATE FROM TEMPLATE
+     UUID: A97A19C0-4B6F-4D73-A8E1-1B663A81E123
+
+  2) St Andrew's AM - Aug 3rd
+     UUID: 7D078D3C-CC1B-417D-A9E6-6991FA73028D
+
+  3) Praise Team Practice
+     UUID: A42A0801-470A-4D20-8E54-6D6F5796173E
+
+✓ Complete
+```
+
+### Direct Export with Playlist Number
+
+```bash
+$ npm start -- pptx 3 "My Service Lyrics"
+```
+
+Output:
+```
+Connecting to ProPresenter at 192.168.68.58:61166...
+✓ Connected to ProPresenter 7.11.0
+
+Fetching Worship library songs...
+  Found 50 songs in Worship library
+
+Fetching playlist: 3
+
+Exporting 5 songs to PowerPoint...
+
+  ✓ Hosanna (Praise Is Rising)
+  ✓ Goodness Of God
+  ✓ Praise My Soul The King Of Heaven
+  ✓ Hymn Of Heaven
+  ✓ The Heart Of Worship
+
+Generating PowerPoint...
+  No logo found (place logo.png in project root to include it)
+
+✓ PowerPoint saved to: My Service Lyrics.pptx
+  5 songs, slides formatted for print/display
+
+✓ Complete
 ```
 
 ## Usage
@@ -213,40 +428,40 @@ npm run dev:cli -- export --json   # JSON format
 
 ```bash
 # Show all playlists
-npm run dev:cli -- playlists
+npm start -- playlists
 
 # Show items in a specific playlist
-npm run dev:cli -- playlist <uuid>
+npm start -- playlist <uuid>
 
 # List all libraries
-npm run dev:cli -- libraries
+npm start -- libraries
 
 # Export playlist (interactive mode - pick by number)
-npm run dev:cli -- export
+npm start -- export
 
 # Export playlist (direct mode - using UUID)
-npm run dev:cli -- export <playlist-uuid>
+npm start -- export <playlist-uuid>
 
 # Export to PowerPoint (interactive)
-npm run dev:cli -- pptx
+npm start -- pptx
 
 # Export to PowerPoint (direct)
-npm run dev:cli -- pptx <playlist-uuid> [output-filename]
+npm start -- pptx <playlist-uuid> [output-filename]
 
 # Show current active presentation
-npm run dev:cli -- current
+npm start -- current
 
 # Show focused presentation
-npm run dev:cli -- focused
+npm start -- focused
 
 # Inspect a specific presentation by UUID
-npm run dev:cli -- inspect <presentation-uuid>
+npm start -- inspect <presentation-uuid>
 
 # Watch for slide changes in real-time
-npm run dev:cli -- watch
+npm start -- watch
 
 # Show help
-npm run dev:cli -- --help
+npm start -- --help
 ```
 
 ### Options
@@ -261,19 +476,19 @@ npm run dev:cli -- --help
 
 ```bash
 # Export with interactive playlist selection
-npm run dev:cli -- export
+npm start -- export
 
 # Export specific playlist as JSON
-npm run dev:cli -- export abc123-def456 --json
+npm start -- export abc123-def456 --json
 
 # Export to PowerPoint with custom filename
-npm run dev:cli -- pptx abc123-def456 "Sunday Service Worship"
+npm start -- pptx abc123-def456 "Sunday Service Worship"
 
 # Export from remote ProPresenter instance
-npm run dev:cli -- export --host 192.168.1.100 --port 1025
+npm start -- export --host 192.168.1.100 --port 1025
 
 # Watch slides with debug output
-npm run dev:cli -- watch --debug
+npm start -- watch --debug
 ```
 
 ## How It Works
@@ -361,18 +576,18 @@ tsconfig.json                 # TypeScript configuration
 - Make sure ProPresenter 7 is running
 - Verify Network API is enabled in ProPresenter settings
 - Check that host and port are correct
-- Try: `npm run dev:cli -- status` to test connection
+- Try: `npm start -- status` to test connection
 
 ### No playlists found
 - Create playlists in ProPresenter first
-- Use `npm run dev:cli -- playlists` to list available playlists
+- Use `npm start -- playlists` to list available playlists
 - Verify Network API connectivity
 
 ### No songs in export
 - The export filters for songs in your "Worship" library
 - Make sure your songs are organized in a library named "Worship"
-- Use `npm run dev:cli -- libraries` to see available libraries
-- Use `npm run dev:cli -- playlist <uuid>` to see items in a playlist
+- Use `npm start -- libraries` to see available libraries
+- Use `npm start -- playlist <uuid>` to see items in a playlist
 
 ### PowerPoint file not created
 - Check write permissions in the current directory
@@ -388,7 +603,7 @@ npm run build
 
 ### Build and Run
 ```bash
-npm run dev:cli -- [command] [options]
+npm start -- [command] [options]
 ```
 
 ### TypeScript Compilation
