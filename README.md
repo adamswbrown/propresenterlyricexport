@@ -16,14 +16,18 @@ A production-ready command-line tool for worship leaders and technical teams who
 
 ## Quick Start (No Installation)
 
-Download a standalone executable for your platform - no Node.js needed:
+**Download the latest executable** from [GitHub Releases](https://github.com/adamswbrown/propresenterlyricexport/releases) for your platform - no Node.js needed:
 
 - **macOS ARM64** (M1/M2/M3): `propresenter-lyrics-macos-arm64`
 - **macOS Intel**: `propresenter-lyrics-macos-x64`
 - **Linux**: `propresenter-lyrics-linux-x64`
 - **Windows**: `propresenter-lyrics-win-x64.exe`
 
-See [DISTRIBUTION.md](./DISTRIBUTION.md) for download and setup instructions.
+**Setup instructions for your platform:** See [DISTRIBUTION.md](./DISTRIBUTION.md)
+
+**Or run setup script:**
+- **macOS/Linux**: `bash scripts/setup-mac.sh`
+- **Windows**: `PowerShell -ExecutionPolicy Bypass -File scripts/setup-windows.ps1` (as Administrator)
 
 ## Installation from Source
 

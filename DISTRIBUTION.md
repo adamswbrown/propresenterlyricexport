@@ -2,11 +2,34 @@
 
 This document explains how to use the standalone executables and distribute them.
 
+## Quick Download (Recommended)
+
+The easiest way to get started is to download the latest executables from **[GitHub Releases](https://github.com/adamswbrown/propresenterlyricexport/releases)**:
+
+1. Go to the [Releases page](https://github.com/adamswbrown/propresenterlyricexport/releases)
+2. Download the executable for your platform:
+   - **Windows**: `propresenter-lyrics-win-x64.exe`
+   - **macOS Intel**: `propresenter-lyrics-macos-x64`
+   - **macOS Apple Silicon**: `propresenter-lyrics-macos-arm64`
+   - **Linux**: `propresenter-lyrics-linux-x64`
+3. Follow the setup instructions below for your platform
+
+## Build Your Own Executables
+
+If you prefer to build from source:
+
+```bash
+npm install
+npm run build:exe
+```
+
+This creates four platform-specific executables in the `executables/` folder.
+
 ## Standalone Executables
 
-Four platform-specific executables have been built. These are self-contained binaries that don't require Node.js to be installed.
+Four platform-specific executables are self-contained binaries that don't require Node.js to be installed.
 
-They are located in the `executables/` folder:
+They are located in the `executables/` folder (after building):
 
 ### Available Executables
 
