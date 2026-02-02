@@ -6,15 +6,8 @@ module.exports = {
     buildResources: 'build',
   },
   files: [
-    {
-      from: 'dist-electron',
-      to: '.',
-      filter: ['**/*'],
-    },
-    {
-      from: 'package.json',
-      to: '.',
-    },
+    'dist-electron/**/*',
+    'package.json',
   ],
   mac: {
     icon: 'assets/icon.icns',
