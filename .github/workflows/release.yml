@@ -1,0 +1,115 @@
+name: Release Desktop Builds
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: 20
+
+jobs:
+  macos:
+    name: macOS App
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build renderer & main bundles
+        run: npm run electron:build
+
+      - name: Package .app (no DMG)
+        run: npx electron-builder --mac dir --config electron-builder.config.js
+
+      - name: Zip macOS app bundle
+        run: |
+          APP_PATH="release/mac/ProPresenter Lyrics.app"
+          ZIP_NAME="ProPresenter-Lyrics-${{ github.ref_name }}-mac.zip"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "App bundle not found at $APP_PATH"
+            exit 1
+          fi
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_NAME"
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-app
+          path: ProPresenter-Lyrics-${{ github.ref_name }}-mac.zip
+          retention-days: 7
+
+  windows:
+    name: Windows EXE
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build renderer & main bundles
+        run: npm run electron:build
+
+      - name: Package Windows executable
+        run: npx electron-builder --win nsis --config electron-builder.config.js
+
+      - name: Collect EXE artifact
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Path release -Filter 'ProPresenter-Lyrics-*-win.exe' | Select-Object -First 1
+          if (-not $exe) { throw 'Installer not found in release directory.' }
+          $target = "ProPresenter-Lyrics-${{ github.ref_name }}-win.exe"
+          Copy-Item $exe.FullName $target -Force
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-exe
+          path: ProPresenter-Lyrics-${{ github.ref_name }}-win.exe
+          retention-days: 7
+
+  publish:
+    name: Publish Release
+    runs-on: ubuntu-latest
+    needs:
+      - macos
+      - windows
+    steps:
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-app
+          path: dist
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-exe
+          path: dist
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/ProPresenter-Lyrics-${{ github.ref_name }}-mac.zip
+            dist/ProPresenter-Lyrics-${{ github.ref_name }}-win.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
