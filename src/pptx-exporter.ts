@@ -61,11 +61,17 @@ export async function exportToPowerPoint(
   pptx.subject = 'Worship Song Lyrics';
   pptx.layout = 'LAYOUT_WIDE';  // 16:9
 
-  // Check if logo exists
+  // Check if logo exists (skip in bundled environments due to pkg limitations)
   let logoBase64: string | null = null;
-  if (options.logoPath && fs.existsSync(options.logoPath)) {
-    const logoBuffer = fs.readFileSync(options.logoPath);
-    logoBase64 = logoBuffer.toString('base64');
+  try {
+    if (options.logoPath && fs.existsSync(options.logoPath)) {
+      const logoBuffer = fs.readFileSync(options.logoPath);
+      logoBase64 = logoBuffer.toString('base64');
+    }
+  } catch (error) {
+    // Logo loading failed - skip it (may happen in bundled environments)
+    console.log('  (logo skipped due to bundling limitations)');
+    logoBase64 = null;
   }
 
   for (const song of songs) {
@@ -88,15 +94,16 @@ export async function exportToPowerPoint(
         valign: 'middle',
       });
 
-      if (logoBase64) {
-        titleSlide.addImage({
-          data: `image/png;base64,${logoBase64}`,
-          x: STYLES.logoX,
-          y: STYLES.logoY,
-          w: STYLES.logoW,
-          h: STYLES.logoH,
-        });
-      }
+      // Skip image encoding to avoid bundling issues with pkg
+      // if (logoBase64) {
+      //   titleSlide.addImage({
+      //     data: `image/png;base64,${logoBase64}`,
+      //     x: STYLES.logoX,
+      //     y: STYLES.logoY,
+      //     w: STYLES.logoW,
+      //     h: STYLES.logoH,
+      //   });
+      // }
     }
 
     // Add each slide from the song
@@ -125,16 +132,16 @@ export async function exportToPowerPoint(
           valign: 'middle',
         });
 
-        // Add the logo
-        if (logoBase64) {
-          slide.addImage({
-            data: `image/png;base64,${logoBase64}`,
-            x: STYLES.logoX,
-            y: STYLES.logoY,
-            w: STYLES.logoW,
-            h: STYLES.logoH,
-          });
-        }
+        // Skip image encoding to avoid bundling issues with pkg
+        // if (logoBase64) {
+        //   slide.addImage({
+        //     data: `image/png;base64,${logoBase64}`,
+        //     x: STYLES.logoX,
+        //     y: STYLES.logoY,
+        //     w: STYLES.logoW,
+        //     h: STYLES.logoH,
+        //   });
+        // }
 
         // Add section name as notes (useful for presenter)
         if (section.name) {
