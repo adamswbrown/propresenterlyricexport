@@ -2,7 +2,7 @@
 
 > Extract and export worship song lyrics from ProPresenter 7 presentations in seconds.
 
-A production-ready command-line tool for worship leaders and technical teams who need to export lyrics from ProPresenter playlists. Supports text, JSON, and PowerPoint formats. Works on macOS and Windows.
+A modern desktop + CLI toolkit for worship leaders and production teams who need to capture lyrics from ProPresenter playlists. Choose between the Electron desktop app (recommended) or the original CLI workflow depending on how you like to work. Both paths support rich PPTX exports, text/JSON dumps, and run on macOS and Windows.
 
 ## Features
 
@@ -16,37 +16,51 @@ A production-ready command-line tool for worship leaders and technical teams who
 
 ## Quick Start
 
-### 1. Download
+You can now run ProPresenter Lyrics Export two ways:
 
-**Get the latest executable** from [GitHub Releases](https://github.com/adamswbrown/propresenterlyricexport/releases) for your platform:
+1. **Desktop App (Electron) — Recommended.** Full UI for managing playlists, styling, and PPTX exports without any terminal work.
+2. **Command-Line Interface — Power users.** The original workflow driven by the standalone executable + setup scripts.
+
+### Option 1: Desktop App (Recommended)
+
+1. **Download the installer/bundle** from [GitHub Releases](https://github.com/adamswbrown/propresenterlyricexport/releases):
+  - macOS: `ProPresenter-Lyrics-vX.Y.Z-mac.zip` (contains `ProPresenter Lyrics.app`)
+  - Windows: `ProPresenter-Lyrics-vX.Y.Z-win.exe`
+2. **Install / open the app:**
+  - macOS: unzip, drag `ProPresenter Lyrics.app` to `Applications`, then open it (grant network permission on first launch).
+  - Windows: run the installer, follow the prompts, then launch “ProPresenter Lyrics”.
+3. **Connect and export:** enter your ProPresenter host/port, load playlists, tweak formatting, and export PPTX directly from the UI. Settings persist between sessions.
+
+This path bundles everything — no Node.js, scripts, or manual setup required.
+
+### Option 2: CLI + Setup Script
+
+If you prefer the terminal or need automation hooks, continue using the standalone executable.
+
+**1. Download the executable** from [GitHub Releases](https://github.com/adamswbrown/propresenterlyricexport/releases):
 
 - **macOS ARM64** (M1/M2/M3): `propresenter-lyrics-macos-arm64`
 - **macOS Intel**: `propresenter-lyrics-macos-x64`
 - **Windows**: `propresenter-lyrics-win-x64.exe`
 
-### 2. Run Setup Script
+**2. Run the setup script** (adds it to your PATH and configures defaults):
 
-**macOS:**
+macOS
 ```bash
 bash scripts/setup-mac.sh
 ```
 
-**Windows (as Administrator):**
+Windows (Administrator)
 ```powershell
 PowerShell -ExecutionPolicy Bypass -File scripts\setup-windows.ps1
 ```
 
-The setup script will:
-- Add the executable to your PATH
-- (Optional) Configure environment variables for host, port, library, and PowerPoint styling
-
-### 3. Test Connection
-
+**3. Test the connection**
 ```bash
 propresenter-lyrics status
 ```
 
-You're ready to go! See [detailed setup instructions](./docs/DISTRIBUTION.md) for your platform.
+After that, you can follow the CLI usage docs below or read [DISTRIBUTION.md](./docs/DISTRIBUTION.md) for deeper platform notes.
 
 ## Requirements
 
