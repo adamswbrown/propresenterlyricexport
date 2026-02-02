@@ -164,7 +164,7 @@ Set these environment variables to configure defaults (optional). The setup scri
 
 **Connection Settings:**
 ```bash
-# macOS/Linux
+# macOS
 export PROPRESENTER_HOST=192.168.1.100  # Default: 127.0.0.1
 export PROPRESENTER_PORT=1025            # Default: 1025
 
@@ -175,7 +175,7 @@ export PROPRESENTER_PORT=1025            # Default: 1025
 
 **Library Filter:**
 ```bash
-# macOS/Linux
+# macOS
 export PROPRESENTER_LIBRARY=Worship      # Default: Worship
 
 # Windows PowerShell
@@ -184,7 +184,7 @@ export PROPRESENTER_LIBRARY=Worship      # Default: Worship
 
 **PowerPoint Styling:**
 ```bash
-# macOS/Linux
+# macOS
 export PPTX_FONT_FACE="Arial"            # Default: Red Hat Display
 export PPTX_FONT_SIZE=44                 # Default: 44pt (regular slides)
 export PPTX_TITLE_FONT_SIZE=54           # Default: 54pt (title slides)
