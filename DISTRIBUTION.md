@@ -4,50 +4,49 @@ This document explains how to use the standalone executables and distribute them
 
 ## Standalone Executables
 
-Four platform-specific executables have been built. These are self-contained binaries that don't require Node.js to be installed:
+Four platform-specific executables have been built. These are self-contained binaries that don't require Node.js to be installed.
+
+They are located in the `executables/` folder:
 
 ### Available Executables
 
 ```
-propresenter-lyrics-win-x64.exe   (112 MB) - Windows 64-bit
-propresenter-lyrics-macos-x64     (126 MB) - macOS Intel
-propresenter-lyrics-macos-arm64   (121 MB) - macOS Apple Silicon (M1/M2/M3)
-propresenter-lyrics-linux-x64     (120 MB) - Linux 64-bit
+executables/propresenter-lyrics-win-x64.exe   (112 MB) - Windows 64-bit
+executables/propresenter-lyrics-macos-x64     (126 MB) - macOS Intel
+executables/propresenter-lyrics-macos-arm64   (121 MB) - macOS Apple Silicon (M1/M2/M3)
+executables/propresenter-lyrics-linux-x64     (120 MB) - Linux 64-bit
 ```
 
 ## Usage
 
 ### Windows
 ```bash
-# Copy the executable to a folder in your PATH, or run directly:
-.\propresenter-lyrics-win-x64.exe status
-.\propresenter-lyrics-win-x64.exe playlists
-.\propresenter-lyrics-win-x64.exe pptx
+# Run directly from executables folder:
+executables\propresenter-lyrics-win-x64.exe status
+executables\propresenter-lyrics-win-x64.exe playlists
+executables\propresenter-lyrics-win-x64.exe pptx
+
+# Or copy to your PATH for easy access:
+copy executables\propresenter-lyrics-win-x64.exe C:\Tools\
 ```
 
 ### macOS
 ```bash
-# Make executable (first time only)
-chmod +x propresenter-lyrics-macos-x64
+# Run directly (already executable):
+executables/propresenter-lyrics-macos-x64 status
+executables/propresenter-lyrics-macos-x64 playlists
+executables/propresenter-lyrics-macos-x64 pptx
 
 # Or for Apple Silicon Macs:
-chmod +x propresenter-lyrics-macos-arm64
-
-# Run:
-./propresenter-lyrics-macos-x64 status
-./propresenter-lyrics-macos-x64 playlists
-./propresenter-lyrics-macos-x64 pptx
+executables/propresenter-lyrics-macos-arm64 status
 ```
 
 ### Linux
 ```bash
-# Make executable (first time only)
-chmod +x propresenter-lyrics-linux-x64
-
-# Run:
-./propresenter-lyrics-linux-x64 status
-./propresenter-lyrics-linux-x64 playlists
-./propresenter-lyrics-linux-x64 pptx
+# Run directly (already executable):
+executables/propresenter-lyrics-linux-x64 status
+executables/propresenter-lyrics-linux-x64 playlists
+executables/propresenter-lyrics-linux-x64 pptx
 ```
 
 ## Installation for Easy Access
@@ -169,13 +168,13 @@ propresenter-lyrics-win-x64.exe %*
 
 ## File Locations
 
-The compiled executables are saved in the project root:
-- `propresenter-lyrics-win-x64.exe`
-- `propresenter-lyrics-macos-x64`
-- `propresenter-lyrics-macos-arm64`
-- `propresenter-lyrics-linux-x64`
+The compiled executables are saved in the `executables/` folder:
+- `executables/propresenter-lyrics-win-x64.exe`
+- `executables/propresenter-lyrics-macos-x64`
+- `executables/propresenter-lyrics-macos-arm64`
+- `executables/propresenter-lyrics-linux-x64`
 
-These are ready to distribute and don't require any setup beyond downloading.
+These are ready to distribute and don't require any setup beyond downloading. The `executables/` folder is added to `.gitignore` since these large binaries can be rebuilt anytime with `npm run build:exe`.
 
 ## Command Reference
 
@@ -183,22 +182,22 @@ All commands work the same as with `npm run dev:cli --`:
 
 ```bash
 # Connection test
-propresenter-lyrics-macos-x64 status
+./executables/propresenter-lyrics-macos-x64 status
 
 # List playlists
-propresenter-lyrics-macos-x64 playlists
+./executables/propresenter-lyrics-macos-x64 playlists
 
 # Interactive export
-propresenter-lyrics-macos-x64 export
+./executables/propresenter-lyrics-macos-x64 export
 
 # Interactive PowerPoint export
-propresenter-lyrics-macos-x64 pptx
+./executables/propresenter-lyrics-macos-x64 pptx
 
 # Get help
-propresenter-lyrics-macos-x64 --help
+./executables/propresenter-lyrics-macos-x64 --help
 
 # Export with specific host
-propresenter-lyrics-macos-x64 pptx --host 192.168.1.100
+./executables/propresenter-lyrics-macos-x64 pptx --host 192.168.1.100
 ```
 
 See [README.md](./README.md) for full documentation.

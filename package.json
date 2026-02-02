@@ -1,19 +1,15 @@
 {
   "name": "propresenterwords",
   "version": "1.0.0",
-  "description": "Extract lyrics from ProPresenter presentations",
-  "main": "dist/main.js",
-  "homepage": "./",
+  "description": "Command-line tool to extract and export lyrics from ProPresenter presentations",
+  "bin": {
+    "propresenter-lyrics": "dist/cli.js"
+  },
   "scripts": {
-    "build": "tsc && vite build",
     "start": "ts-node src/cli.ts",
     "dev:cli": "ts-node src/cli.ts",
-    "dev:gui": "vite",
-    "electron": "electron .",
-    "electron:dev": "concurrently \"npm run dev:gui\" \"wait-on http://localhost:5173 && npm run electron\"",
-    "electron:build": "npm run build && electron-builder",
-    "build:cli": "tsc",
-    "build:exe": "npm run build:cli && pkg dist/cli.js --output propresenter-lyrics --targets node18-win-x64,node18-macos-x64,node18-macos-arm64,node18-linux-x64 --options max-old-space-size=4096"
+    "build": "tsc",
+    "build:exe": "npm run build && mkdir -p executables && pkg dist/cli.js --output executables/propresenter-lyrics --targets node18-win-x64,node18-macos-x64,node18-macos-arm64,node18-linux-x64 --options max-old-space-size=4096"
   },
   "keywords": [
     "propresenter",
@@ -24,26 +20,13 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@tauri-apps/api": "^2.9.1",
     "pptxgenjs": "^4.0.1",
     "renewedvision-propresenter": "^7.7.2"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.9.6",
     "@types/node": "^25.2.0",
-    "@types/react": "^19.2.10",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.2",
-    "concurrently": "^9.2.1",
-    "electron": "^30.5.1",
-    "electron-builder": "^26.7.0",
-    "electron-is-dev": "^3.0.1",
     "pkg": "^5.8.1",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3",
-    "vite": "^7.3.1",
-    "wait-on": "^9.0.3"
+    "typescript": "^5.9.3"
   }
 }

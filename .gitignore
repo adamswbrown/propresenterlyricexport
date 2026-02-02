@@ -7,7 +7,12 @@ yarn.lock
 dist/
 dist-gui/
 build/
+executables/
 *.tsbuildinfo
+
+# Standalone executables (large binaries, rebuild with: npm run build:exe)
+propresenter-lyrics*
+*.exe
 
 # Generated files
 *.log
@@ -21,18 +26,15 @@ yarn-error.log*
 *.swp
 *.swo
 *~
-.DS_Store
-.env.local
-.env.*.local
-
-# Generated PowerPoint files
-service-lyrics-*.pptx
-*.pptx
 
 # Environment variables
 .env
 .env.local
 .env.*.local
+
+# Generated output files
+service-lyrics-*.pptx
+*.pptx
 
 # OS files
 .DS_Store
