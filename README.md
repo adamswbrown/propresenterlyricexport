@@ -52,9 +52,26 @@ npm start -- status
 
 Set these environment variables to configure defaults (optional):
 
+**Connection Settings:**
 ```bash
 export PROPRESENTER_HOST=192.168.1.100  # Default: 127.0.0.1
 export PROPRESENTER_PORT=1025            # Default: 1025
+```
+
+**Library Filter:**
+```bash
+export PROPRESENTER_LIBRARY=Worship      # Default: Worship
+# Use this to filter songs from a different library name
+```
+
+**PowerPoint Styling:**
+```bash
+export PPTX_FONT_FACE="Arial"            # Default: Red Hat Display
+export PPTX_FONT_SIZE=44                 # Default: 44pt (regular slides)
+export PPTX_TITLE_FONT_SIZE=54           # Default: 54pt (title slides)
+export PPTX_TEXT_COLOR=2d6a7a            # Default: 2d6a7a (hex, no # prefix)
+export PPTX_FONT_BOLD=true               # Default: true
+export PPTX_FONT_ITALIC=true             # Default: true
 ```
 
 ### ProPresenter Setup
@@ -94,33 +111,48 @@ PowerPoint exports are optimized for reliable operation across all platforms (Wi
 
 ### Font Configuration
 
-The PowerPoint export uses specific fonts and styling to create professional-looking slide presentations:
+The PowerPoint export uses specific fonts and styling to create professional-looking slide presentations. All styles are **fully customizable** via environment variables.
 
-**Font Details:**
+**Default Font Details:**
 - **Font Family:** Red Hat Display
 - **Regular Slides:** 44pt, Bold, Italic
 - **Title Slides:** 54pt, Bold, Italic
 - **Color:** Dark teal (#2d6a7a)
 - **Layout:** 16:9 widescreen (1920×1080)
 
-**What you need to know:**
+**Customizing Fonts and Colors:**
 
-1. **Red Hat Display Font**
-   - Red Hat Display is an open-source font (recommended for modern, clean look)
-   - If you don't have it installed, PowerPoint will automatically substitute it with a similar sans-serif font
-   - [Download Red Hat Display](https://fonts.google.com/specimen/Red+Hat+Display) if you want consistent rendering across devices
+Change any style by setting environment variables before running the export:
 
-2. **Font Installation (Optional)**
-   - **Windows:** Download the .ttf files and right-click → Install
-   - **macOS:** Download and double-click to install in Font Book
-   - **Linux:** Place .ttf files in `~/.fonts/` directory
+```bash
+# Use different font
+export PPTX_FONT_FACE="Calibri"
+export PPTX_FONT_SIZE=40
 
-3. **If font isn't installed**
-   - PowerPoint will use a fallback font (usually Arial or Calibri)
-   - The layout and styling remain the same
-   - Text will be readable, just styled differently
+# Use different colors (hex format without #)
+export PPTX_TEXT_COLOR=FF0000  # Red text
 
-**Why these choices?**
+# Adjust title slide size
+export PPTX_TITLE_FONT_SIZE=60
+
+# Disable bold/italic
+export PPTX_FONT_BOLD=false
+export PPTX_FONT_ITALIC=false
+
+npm start -- pptx
+```
+
+**Default Red Hat Display Font:**
+- Red Hat Display is an open-source font (recommended for modern, clean look)
+- If you don't have it installed, PowerPoint will automatically substitute it with a similar sans-serif font
+- [Download Red Hat Display](https://fonts.google.com/specimen/Red+Hat+Display) if you want consistent rendering across devices
+
+**Font Installation (Optional)**
+- **Windows:** Download the .ttf files and right-click → Install
+- **macOS:** Download and double-click to install in Font Book
+- **Linux:** Place .ttf files in `~/.fonts/` directory
+
+**Why the defaults?**
 - **Red Hat Display:** Modern, professional, highly readable on projectors
 - **44pt/54pt:** Large enough for projection in church/venue settings
 - **Bold + Italic:** Emphasizes the lyrics while maintaining elegance
@@ -584,10 +616,11 @@ tsconfig.json                 # TypeScript configuration
 - Verify Network API connectivity
 
 ### No songs in export
-- The export filters for songs in your "Worship" library
-- Make sure your songs are organized in a library named "Worship"
+- The export filters for songs in your library (default: "Worship")
+- Make sure your songs are organized in the correct library
 - Use `npm start -- libraries` to see available libraries
 - Use `npm start -- playlist <uuid>` to see items in a playlist
+- To use a different library, set: `export PROPRESENTER_LIBRARY=YourLibraryName`
 
 ### PowerPoint file not created
 - Check write permissions in the current directory

@@ -12,18 +12,19 @@ import { ExtractedLyrics } from './lyrics-extractor';
 // Re-export for convenience
 export type { ExtractedLyrics as LyricsData } from './lyrics-extractor';
 
-// Styling constants matching the St Andrew's format
+// Styling constants - configurable via environment variables
 const STYLES = {
-  // Dark teal color from the example
-  textColor: '2d6a7a',
+  // Text color (hex) - configure via PPTX_TEXT_COLOR
+  textColor: process.env.PPTX_TEXT_COLOR || '2d6a7a',
 
-  // Font settings
-  fontFace: 'Red Hat Display',
-  fontSize: 44,
-  bold: true,
-  italic: true,
+  // Font settings - configure via PPTX_FONT_FACE, PPTX_FONT_SIZE, PPTX_TITLE_FONT_SIZE
+  fontFace: process.env.PPTX_FONT_FACE || 'Red Hat Display',
+  fontSize: parseInt(process.env.PPTX_FONT_SIZE || '44', 10),
+  titleFontSize: parseInt(process.env.PPTX_TITLE_FONT_SIZE || '54', 10),
+  bold: process.env.PPTX_FONT_BOLD !== 'false',
+  italic: process.env.PPTX_FONT_ITALIC !== 'false',
 
-  // Slide dimensions (16:9 widescreen)
+  // Slide dimensions (16:9 widescreen) - typically not changed
   slideWidth: 13.333,
   slideHeight: 7.5,
 
@@ -85,11 +86,11 @@ export async function exportToPowerPoint(
         y: 3.0,
         w: STYLES.textW,
         h: 1.5,
-        fontSize: 54,
+        fontSize: STYLES.titleFontSize,
         fontFace: STYLES.fontFace,
         color: STYLES.textColor,
-        bold: true,
-        italic: true,
+        bold: STYLES.bold,
+        italic: STYLES.italic,
         align: 'center',
         valign: 'middle',
       });

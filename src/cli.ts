@@ -16,6 +16,9 @@ import * as readline from 'readline';
 const DEFAULT_HOST = process.env.PROPRESENTER_HOST || '127.0.0.1';
 const DEFAULT_PORT = parseInt(process.env.PROPRESENTER_PORT || '1025', 10);
 
+// Default library filter for songs
+const DEFAULT_LIBRARY = process.env.PROPRESENTER_LIBRARY || 'Worship';
+
 interface CLIOptions {
   host: string;
   port: number;
@@ -97,6 +100,10 @@ CONNECTION SETTINGS:
   Set these environment variables to avoid typing host/port:
     PROPRESENTER_HOST=192.168.1.100
     PROPRESENTER_PORT=1025
+
+LIBRARY FILTER:
+  Filter exported songs to specific library (default: Worship):
+    PROPRESENTER_LIBRARY=MyLibraryName
 
 EXAMPLES:
 
@@ -299,21 +306,21 @@ async function inspectPresentation(
 }
 
 /**
- * Get the set of presentation UUIDs from the Worship library
+ * Get the set of presentation UUIDs from the configured library
  */
 async function getWorshipLibrarySongs(client: ProPresenterClient): Promise<Set<string>> {
   const libraries = await client.getLibraries();
-  const worshipLibrary = libraries.find(lib => lib.name.toLowerCase() === 'worship');
+  const targetLibrary = libraries.find(lib => lib.name.toLowerCase() === DEFAULT_LIBRARY.toLowerCase());
 
-  if (!worshipLibrary) {
-    console.log('  Warning: No "Worship" library found. Available libraries:');
+  if (!targetLibrary) {
+    console.log(`  Warning: No "${DEFAULT_LIBRARY}" library found. Available libraries:`);
     for (const lib of libraries) {
       console.log(`    - ${lib.name}`);
     }
     return new Set();
   }
 
-  const presentations = await client.getLibraryPresentations(worshipLibrary.uuid);
+  const presentations = await client.getLibraryPresentations(targetLibrary.uuid);
   return new Set(presentations.map(p => p.uuid));
 }
 
