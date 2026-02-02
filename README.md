@@ -654,6 +654,10 @@ npm run build
 - **pptxgenjs** - PowerPoint presentation generation
 - **TypeScript** - Language and development
 
+## Acknowledgments
+
+This project builds on the excellent [renewedvision-propresenter](https://github.com/renewedvision/propresenter-js-sdk) package, which provides the foundation for interacting with ProPresenter 7's Network API. Without this library, the core functionality of this CLI tool would not be possible.
+
 ## License
 
 MIT
