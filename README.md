@@ -56,6 +56,47 @@ export PROPRESENTER_PORT=1025            # Default: 1025
 3. Enable **Network API**
 4. Note the host and port (typically 127.0.0.1:1025 or your machine's IP)
 
+### Logo Configuration (Optional)
+
+The PowerPoint export can include your church/organization logo on the title slide. To use this feature:
+
+**1. Add your logo file as `logo.png`**
+
+Place a PNG file named `logo.png` in one of these locations (checked in order):
+- Project root directory: `./logo.png`
+- Assets folder: `./assets/logo.png`
+- Build output: `./dist/logo.png`
+
+**2. Logo specifications**
+- **Format:** PNG with transparent background (recommended)
+- **Size:** Any size (will be scaled appropriately, typically ~200-300px works well)
+- **Dimensions:** Square or wide format both work well
+
+**3. What happens**
+- If `logo.png` is found → It will be inserted on the title slide of your PowerPoint
+- If not found → PowerPoint exports work normally without a logo (no error)
+
+**Example:**
+```bash
+# Copy your logo to the project root
+cp ~/church-logo.png logo.png
+
+# Now when you export, the logo will be included
+npm run dev -- pptx
+```
+
+**Tip:** You'll see confirmation in the output:
+```
+Generating PowerPoint...
+  Using logo: /Users/adambrown/Developer/ProPresenterWords/logo.png
+```
+
+Or if no logo is found:
+```
+Generating PowerPoint...
+  No logo found (place logo.png in project root to include it)
+```
+
 ## Quick Start: Export a Playlist to PowerPoint
 
 This is the most common workflow. Just three steps:
