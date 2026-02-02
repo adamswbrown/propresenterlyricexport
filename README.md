@@ -4,6 +4,7 @@ A command-line tool to extract and export lyrics from ProPresenter 7 presentatio
 
 ## Features
 
+- **Desktop GUI** - Beautiful, easy-to-use desktop application (new!)
 - **Extract Lyrics** - Pull lyrics from ProPresenter presentations
 - **Multiple Export Formats**:
   - Plain text with formatted sections
@@ -13,6 +14,7 @@ A command-line tool to extract and export lyrics from ProPresenter 7 presentatio
 - **Library Filtering** - Automatically filters songs from your Worship library
 - **Interactive Selection** - Pick playlists by number instead of typing UUIDs
 - **Network API** - Works with ProPresenter 7 Network API
+- **CLI & GUI** - Choose between command-line or graphical interface
 
 ## Requirements
 
@@ -35,7 +37,11 @@ npm install
 
 3. Build the project:
 ```bash
+# CLI only
 npm run build
+
+# With desktop GUI
+npm run tauri:build
 ```
 
 ## Configuration
@@ -130,6 +136,89 @@ The PowerPoint export uses specific fonts and styling to create professional-loo
 - **44pt/54pt:** Large enough for projection in church/venue settings
 - **Bold + Italic:** Emphasizes the lyrics while maintaining elegance
 - **Dark teal (#2d6a7a):** High contrast against white background, easier to read on screens
+
+## Desktop GUI
+
+A modern, user-friendly desktop application for exporting lyrics without touching the command line.
+
+### Starting the GUI
+
+```bash
+npm run tauri:dev
+```
+
+This launches a beautiful native desktop window with:
+
+**Features:**
+- 🎨 Beautiful gradient UI with smooth animations
+- 🔌 Real-time connection status to ProPresenter
+- 📋 Interactive playlist selector (no UUIDs needed)
+- 💾 Multiple export format options (PowerPoint, Text, JSON)
+- ⚙️ Easy connection settings (host & port)
+- 📊 Live export progress tracking
+- ✨ Professional, responsive design
+
+### GUI Screenshot & Workflow
+
+```
+┌────────────────────────────────────────┐
+│  ProPresenter Lyrics Export            │
+│  Export worship lyrics to PowerPoint   │
+├────────────────────────────────────────┤
+│                                        │
+│  Connection Settings                  │
+│  ● Connected                          │
+│                                        │
+│  ProPresenter Host: 127.0.0.1         │
+│  Port: 1025                           │
+│  [Test Connection]                    │
+│                                        │
+├────────────────────────────────────────┤
+│  Select Playlist                       │
+│  ◉ 1) Sunday Service / Worship         │
+│  ○ 2) Sunday Service / Teaching        │
+│  ○ 3) Wednesday Night / Worship        │
+│                                        │
+├────────────────────────────────────────┤
+│  Export Settings                       │
+│                                        │
+│  Export Format                         │
+│  ◉ PowerPoint                          │
+│  ○ Text                                │
+│  ○ JSON                                │
+│                                        │
+│  [            Export Now            ] │
+└────────────────────────────────────────┘
+```
+
+### Building a Distributable App
+
+To create a standalone desktop application:
+
+```bash
+npm run tauri:build
+```
+
+This generates:
+- **macOS**: `.dmg` file for installation
+- **Windows**: `.exe` installer
+- **Linux**: `.deb` or `.AppImage` depending on your setup
+
+The app will be in `src-tauri/target/release/bundle/`
+
+### GUI vs CLI
+
+| Feature | GUI | CLI |
+|---------|-----|-----|
+| **Ease of use** | ✓ No technical knowledge needed | Requires terminal |
+| **Visual feedback** | ✓ Real-time UI updates | Output-based |
+| **Playlist selection** | ✓ Beautiful numbered list | Number-based picker |
+| **Connection testing** | ✓ One-click status check | Manual command |
+| **Automation** | Scripts only | ✓ Full scripting support |
+| **Remote access** | Local only | Can be used remotely |
+
+**Choose GUI if:** You want simplicity, visual feedback, and a polished experience.
+**Choose CLI if:** You need automation, scripting, or remote access.
 
 ## Quick Start: Export a Playlist to PowerPoint
 
