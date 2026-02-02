@@ -12,30 +12,32 @@ import { ExtractedLyrics } from './lyrics-extractor';
 // Re-export for convenience
 export type { ExtractedLyrics as LyricsData } from './lyrics-extractor';
 
-// Styling constants - configurable via environment variables
-const STYLES = {
-  // Text color (hex) - configure via PPTX_TEXT_COLOR
-  textColor: process.env.PPTX_TEXT_COLOR || '2d6a7a',
+export interface PptxTextStyle {
+  textColor: string;
+  fontFace: string;
+  fontSize: number;
+  titleFontSize: number;
+  bold: boolean;
+  italic: boolean;
+}
 
-  // Font settings - configure via PPTX_FONT_FACE, PPTX_FONT_SIZE, PPTX_TITLE_FONT_SIZE
+export const DEFAULT_PPTX_TEXT_STYLE: PptxTextStyle = {
+  textColor: process.env.PPTX_TEXT_COLOR || '2d6a7a',
   fontFace: process.env.PPTX_FONT_FACE || 'Red Hat Display',
   fontSize: parseInt(process.env.PPTX_FONT_SIZE || '44', 10),
   titleFontSize: parseInt(process.env.PPTX_TITLE_FONT_SIZE || '54', 10),
   bold: process.env.PPTX_FONT_BOLD !== 'false',
   italic: process.env.PPTX_FONT_ITALIC !== 'false',
+};
 
-  // Slide dimensions (16:9 widescreen) - typically not changed
+const LAYOUT = {
   slideWidth: 13.333,
   slideHeight: 7.5,
-
-  // Text positioning (centered, upper-middle area)
   textX: 0.5,
   textY: 2.0,
   textW: 12.333,
   textH: 3.5,
-
-  // Logo positioning (bottom center)
-  logoX: 6.0,  // Centered
+  logoX: 6.0,
   logoY: 6.2,
   logoW: 1.2,
   logoH: 1.0,
@@ -45,6 +47,7 @@ export interface ExportOptions {
   outputPath: string;
   logoPath?: string;
   includeSongTitles?: boolean;
+  styleOverrides?: Partial<PptxTextStyle>;
 }
 
 /**
@@ -56,11 +59,16 @@ export async function exportToPowerPoint(
 ): Promise<string> {
   const pptx = new PptxGenJS();
 
+  const textStyle: PptxTextStyle = {
+    ...DEFAULT_PPTX_TEXT_STYLE,
+    ...options.styleOverrides,
+  };
+
   // Set presentation properties
   pptx.author = 'ProPresenter Words';
   pptx.title = 'Song Lyrics';
   pptx.subject = 'Worship Song Lyrics';
-  pptx.layout = 'LAYOUT_WIDE';  // 16:9
+  pptx.layout = 'LAYOUT_WIDE';
 
   // Check if logo exists (skip in bundled environments due to pkg limitations)
   let logoBase64: string | null = null;
@@ -82,15 +90,15 @@ export async function exportToPowerPoint(
       titleSlide.background = { color: 'FFFFFF' };
 
       titleSlide.addText(song.title, {
-        x: STYLES.textX,
+        x: LAYOUT.textX,
         y: 3.0,
-        w: STYLES.textW,
+        w: LAYOUT.textW,
         h: 1.5,
-        fontSize: STYLES.titleFontSize,
-        fontFace: STYLES.fontFace,
-        color: STYLES.textColor,
-        bold: STYLES.bold,
-        italic: STYLES.italic,
+        fontSize: textStyle.titleFontSize,
+        fontFace: textStyle.fontFace,
+        color: textStyle.textColor,
+        bold: textStyle.bold,
+        italic: textStyle.italic,
         align: 'center',
         valign: 'middle',
       });
@@ -99,10 +107,10 @@ export async function exportToPowerPoint(
       // if (logoBase64) {
       //   titleSlide.addImage({
       //     data: `image/png;base64,${logoBase64}`,
-      //     x: STYLES.logoX,
-      //     y: STYLES.logoY,
-      //     w: STYLES.logoW,
-      //     h: STYLES.logoH,
+      //     x: LAYOUT.logoX,
+      //     y: LAYOUT.logoY,
+      //     w: LAYOUT.logoW,
+      //     h: LAYOUT.logoH,
       //   });
       // }
     }
@@ -120,15 +128,15 @@ export async function exportToPowerPoint(
 
         // Add the lyrics text (preserves line breaks from ProPresenter)
         slide.addText(slideData.text, {
-          x: STYLES.textX,
-          y: STYLES.textY,
-          w: STYLES.textW,
-          h: STYLES.textH,
-          fontSize: STYLES.fontSize,
-          fontFace: STYLES.fontFace,
-          color: STYLES.textColor,
-          bold: STYLES.bold,
-          italic: STYLES.italic,
+          x: LAYOUT.textX,
+          y: LAYOUT.textY,
+          w: LAYOUT.textW,
+          h: LAYOUT.textH,
+          fontSize: textStyle.fontSize,
+          fontFace: textStyle.fontFace,
+          color: textStyle.textColor,
+          bold: textStyle.bold,
+          italic: textStyle.italic,
           align: 'center',
           valign: 'middle',
         });
@@ -137,10 +145,10 @@ export async function exportToPowerPoint(
         // if (logoBase64) {
         //   slide.addImage({
         //     data: `image/png;base64,${logoBase64}`,
-        //     x: STYLES.logoX,
-        //     y: STYLES.logoY,
-        //     w: STYLES.logoW,
-        //     h: STYLES.logoH,
+        //     x: LAYOUT.logoX,
+        //     y: LAYOUT.logoY,
+        //     w: LAYOUT.logoW,
+        //     h: LAYOUT.logoH,
         //   });
         // }
 

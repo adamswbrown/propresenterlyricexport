@@ -8,8 +8,9 @@
 import { ProPresenterClient, PresentationInfo, PlaylistItem } from './propresenter-client';
 import { extractLyrics, formatLyricsAsText, formatLyricsAsJSON, getLyricsSummary } from './lyrics-extractor';
 import { exportToPowerPoint } from './pptx-exporter';
-import { ExtractedLyrics } from './lyrics-extractor';
-import * as path from 'path';
+import { collectPlaylistLyrics, PlaylistProgressEvent } from './services/playlist-exporter';
+import { findLogoPath } from './services/logo';
+import { flattenPlaylists, formatPlaylistName } from './utils/playlist-utils';
 import * as readline from 'readline';
 
 // Default connection settings
@@ -305,41 +306,48 @@ async function inspectPresentation(
   await showPresentation(client, presentation, 'Inspected', format, debug);
 }
 
-/**
- * Get the set of presentation UUIDs from the configured library
- */
-async function getWorshipLibrarySongs(client: ProPresenterClient): Promise<Set<string>> {
-  const libraries = await client.getLibraries();
-  const targetLibrary = libraries.find(lib => lib.name.toLowerCase() === DEFAULT_LIBRARY.toLowerCase());
-
-  if (!targetLibrary) {
-    console.log(`  Warning: No "${DEFAULT_LIBRARY}" library found. Available libraries:`);
-    for (const lib of libraries) {
-      console.log(`    - ${lib.name}`);
-    }
-    return new Set();
+function logPlaylistProgress(
+  event: PlaylistProgressEvent,
+  { debug = false, verbose = true }: { debug?: boolean; verbose?: boolean } = {}
+): void {
+  switch (event.type) {
+    case 'library:search':
+      console.log(`\nFetching ${event.libraryName} library songs...`);
+      break;
+    case 'library:not-found':
+      console.log(`  Warning: No "${event.libraryName}" library found.`);
+      if (event.availableLibraries.length > 0) {
+        console.log('  Available libraries:');
+        for (const name of event.availableLibraries) {
+          console.log(`    - ${name}`);
+        }
+      }
+      break;
+    case 'playlist:start':
+      console.log(`\nScanning playlist items (${event.totalItems} total)...`);
+      break;
+    case 'playlist:item:skip':
+      if (debug) {
+        console.log(`  - Skipped ${event.item.name}`);
+      }
+      break;
+    case 'playlist:item:start':
+      if (debug) {
+        console.log(`  ... ${event.item.name}`);
+      }
+      break;
+    case 'playlist:item:success':
+      if (verbose) {
+        console.log(`  ✓ ${event.item.name}`);
+      }
+      break;
+    case 'playlist:item:error':
+      console.log(`  ⚠ ${event.item.name}: ${event.error}`);
+      break;
+    case 'complete':
+      console.log(`\nCollected ${event.totalSongs} songs.`);
+      break;
   }
-
-  const presentations = await client.getLibraryPresentations(targetLibrary.uuid);
-  return new Set(presentations.map(p => p.uuid));
-}
-
-/**
- * Check if a playlist item is a song from the Worship library
- */
-function isWorshipSong(item: PlaylistItem, worshipSongUuids: Set<string>): boolean {
-  // Skip headers
-  if (item.isHeader) {
-    return false;
-  }
-
-  // Skip items without presentation content
-  if (!item.presentationUuid) {
-    return false;
-  }
-
-  // Only include if it's in the Worship library
-  return worshipSongUuids.has(item.presentationUuid);
 }
 
 async function exportPlaylistLyrics(
@@ -350,71 +358,33 @@ async function exportPlaylistLyrics(
 ): Promise<void> {
   await client.connect();
 
-  console.log(`\nFetching Worship library songs...`);
-  const worshipSongUuids = await getWorshipLibrarySongs(client);
-  console.log(`  Found ${worshipSongUuids.size} songs in Worship library`);
-
   console.log(`\nFetching playlist: ${playlistId}`);
-  const items = await client.getPlaylistItems(playlistId);
 
-  if (items.length === 0) {
-    console.log('Playlist is empty.');
-    return;
-  }
+  const result = await collectPlaylistLyrics(client, playlistId, {
+    libraryFilter: DEFAULT_LIBRARY,
+    onProgress: (event) => logPlaylistProgress(event, { debug, verbose: format !== 'json' }),
+  });
 
-  // Filter for songs from the Worship library
-  const songItems = items.filter(item => isWorshipSong(item, worshipSongUuids));
-
-  if (debug) {
-    console.log(`\nFound ${items.length} items, ${songItems.length} are from Worship library:`);
-    for (const item of items) {
-      const isSong = isWorshipSong(item, worshipSongUuids);
-      console.log(`  ${isSong ? '✓' : '✗'} ${item.name}${item.isHeader ? ' [HEADER]' : ''}`);
-    }
-  }
-
-  if (songItems.length === 0) {
+  if (result.songs.length === 0) {
     console.log('No songs found in playlist.');
     return;
   }
 
-  console.log(`\nExporting lyrics for ${songItems.length} songs...\n`);
-
-  const allSongs: any[] = [];
-
-  for (const item of songItems) {
-    if (!item.presentationUuid) continue;
-
-    try {
-      const presentation = await client.getPresentationByUuid(item.presentationUuid);
-      if (!presentation) {
-        console.log(`  ⚠ Could not fetch: ${item.name}`);
-        continue;
-      }
-
-      const lyrics = extractLyrics(presentation);
-      allSongs.push(lyrics);
-
-      if (format !== 'json') {
-        console.log(`  ✓ ${item.name}`);
-      }
-    } catch (e: any) {
-      console.log(`  ⚠ Error fetching ${item.name}: ${e.message}`);
-    }
-  }
+  const lyricsList = result.songs.map(entry => entry.lyrics);
 
   if (format === 'json') {
-    console.log(JSON.stringify(allSongs, null, 2));
-  } else {
-    console.log('\n' + '='.repeat(60) + '\n');
-
-    for (const song of allSongs) {
-      console.log(formatLyricsAsText(song));
-      console.log('\n' + '-'.repeat(40) + '\n');
-    }
-
-    console.log(`\nExported ${allSongs.length} songs from playlist.`);
+    console.log(JSON.stringify(lyricsList, null, 2));
+    return;
   }
+
+  console.log('\n' + '='.repeat(60) + '\n');
+
+  for (const song of lyricsList) {
+    console.log(formatLyricsAsText(song));
+    console.log('\n' + '-'.repeat(40) + '\n');
+  }
+
+  console.log(`\nExported ${lyricsList.length} songs from playlist.`);
 }
 
 async function exportPlaylistToPptx(
@@ -425,78 +395,20 @@ async function exportPlaylistToPptx(
 ): Promise<void> {
   await client.connect();
 
-  console.log(`\nFetching Worship library songs...`);
-  const worshipSongUuids = await getWorshipLibrarySongs(client);
-  console.log(`  Found ${worshipSongUuids.size} songs in Worship library`);
-
   console.log(`\nFetching playlist: ${playlistId}`);
-  const items = await client.getPlaylistItems(playlistId);
 
-  if (items.length === 0) {
-    console.log('Playlist is empty.');
+  const result = await collectPlaylistLyrics(client, playlistId, {
+    libraryFilter: DEFAULT_LIBRARY,
+    onProgress: (event) => logPlaylistProgress(event, { debug, verbose: true }),
+  });
+
+  if (result.songs.length === 0) {
+    console.log('No songs to export.');
     return;
   }
 
-  // Filter for songs from the Worship library
-  const songItems = items.filter(item => isWorshipSong(item, worshipSongUuids));
-
-  if (debug) {
-    console.log(`\nFound ${items.length} items, ${songItems.length} are from Worship library:`);
-    for (const item of items) {
-      const isSong = isWorshipSong(item, worshipSongUuids);
-      console.log(`  ${isSong ? '✓' : '✗'} ${item.name}${item.isHeader ? ' [HEADER]' : ''}`);
-    }
-  }
-
-  if (songItems.length === 0) {
-    console.log('No songs found in playlist.');
-    return;
-  }
-
-  console.log(`\nExporting ${songItems.length} songs to PowerPoint...\n`);
-
-  const allSongs: ExtractedLyrics[] = [];
-
-  for (const item of songItems) {
-    if (!item.presentationUuid) continue;
-
-    try {
-      const presentation = await client.getPresentationByUuid(item.presentationUuid);
-      if (!presentation) {
-        console.log(`  ⚠ Could not fetch: ${item.name}`);
-        continue;
-      }
-
-      const lyrics = extractLyrics(presentation);
-      allSongs.push(lyrics);
-      console.log(`  ✓ ${item.name}`);
-    } catch (e: any) {
-      console.log(`  ⚠ Error fetching ${item.name}: ${e.message}`);
-    }
-  }
-
-  if (allSongs.length === 0) {
-    console.log('\nNo songs to export.');
-    return;
-  }
-
-  // Look for logo in common locations
-  const logoLocations = [
-    path.join(process.cwd(), 'logo.png'),
-    path.join(process.cwd(), 'assets', 'logo.png'),
-    path.join(__dirname, '..', 'logo.png'),
-  ];
-
-  let logoPath: string | undefined;
-  for (const loc of logoLocations) {
-    try {
-      const fs = await import('fs');
-      if (fs.existsSync(loc)) {
-        logoPath = loc;
-        break;
-      }
-    } catch {}
-  }
+  const songs = result.songs.map(entry => entry.lyrics);
+  const logoPath = findLogoPath();
 
   console.log(`\nGenerating PowerPoint...`);
   if (logoPath) {
@@ -505,14 +417,14 @@ async function exportPlaylistToPptx(
     console.log(`  No logo found (place logo.png in project root to include it)`);
   }
 
-  const finalPath = await exportToPowerPoint(allSongs, {
+  const finalPath = await exportToPowerPoint(songs, {
     outputPath,
     logoPath,
     includeSongTitles: true,
   });
 
   console.log(`\n✓ PowerPoint saved to: ${finalPath}`);
-  console.log(`  ${allSongs.length} songs, slides formatted for print/display`);
+  console.log(`  ${songs.length} songs, slides formatted for print/display`);
 }
 
 async function watchSlides(client: ProPresenterClient): Promise<void> {
@@ -546,29 +458,6 @@ async function watchSlides(client: ProPresenterClient): Promise<void> {
 }
 
 /**
- * Flatten the playlist tree into a list of selectable items
- */
-function flattenPlaylists(items: PlaylistItem[], prefix: string = ''): Array<{ name: string; uuid: string }> {
-  const result: Array<{ name: string; uuid: string }> = [];
-
-  for (const item of items) {
-    // Only add non-header items with UUIDs
-    if (!item.isHeader && item.uuid) {
-      const displayName = prefix ? `${prefix} / ${item.name}` : item.name;
-      result.push({ name: displayName, uuid: item.uuid });
-    }
-
-    // Recurse into children
-    if (item.children && item.children.length > 0) {
-      const childPrefix = prefix ? `${prefix} / ${item.name}` : item.name;
-      result.push(...flattenPlaylists(item.children, childPrefix));
-    }
-  }
-
-  return result;
-}
-
-/**
  * Prompt user to select a playlist from a list
  */
 async function selectPlaylist(client: ProPresenterClient): Promise<string> {
@@ -585,7 +474,7 @@ async function selectPlaylist(client: ProPresenterClient): Promise<string> {
   console.log('====================\n');
 
   for (let i = 0; i < flatList.length; i++) {
-    console.log(`  ${i + 1}) ${flatList[i].name}`);
+    console.log(`  ${i + 1}) ${formatPlaylistName(flatList[i])}`);
   }
 
   console.log('');
@@ -606,8 +495,9 @@ async function selectPlaylist(client: ProPresenterClient): Promise<string> {
         process.exit(1);
       }
 
-      console.log(`\nSelected: ${flatList[index].name}\n`);
-      resolve(flatList[index].uuid);
+      const selected = flatList[index];
+      console.log(`\nSelected: ${formatPlaylistName(selected)}\n`);
+      resolve(selected.uuid);
     });
   });
 }

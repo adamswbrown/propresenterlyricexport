@@ -1,0 +1,67 @@
+name: Release Bundles
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm run build:exe
+      - run: npm run build:macos
+      - run: npm run build:macos:dmg
+      - run: npm run electron:package
+      - name: Prepare artifacts
+        run: |
+          mkdir -p artifacts
+          zip -j artifacts/cli-binaries.zip executables/propresenter-lyrics*
+          zip -r artifacts/cli-macos-app.zip "ProPresenter Lyrics.app"
+          cp ProPresenterLyrics-macOS-arm64.dmg artifacts/
+          cp release/* artifacts/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-artifacts
+          path: artifacts/*
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm run electron:package
+      - name: Collect windows artifacts
+        run: |
+          New-Item -ItemType Directory -Path artifacts | Out-Null
+          Copy-Item release/* artifacts/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: artifacts/*
+
+  publish:
+    runs-on: ubuntu-latest
+    needs:
+      - build-macos
+      - build-windows
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: releases
+      - name: Display files
+        run: ls -R releases
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: releases/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

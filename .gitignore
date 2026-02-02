@@ -5,9 +5,12 @@ yarn.lock
 
 # Build output
 dist/
+dist-electron/
 dist-gui/
 build/
 executables/
+release/
+artifacts/
 *.tsbuildinfo
 
 # Standalone executables (large binaries, rebuild with: npm run build:exe)

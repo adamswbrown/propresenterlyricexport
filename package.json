@@ -2,6 +2,7 @@
   "name": "propresenterwords",
   "version": "1.0.0",
   "description": "Extract and export worship song lyrics from ProPresenter 7 playlists as text, JSON, or PowerPoint. Cross-platform CLI with standalone executables for macOS and Windows.",
+  "main": "dist-electron/main/index.js",
   "bin": {
     "propresenter-lyrics": "dist/cli.js"
   },
@@ -11,7 +12,11 @@
     "build": "tsc",
     "build:exe": "npm run build && mkdir -p executables && pkg dist/cli.js --output executables/propresenter-lyrics --targets node18-win-x64,node18-macos-x64,node18-macos-arm64 --assets logo.png --options max-old-space-size=4096",
     "build:macos": "scripts/build-macos-app.sh",
-    "build:macos:dmg": "scripts/create-dmg.sh"
+    "build:macos:dmg": "scripts/create-dmg.sh",
+    "electron:dev": "electron-vite dev",
+    "electron:build": "electron-vite build",
+    "electron:package": "npm run electron:build && electron-builder",
+    "release:bundle": "npm run build:exe && npm run build:macos && npm run build:macos:dmg && npm run electron:package"
   },
   "keywords": [
     "propresenter",
@@ -22,13 +27,23 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "electron-store": "^8.2.0",
     "pptxgenjs": "^3.10.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "renewedvision-propresenter": "^7.7.2"
   },
   "devDependencies": {
     "@types/node": "^25.2.0",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.2",
+    "@vitejs/plugin-react": "^4.3.1",
+    "electron": "^31.2.0",
+    "electron-builder": "^24.13.3",
+    "electron-vite": "^2.3.0",
     "pkg": "^5.8.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vite": "^5.4.0"
   }
 }
