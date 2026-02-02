@@ -1,6 +1,6 @@
 {
   "name": "propresenterwords",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Extract and export worship song lyrics from ProPresenter 7 playlists as text, JSON, or PowerPoint. Cross-platform CLI with standalone executables for macOS and Windows.",
   "main": "dist-electron/main/index.js",
   "bin": {
