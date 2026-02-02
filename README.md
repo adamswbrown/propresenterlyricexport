@@ -1,47 +1,50 @@
 # ProPresenter Lyrics Export
 
-A command-line tool to extract and export lyrics from ProPresenter 7 presentations. Supports text, JSON, and PowerPoint formats.
+> Extract and export worship song lyrics from ProPresenter 7 presentations in seconds.
+
+A production-ready command-line tool for worship leaders and technical teams who need to export lyrics from ProPresenter playlists. Supports text, JSON, and PowerPoint formats. Works on Mac, Windows, and Linux.
 
 ## Features
 
-- **Command-Line Interface** - Clean, easy-to-use CLI tool
-- **Extract Lyrics** - Pull lyrics from ProPresenter presentations
-- **Connection Validation** - Automatic connectivity checking with clear error messages
-- **Multiple Export Formats**:
-  - Plain text with formatted sections
-  - JSON with structured metadata
-  - PowerPoint presentations with styled slides
-- **Playlist Support** - Export entire playlists at once
-- **Library Filtering** - Automatically filters songs from your Worship library
-- **Interactive Selection** - Pick playlists by number instead of typing UUIDs
-- **Network API** - Works with ProPresenter 7 Network API
-- **Cross-Platform** - Runs on Mac, Windows, and Linux
+- 🎯 **Interactive Playlist Selection** - Browse and select playlists by number
+- 📤 **Multiple Export Formats** - Text, JSON, or beautifully formatted PowerPoint
+- ✅ **Connection Validation** - Automatic connectivity checking with clear error messages
+- 🔄 **Batch Export** - Export entire playlists in one command
+- 🏆 **Worship Library Integration** - Automatically filters songs from your Worship library
+- 🌍 **Cross-Platform** - Native support for macOS (ARM64 & Intel), Linux, and Windows
+- 📦 **Standalone Executables** - No Node.js installation required (optional)
+
+## Quick Start (No Installation)
+
+Download a standalone executable for your platform - no Node.js needed:
+
+- **macOS ARM64** (M1/M2/M3): `propresenter-lyrics-macos-arm64`
+- **macOS Intel**: `propresenter-lyrics-macos-x64`
+- **Linux**: `propresenter-lyrics-linux-x64`
+- **Windows**: `propresenter-lyrics-win-x64.exe`
+
+See [DISTRIBUTION.md](./DISTRIBUTION.md) for download and setup instructions.
+
+## Installation from Source
+
+Requires **Node.js 18+**
+
+```bash
+# Clone the repository
+git clone https://github.com/adamswbrown/propresenterlyricexport.git
+cd propresenterlyricexport
+
+# Install dependencies
+npm install
+
+# Test your connection
+npm start -- status
+```
 
 ## Requirements
 
-- **Node.js** 14+
 - **ProPresenter 7** running and accessible on your network
-- Network API enabled in ProPresenter settings
-
-## Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/adamswbrown/propresenterlyricexport.git
-cd propresenterlyricexport
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Install and run:
-```bash
-npm run dev:cli -- status
-```
-
-This will test your connection to ProPresenter. If you see connection errors, refer to the [Troubleshooting](#troubleshooting) section.
+- Network API enabled in ProPresenter settings (see [Configuration](#configuration))
 
 ## Configuration
 
@@ -80,46 +83,14 @@ This command will:
 - Network connectivity troubleshooting
 - Real-world usage examples
 
-### Logo Configuration (Optional)
+### About Logo Support
 
-The PowerPoint export can include your church/organization logo on the title slide. To use this feature:
+PowerPoint exports are optimized for reliable operation across all platforms (Windows, macOS, Linux). Currently, logos are not included in the PPTX output to ensure maximum compatibility and performance, especially in bundled executables.
 
-**1. Add your logo file as `logo.png`**
-
-Place a PNG file named `logo.png` in one of these locations (checked in order):
-- Project root directory: `./logo.png`
-- Assets folder: `./assets/logo.png`
-- Build output: `./dist/logo.png`
-
-**2. Logo specifications**
-- **Format:** PNG with transparent background (recommended)
-- **Size:** Any size (will be scaled appropriately, typically ~200-300px works well)
-- **Dimensions:** Square or wide format both work well
-
-**3. What happens**
-- If `logo.png` is found → It will be inserted on the title slide of your PowerPoint
-- If not found → PowerPoint exports work normally without a logo (no error)
-
-**Example:**
-```bash
-# Copy your logo to the project root
-cp ~/church-logo.png logo.png
-
-# Now when you export, the logo will be included
-npm run dev:cli -- pptx
-```
-
-**Tip:** You'll see confirmation in the output:
-```
-Generating PowerPoint...
-  Using logo: /Users/adambrown/Developer/ProPresenterWords/logo.png
-```
-
-Or if no logo is found:
-```
-Generating PowerPoint...
-  No logo found (place logo.png in project root to include it)
-```
+**You can still:**
+- Export professional-looking PowerPoints with properly formatted lyrics
+- Add logos manually in PowerPoint after export (Edit → Logo)
+- Use text watermarks via PowerPoint's built-in features
 
 ### Font Configuration
 
@@ -155,13 +126,20 @@ The PowerPoint export uses specific fonts and styling to create professional-loo
 - **Bold + Italic:** Emphasizes the lyrics while maintaining elegance
 - **Dark teal (#2d6a7a):** High contrast against white background, easier to read on screens
 
-## Quick Start: Export a Playlist to PowerPoint
+## Usage: Export a Playlist to PowerPoint
 
 This is the most common workflow. Just three steps:
 
 ### Step 1: Start the Tool
+
+Using the CLI:
 ```bash
-npm run dev:cli -- pptx
+npm start -- pptx
+```
+
+Or using the executable:
+```bash
+propresenter-lyrics pptx
 ```
 
 ### Step 2: Select Your Playlist
