@@ -78,8 +78,13 @@ if ([string]::IsNullOrEmpty($SetupType)) {
     Write-Host "4. All of the above"
     Write-Host "   - Complete setup"
     Write-Host ""
+    Write-Host "5. Configure environment variables"
+    Write-Host "   - Set ProPresenter host/port"
+    Write-Host "   - Set library filter"
+    Write-Host "   - Configure PowerPoint styling"
+    Write-Host ""
 
-    $choice = Read-Host "Choose setup type (1/2/3/4) [default: 1]"
+    $choice = Read-Host "Choose setup type (1/2/3/4/5) [default: 1]"
     if ([string]::IsNullOrEmpty($choice)) { $choice = "1" }
 } else {
     switch ($SetupType.ToLower()) {
@@ -190,6 +195,54 @@ function Setup-ProgramFiles {
     }
 }
 
+function Setup-Config {
+    Write-Host ""
+    Write-Host "Configuring Environment Variables..."
+    Write-Host "-----------------------------------------------------------"
+    Write-Host ""
+
+    # ProPresenter Connection
+    $ppHost = Read-Host "ProPresenter host [127.0.0.1]"
+    if ([string]::IsNullOrEmpty($ppHost)) { $ppHost = "127.0.0.1" }
+
+    $ppPort = Read-Host "ProPresenter port [1025]"
+    if ([string]::IsNullOrEmpty($ppPort)) { $ppPort = "1025" }
+
+    # Library Filter
+    $ppLibrary = Read-Host "Library name to filter [Worship]"
+    if ([string]::IsNullOrEmpty($ppLibrary)) { $ppLibrary = "Worship" }
+
+    # PowerPoint Styling
+    $pptxFont = Read-Host "PowerPoint font face [Red Hat Display]"
+    if ([string]::IsNullOrEmpty($pptxFont)) { $pptxFont = "Red Hat Display" }
+
+    $pptxSize = Read-Host "PowerPoint font size [44]"
+    if ([string]::IsNullOrEmpty($pptxSize)) { $pptxSize = "44" }
+
+    $pptxTitleSize = Read-Host "PowerPoint title font size [54]"
+    if ([string]::IsNullOrEmpty($pptxTitleSize)) { $pptxTitleSize = "54" }
+
+    $pptxColor = Read-Host "PowerPoint text color in hex [2d6a7a]"
+    if ([string]::IsNullOrEmpty($pptxColor)) { $pptxColor = "2d6a7a" }
+
+    Write-Host ""
+    Write-Host "Setting environment variables..."
+
+    # Set environment variables at user level
+    [Environment]::SetEnvironmentVariable("PROPRESENTER_HOST", $ppHost, "User")
+    [Environment]::SetEnvironmentVariable("PROPRESENTER_PORT", $ppPort, "User")
+    [Environment]::SetEnvironmentVariable("PROPRESENTER_LIBRARY", $ppLibrary, "User")
+    [Environment]::SetEnvironmentVariable("PPTX_FONT_FACE", $pptxFont, "User")
+    [Environment]::SetEnvironmentVariable("PPTX_FONT_SIZE", $pptxSize, "User")
+    [Environment]::SetEnvironmentVariable("PPTX_TITLE_FONT_SIZE", $pptxTitleSize, "User")
+    [Environment]::SetEnvironmentVariable("PPTX_TEXT_COLOR", $pptxColor, "User")
+
+    Write-Host "✓ Configuration saved"
+    Write-Host ""
+    Write-Host "IMPORTANT: Restart any open Command Prompt or PowerShell windows"
+    Write-Host "to use the new environment variables."
+}
+
 # ============================================================
 # Execute Setup
 # ============================================================
@@ -208,6 +261,9 @@ switch ($choice) {
         Setup-PATH
         Setup-Shortcut
         Setup-ProgramFiles
+    }
+    "5" {
+        Setup-Config
     }
     default {
         Write-Host "Invalid choice"
@@ -232,10 +288,19 @@ Write-Host "1. Test the connection:"
 Write-Host "   propresenter-lyrics status"
 Write-Host ""
 Write-Host "2. Configure connection (optional):"
-Write-Host "   `$env:PROPRESENTER_HOST='192.168.1.100'"
-Write-Host "   `$env:PROPRESENTER_PORT='1025'"
+Write-Host "   [Environment]::SetEnvironmentVariable('PROPRESENTER_HOST', '192.168.1.100', 'User')"
+Write-Host "   [Environment]::SetEnvironmentVariable('PROPRESENTER_PORT', '1025', 'User')"
 Write-Host ""
-Write-Host "3. Export your first playlist:"
+Write-Host "3. Configure library filter (optional):"
+Write-Host "   [Environment]::SetEnvironmentVariable('PROPRESENTER_LIBRARY', 'Worship', 'User')"
+Write-Host ""
+Write-Host "4. Customize PowerPoint styling (optional):"
+Write-Host "   [Environment]::SetEnvironmentVariable('PPTX_FONT_FACE', 'Calibri', 'User')"
+Write-Host "   [Environment]::SetEnvironmentVariable('PPTX_FONT_SIZE', '40', 'User')"
+Write-Host "   [Environment]::SetEnvironmentVariable('PPTX_TITLE_FONT_SIZE', '54', 'User')"
+Write-Host "   [Environment]::SetEnvironmentVariable('PPTX_TEXT_COLOR', 'FF0000', 'User')"
+Write-Host ""
+Write-Host "5. Export your first playlist:"
 Write-Host "   propresenter-lyrics pptx"
 Write-Host ""
 Write-Host "For help:"

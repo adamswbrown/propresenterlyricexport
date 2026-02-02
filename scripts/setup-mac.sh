@@ -50,7 +50,12 @@ echo ""
 echo "3. Both"
 echo "   - Set up command-line AND Applications folder"
 echo ""
-read -p "Choose setup type (1/2/3) [default: 1]: " CHOICE
+echo "4. Configure environment variables"
+echo "   - Set ProPresenter host/port"
+echo "   - Set library filter"
+echo "   - Configure PowerPoint styling"
+echo ""
+read -p "Choose setup type (1/2/3/4) [default: 1]: " CHOICE
 CHOICE=${CHOICE:-1}
 
 # Function to setup command-line access
@@ -148,6 +153,64 @@ EOF
     echo "  open /Applications/ProPresenter\ Lyrics.app"
 }
 
+# Function to setup environment variables
+setup_config() {
+    echo ""
+    echo "Configuring Environment Variables..."
+    echo "─────────────────────────────────────────────────────────────"
+    echo ""
+
+    # Detect shell
+    if [ -n "$ZSH_VERSION" ]; then
+        SHELL_RC="$HOME/.zshrc"
+        SHELL_NAME="zsh"
+    else
+        SHELL_RC="$HOME/.bashrc"
+        SHELL_NAME="bash"
+    fi
+
+    # ProPresenter Connection
+    read -p "ProPresenter host [127.0.0.1]: " PP_HOST
+    PP_HOST=${PP_HOST:-127.0.0.1}
+    read -p "ProPresenter port [1025]: " PP_PORT
+    PP_PORT=${PP_PORT:-1025}
+
+    # Library Filter
+    read -p "Library name to filter (default: Worship): " PP_LIBRARY
+    PP_LIBRARY=${PP_LIBRARY:-Worship}
+
+    # PowerPoint Styling
+    read -p "PowerPoint font face (default: Red Hat Display): " PPTX_FONT
+    PPTX_FONT=${PPTX_FONT:-Red Hat Display}
+    read -p "PowerPoint font size (default: 44): " PPTX_SIZE
+    PPTX_SIZE=${PPTX_SIZE:-44}
+    read -p "PowerPoint title font size (default: 54): " PPTX_TITLE_SIZE
+    PPTX_TITLE_SIZE=${PPTX_TITLE_SIZE:-54}
+    read -p "PowerPoint text color in hex (default: 2d6a7a): " PPTX_COLOR
+    PPTX_COLOR=${PPTX_COLOR:-2d6a7a}
+
+    echo ""
+    echo "Adding configuration to $SHELL_RC..."
+
+    # Add to shell configuration
+    {
+        echo ""
+        echo "# ProPresenter Lyrics Configuration - Added by setup script"
+        echo "export PROPRESENTER_HOST=$PP_HOST"
+        echo "export PROPRESENTER_PORT=$PP_PORT"
+        echo "export PROPRESENTER_LIBRARY=\"$PP_LIBRARY\""
+        echo "export PPTX_FONT_FACE=\"$PPTX_FONT\""
+        echo "export PPTX_FONT_SIZE=$PPTX_SIZE"
+        echo "export PPTX_TITLE_FONT_SIZE=$PPTX_TITLE_SIZE"
+        echo "export PPTX_TEXT_COLOR=$PPTX_COLOR"
+    } >> "$SHELL_RC"
+
+    echo "✓ Configuration saved to $SHELL_RC"
+    echo ""
+    echo "To activate, run:"
+    echo "  source $SHELL_RC"
+}
+
 # Execute chosen option
 case $CHOICE in
     1)
@@ -159,6 +222,9 @@ case $CHOICE in
     3)
         setup_cli
         setup_applications
+        ;;
+    4)
+        setup_config
         ;;
     *)
         echo "✗ Invalid choice"
@@ -188,9 +254,18 @@ echo "3. Configure connection (optional):"
 echo "   export PROPRESENTER_HOST=192.168.1.100"
 echo "   export PROPRESENTER_PORT=1025"
 echo ""
-echo "4. Export your first playlist:"
+echo "4. Configure library filter (optional):"
+echo "   export PROPRESENTER_LIBRARY=Worship"
+echo ""
+echo "5. Customize PowerPoint styling (optional):"
+echo "   export PPTX_FONT_FACE='Calibri'"
+echo "   export PPTX_FONT_SIZE=40"
+echo "   export PPTX_TITLE_FONT_SIZE=54"
+echo "   export PPTX_TEXT_COLOR=FF0000"
+echo ""
+echo "6. Export your first playlist:"
 echo "   propresenter-lyrics pptx"
 echo ""
-echo "For help:"
+echo "For help and full configuration options:"
 echo "   propresenter-lyrics --help"
 echo ""
