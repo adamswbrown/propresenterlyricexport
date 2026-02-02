@@ -34,10 +34,11 @@ jobs:
 
       - name: Zip macOS app bundle
         run: |
-          APP_PATH="release/mac/ProPresenter Lyrics.app"
+          APP_PATH=$(find release -maxdepth 2 -type d -name "ProPresenter Lyrics.app" | head -n 1)
           ZIP_NAME="ProPresenter-Lyrics-${{ github.ref_name }}-mac.zip"
-          if [ ! -d "$APP_PATH" ]; then
-            echo "App bundle not found at $APP_PATH"
+          if [ -z "$APP_PATH" ] || [ ! -d "$APP_PATH" ]; then
+            echo "App bundle not found under release/."
+            find release -maxdepth 3 -type d -name "*.app" -print || true
             exit 1
           fi
           ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_NAME"
