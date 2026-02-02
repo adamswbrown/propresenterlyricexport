@@ -30,6 +30,8 @@ jobs:
         run: npm run electron:build
 
       - name: Package macOS zip
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx electron-builder --mac zip --config electron-builder.config.js
 
       - name: Prepare macOS artifact
@@ -70,6 +72,8 @@ jobs:
         run: npm run electron:build
 
       - name: Package Windows executable
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx electron-builder --win nsis --config electron-builder.config.js
 
       - name: Collect EXE artifact
