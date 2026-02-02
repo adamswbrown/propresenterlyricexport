@@ -202,28 +202,41 @@ function Setup-Config {
     Write-Host ""
 
     # ProPresenter Connection
-    $ppHost = Read-Host "ProPresenter host [127.0.0.1]"
+    Write-Host "ProPresenter Connection Settings:"
+    Write-Host "  (Find these in ProPresenter → Preferences → Network)"
+    $ppHost = Read-Host "  Host (IP or hostname) [127.0.0.1]"
     if ([string]::IsNullOrEmpty($ppHost)) { $ppHost = "127.0.0.1" }
 
-    $ppPort = Read-Host "ProPresenter port [1025]"
+    $ppPort = Read-Host "  Port (usually 1025) [1025]"
     if ([string]::IsNullOrEmpty($ppPort)) { $ppPort = "1025" }
 
     # Library Filter
-    $ppLibrary = Read-Host "Library name to filter [Worship]"
+    Write-Host ""
+    Write-Host "Library Filter:"
+    Write-Host "  (Must match exact library name in ProPresenter)"
+    $ppLibrary = Read-Host "  Library name [Worship]"
     if ([string]::IsNullOrEmpty($ppLibrary)) { $ppLibrary = "Worship" }
 
     # PowerPoint Styling
-    $pptxFont = Read-Host "PowerPoint font face [Red Hat Display]"
+    Write-Host ""
+    Write-Host "PowerPoint Styling:"
+    $pptxFont = Read-Host "  Font face (e.g. Arial, Calibri, Red Hat Display) [Red Hat Display]"
     if ([string]::IsNullOrEmpty($pptxFont)) { $pptxFont = "Red Hat Display" }
 
-    $pptxSize = Read-Host "PowerPoint font size [44]"
+    $pptxSize = Read-Host "  Font size in points (e.g. 40, 44, 48) [44]"
     if ([string]::IsNullOrEmpty($pptxSize)) { $pptxSize = "44" }
 
-    $pptxTitleSize = Read-Host "PowerPoint title font size [54]"
+    $pptxTitleSize = Read-Host "  Title font size in points [54]"
     if ([string]::IsNullOrEmpty($pptxTitleSize)) { $pptxTitleSize = "54" }
 
-    $pptxColor = Read-Host "PowerPoint text color in hex [2d6a7a]"
+    $pptxColor = Read-Host "  Text color in hex (e.g. 2d6a7a, FF0000) [2d6a7a]"
     if ([string]::IsNullOrEmpty($pptxColor)) { $pptxColor = "2d6a7a" }
+
+    $pptxBold = Read-Host "  Bold text? (true/false) [true]"
+    if ([string]::IsNullOrEmpty($pptxBold)) { $pptxBold = "true" }
+
+    $pptxItalic = Read-Host "  Italic text? (true/false) [true]"
+    if ([string]::IsNullOrEmpty($pptxItalic)) { $pptxItalic = "true" }
 
     Write-Host ""
     Write-Host "Setting environment variables..."
@@ -236,6 +249,8 @@ function Setup-Config {
     [Environment]::SetEnvironmentVariable("PPTX_FONT_SIZE", $pptxSize, "User")
     [Environment]::SetEnvironmentVariable("PPTX_TITLE_FONT_SIZE", $pptxTitleSize, "User")
     [Environment]::SetEnvironmentVariable("PPTX_TEXT_COLOR", $pptxColor, "User")
+    [Environment]::SetEnvironmentVariable("PPTX_FONT_BOLD", $pptxBold, "User")
+    [Environment]::SetEnvironmentVariable("PPTX_FONT_ITALIC", $pptxItalic, "User")
 
     Write-Host "✓ Configuration saved"
     Write-Host ""

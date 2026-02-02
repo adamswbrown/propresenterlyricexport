@@ -170,24 +170,35 @@ setup_config() {
     fi
 
     # ProPresenter Connection
-    read -p "ProPresenter host [127.0.0.1]: " PP_HOST
+    echo "ProPresenter Connection Settings:"
+    echo "  (Find these in ProPresenter → Preferences → Network)"
+    read -p "  Host (IP or hostname) [127.0.0.1]: " PP_HOST
     PP_HOST=${PP_HOST:-127.0.0.1}
-    read -p "ProPresenter port [1025]: " PP_PORT
+    read -p "  Port (usually 1025) [1025]: " PP_PORT
     PP_PORT=${PP_PORT:-1025}
 
     # Library Filter
-    read -p "Library name to filter (default: Worship): " PP_LIBRARY
+    echo ""
+    echo "Library Filter:"
+    echo "  (Must match exact library name in ProPresenter)"
+    read -p "  Library name [Worship]: " PP_LIBRARY
     PP_LIBRARY=${PP_LIBRARY:-Worship}
 
     # PowerPoint Styling
-    read -p "PowerPoint font face (default: Red Hat Display): " PPTX_FONT
+    echo ""
+    echo "PowerPoint Styling:"
+    read -p "  Font face (e.g. Arial, Calibri, Red Hat Display) [Red Hat Display]: " PPTX_FONT
     PPTX_FONT=${PPTX_FONT:-Red Hat Display}
-    read -p "PowerPoint font size (default: 44): " PPTX_SIZE
+    read -p "  Font size in points (e.g. 40, 44, 48) [44]: " PPTX_SIZE
     PPTX_SIZE=${PPTX_SIZE:-44}
-    read -p "PowerPoint title font size (default: 54): " PPTX_TITLE_SIZE
+    read -p "  Title font size in points [54]: " PPTX_TITLE_SIZE
     PPTX_TITLE_SIZE=${PPTX_TITLE_SIZE:-54}
-    read -p "PowerPoint text color in hex (default: 2d6a7a): " PPTX_COLOR
+    read -p "  Text color in hex (e.g. 2d6a7a, FF0000) [2d6a7a]: " PPTX_COLOR
     PPTX_COLOR=${PPTX_COLOR:-2d6a7a}
+    read -p "  Bold text? (true/false) [true]: " PPTX_BOLD
+    PPTX_BOLD=${PPTX_BOLD:-true}
+    read -p "  Italic text? (true/false) [true]: " PPTX_ITALIC
+    PPTX_ITALIC=${PPTX_ITALIC:-true}
 
     echo ""
     echo "Adding configuration to $SHELL_RC..."
@@ -203,6 +214,8 @@ setup_config() {
         echo "export PPTX_FONT_SIZE=$PPTX_SIZE"
         echo "export PPTX_TITLE_FONT_SIZE=$PPTX_TITLE_SIZE"
         echo "export PPTX_TEXT_COLOR=$PPTX_COLOR"
+        echo "export PPTX_FONT_BOLD=$PPTX_BOLD"
+        echo "export PPTX_FONT_ITALIC=$PPTX_ITALIC"
     } >> "$SHELL_RC"
 
     echo "✓ Configuration saved to $SHELL_RC"
