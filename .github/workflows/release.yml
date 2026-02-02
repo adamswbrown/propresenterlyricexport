@@ -29,19 +29,19 @@ jobs:
       - name: Build renderer & main bundles
         run: npm run electron:build
 
-      - name: Package .app (no DMG)
-        run: npx electron-builder --mac dir --config electron-builder.config.js
+      - name: Package macOS zip
+        run: npx electron-builder --mac zip --config electron-builder.config.js
 
-      - name: Zip macOS app bundle
+      - name: Prepare macOS artifact
         run: |
-          APP_PATH=$(find release -maxdepth 2 -type d -name "ProPresenter Lyrics.app" | head -n 1)
-          ZIP_NAME="ProPresenter-Lyrics-${{ github.ref_name }}-mac.zip"
-          if [ -z "$APP_PATH" ] || [ ! -d "$APP_PATH" ]; then
-            echo "App bundle not found under release/."
-            find release -maxdepth 3 -type d -name "*.app" -print || true
+          SOURCE=$(find release -maxdepth 1 -name 'ProPresenter-Lyrics-*-mac.zip' | head -n 1)
+          TARGET="ProPresenter-Lyrics-${{ github.ref_name }}-mac.zip"
+          if [ -z "$SOURCE" ] || [ ! -f "$SOURCE" ]; then
+            echo "Built macOS zip not found in release/."
+            ls -R release || true
             exit 1
           fi
-          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_NAME"
+          cp "$SOURCE" "$TARGET"
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
