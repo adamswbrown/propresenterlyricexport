@@ -1,6 +1,11 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import path from 'path';
+import fs from 'fs';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import Store from 'electron-store';
+
+const execAsync = promisify(exec);
 import { ProPresenterClient } from '../../src/propresenter-client';
 import { collectPlaylistLyrics, PlaylistProgressEvent } from '../../src/services/playlist-exporter';
 import { mapPlaylistTree, PlaylistTreeNode } from '../../src/utils/playlist-utils';
@@ -116,6 +121,157 @@ function defaultOutputPath(playlistName: string): string {
 function sanitizeColor(value?: string | null): string | undefined {
   if (!value) return undefined;
   return value.replace(/^#/, '').trim();
+}
+
+// Curated font list optimized for lyrics/presentation readability
+interface FontOption {
+  name: string;
+  category: 'sans-serif' | 'serif' | 'display';
+  downloadUrl?: string;
+}
+
+const CURATED_FONTS: FontOption[] = [
+  // Sans-serif fonts - clean and highly readable
+  { name: 'Red Hat Display', category: 'sans-serif', downloadUrl: 'https://fonts.google.com/specimen/Red+Hat+Display' },
+  { name: 'Arial', category: 'sans-serif' },
+  { name: 'Helvetica', category: 'sans-serif' },
+  { name: 'Verdana', category: 'sans-serif' },
+  { name: 'Tahoma', category: 'sans-serif' },
+  { name: 'Trebuchet MS', category: 'sans-serif' },
+  { name: 'Segoe UI', category: 'sans-serif' },
+  { name: 'SF Pro Display', category: 'sans-serif' },
+  { name: 'Open Sans', category: 'sans-serif', downloadUrl: 'https://fonts.google.com/specimen/Open+Sans' },
+  { name: 'Roboto', category: 'sans-serif', downloadUrl: 'https://fonts.google.com/specimen/Roboto' },
+  { name: 'Lato', category: 'sans-serif', downloadUrl: 'https://fonts.google.com/specimen/Lato' },
+  { name: 'Montserrat', category: 'sans-serif', downloadUrl: 'https://fonts.google.com/specimen/Montserrat' },
+  { name: 'Source Sans Pro', category: 'sans-serif', downloadUrl: 'https://fonts.google.com/specimen/Source+Sans+Pro' },
+  { name: 'Nunito', category: 'sans-serif', downloadUrl: 'https://fonts.google.com/specimen/Nunito' },
+  { name: 'Poppins', category: 'sans-serif', downloadUrl: 'https://fonts.google.com/specimen/Poppins' },
+  // Serif fonts - traditional and elegant
+  { name: 'Georgia', category: 'serif' },
+  { name: 'Times New Roman', category: 'serif' },
+  { name: 'Palatino Linotype', category: 'serif' },
+  { name: 'Book Antiqua', category: 'serif' },
+  { name: 'Cambria', category: 'serif' },
+  { name: 'Garamond', category: 'serif' },
+  { name: 'Merriweather', category: 'serif', downloadUrl: 'https://fonts.google.com/specimen/Merriweather' },
+  { name: 'Playfair Display', category: 'serif', downloadUrl: 'https://fonts.google.com/specimen/Playfair+Display' },
+  { name: 'Lora', category: 'serif', downloadUrl: 'https://fonts.google.com/specimen/Lora' },
+  // Display fonts - impactful for titles
+  { name: 'Impact', category: 'display' },
+  { name: 'Oswald', category: 'display', downloadUrl: 'https://fonts.google.com/specimen/Oswald' },
+  { name: 'Bebas Neue', category: 'display', downloadUrl: 'https://fonts.google.com/specimen/Bebas+Neue' },
+];
+
+async function checkFontInstalled(fontName: string): Promise<boolean> {
+  const platform = process.platform;
+
+  if (platform === 'darwin') {
+    // macOS: Use system_profiler or check font directories
+    const fontDirs = [
+      '/System/Library/Fonts',
+      '/Library/Fonts',
+      path.join(app.getPath('home'), 'Library/Fonts'),
+    ];
+
+    // Normalize font name for file matching
+    const normalizedName = fontName.toLowerCase().replace(/\s+/g, '');
+
+    for (const dir of fontDirs) {
+      try {
+        const files = await fs.promises.readdir(dir);
+        const found = files.some(file => {
+          const normalizedFile = file.toLowerCase().replace(/\s+/g, '');
+          return normalizedFile.includes(normalizedName) ||
+                 normalizedFile.includes(fontName.toLowerCase().replace(/\s+/g, '-'));
+        });
+        if (found) return true;
+      } catch {
+        // Directory doesn't exist or not accessible
+      }
+    }
+
+    // Fallback: use fc-list if available
+    try {
+      const { stdout } = await execAsync(`fc-list : family | grep -i "${fontName}"`);
+      return stdout.trim().length > 0;
+    } catch {
+      // fc-list not available or font not found
+    }
+
+    return false;
+  }
+
+  if (platform === 'win32') {
+    // Windows: Check font directories
+    const fontDirs = [
+      path.join(process.env.WINDIR || 'C:\\Windows', 'Fonts'),
+      path.join(app.getPath('home'), 'AppData', 'Local', 'Microsoft', 'Windows', 'Fonts'),
+    ];
+
+    const normalizedName = fontName.toLowerCase().replace(/\s+/g, '');
+
+    for (const dir of fontDirs) {
+      try {
+        const files = await fs.promises.readdir(dir);
+        const found = files.some(file => {
+          const normalizedFile = file.toLowerCase().replace(/\s+/g, '');
+          return normalizedFile.includes(normalizedName) ||
+                 normalizedFile.includes(fontName.toLowerCase().replace(/\s+/g, '-'));
+        });
+        if (found) return true;
+      } catch {
+        // Directory doesn't exist or not accessible
+      }
+    }
+
+    return false;
+  }
+
+  // Linux: use fc-list
+  try {
+    const { stdout } = await execAsync(`fc-list : family | grep -i "${fontName}"`);
+    return stdout.trim().length > 0;
+  } catch {
+    return false;
+  }
+}
+
+interface FontStatus {
+  name: string;
+  category: 'sans-serif' | 'serif' | 'display';
+  installed: boolean;
+  downloadUrl?: string;
+}
+
+async function getFontStatuses(): Promise<FontStatus[]> {
+  const results = await Promise.all(
+    CURATED_FONTS.map(async (font) => ({
+      name: font.name,
+      category: font.category,
+      installed: await checkFontInstalled(font.name),
+      downloadUrl: font.downloadUrl,
+    }))
+  );
+  return results;
+}
+
+async function checkSingleFont(fontName: string): Promise<FontStatus | null> {
+  const font = CURATED_FONTS.find(f => f.name.toLowerCase() === fontName.toLowerCase());
+  if (font) {
+    return {
+      name: font.name,
+      category: font.category,
+      installed: await checkFontInstalled(font.name),
+      downloadUrl: font.downloadUrl,
+    };
+  }
+  // Check for custom font (not in curated list)
+  return {
+    name: fontName,
+    category: 'sans-serif',
+    installed: await checkFontInstalled(fontName),
+  };
 }
 
 function resolveStyleOverrides(payload: ExportPayload): Partial<PptxTextStyle> {
@@ -330,4 +486,18 @@ ipcMain.handle('export:start', async (event, payload: ExportPayload) => {
     });
     throw error;
   }
+});
+
+// Font management IPC handlers
+ipcMain.handle('fonts:list', async () => {
+  return getFontStatuses();
+});
+
+ipcMain.handle('fonts:check', async (_event, fontName: string) => {
+  return checkSingleFont(fontName);
+});
+
+ipcMain.handle('fonts:download', async (_event, url: string) => {
+  await shell.openExternal(url);
+  return { success: true };
 });
