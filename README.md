@@ -28,8 +28,13 @@ You can now run ProPresenter Lyrics Export two ways:
   - macOS: `ProPresenter-Lyrics-vX.Y.Z-mac.zip` (contains `ProPresenter Lyrics.app`)
   - Windows: `ProPresenter-Lyrics-vX.Y.Z-win.exe`
 2. **Install / open the app:**
-  - macOS: unzip, drag `ProPresenter Lyrics.app` to `Applications`, then open it (grant network permission on first launch).
-  - Windows: run the installer, follow the prompts, then launch “ProPresenter Lyrics”.
+  - **macOS**:
+    1. Unzip the downloaded file
+    2. Open Terminal and run: `xattr -cr "/path/to/ProPresenter Lyrics.app"` (this fixes the "damaged app" error caused by macOS Gatekeeper)
+    3. Drag `ProPresenter Lyrics.app` to `Applications`
+    4. Open the app (grant network permission on first launch)
+    - *Alternative*: Right-click the app → "Open" → click "Open" in the security dialog
+  - **Windows**: Run the installer, follow the prompts, then launch "ProPresenter Lyrics".
 3. **Connect and export:** enter your ProPresenter host/port, load playlists, tweak formatting, and export PPTX directly from the UI. Settings persist between sessions.
 
 **Desktop App Features:**
