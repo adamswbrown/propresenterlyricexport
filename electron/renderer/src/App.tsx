@@ -13,6 +13,11 @@ type SettingsState = {
   italic: boolean;
   logoPath: string;
   lastPlaylistId?: string;
+  // Service Generator libraries
+  worshipLibraryId: string;
+  kidsLibraryId: string;
+  serviceContentLibraryId: string;
+  templatePlaylistId: string;
 };
 
 type PlaylistNode = {
@@ -121,6 +126,10 @@ function App(): JSX.Element {
     bold: true,
     italic: true,
     logoPath: '',
+    worshipLibraryId: '',
+    kidsLibraryId: '',
+    serviceContentLibraryId: '',
+    templatePlaylistId: '',
   });
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
   const [exportState, setExportState] = useState<ExportState>('idle');
@@ -133,6 +142,7 @@ function App(): JSX.Element {
   const [statusNote, setStatusNote] = useState('Not connected');
   const [latestOutput, setLatestOutput] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showServiceGenerator, setShowServiceGenerator] = useState(false);
   const [libraryOptions, setLibraryOptions] = useState<LibraryOption[]>([]);
   const [fontList, setFontList] = useState<FontStatus[]>([]);
   const [fontsLoading, setFontsLoading] = useState(false);
@@ -155,6 +165,10 @@ function App(): JSX.Element {
         italic: typeof saved.italic === 'boolean' ? saved.italic : true,
         logoPath: saved.logoPath ?? '',
         lastPlaylistId: saved.lastPlaylistId,
+        worshipLibraryId: saved.worshipLibraryId ?? '',
+        kidsLibraryId: saved.kidsLibraryId ?? '',
+        serviceContentLibraryId: saved.serviceContentLibraryId ?? '',
+        templatePlaylistId: saved.templatePlaylistId ?? '',
       }));
       if (saved.lastPlaylistId) {
         setSelectedId(saved.lastPlaylistId);
@@ -455,10 +469,15 @@ function App(): JSX.Element {
       bold: settings.bold,
       italic: settings.italic,
       logoPath: settings.logoPath || null,
+      worshipLibraryId: settings.worshipLibraryId || null,
+      kidsLibraryId: settings.kidsLibraryId || null,
+      serviceContentLibraryId: settings.serviceContentLibraryId || null,
+      templatePlaylistId: settings.templatePlaylistId || null,
     };
     await window.api.saveSettings(payload);
     setStatusNote('Settings saved');
     setShowSettings(false);
+    setShowServiceGenerator(false);
   }
 
   async function handleChooseLogo(): Promise<void> {
@@ -518,6 +537,15 @@ function App(): JSX.Element {
           <p className="eyebrow">All-playlist PPTX exporter</p>
         </div>
         <div className="header-actions">
+          <button
+            className="icon-button"
+            type="button"
+            aria-label="Service Generator settings"
+            onClick={() => setShowServiceGenerator(true)}
+            title="Service Generator"
+          >
+            📖
+          </button>
           <button
             className="icon-button"
             type="button"
@@ -632,6 +660,94 @@ function App(): JSX.Element {
             ))}
           </div>
         </div>
+
+        {showServiceGenerator && (
+          <div className="settings-overlay" role="dialog" aria-modal="true">
+            <div className="settings-modal">
+              <div className="modal-header">
+                <div>
+                  <h2>Service Generator</h2>
+                  <span className="hint">Configure libraries and template for automated service generation</span>
+                </div>
+                <button className="icon-button" type="button" aria-label="Close" onClick={() => setShowServiceGenerator(false)}>
+                  ×
+                </button>
+              </div>
+              <div className="form-grid">
+                <label>
+                  Worship Library
+                  <select
+                    name="worshipLibraryId"
+                    value={settings.worshipLibraryId}
+                    onChange={(e) => setSettings(prev => ({ ...prev, worshipLibraryId: e.target.value }))}
+                  >
+                    <option value="">-- Select Library --</option>
+                    {libraryOptions.map(lib => (
+                      <option key={lib.uuid} value={lib.uuid}>
+                        {lib.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Kids Songs Library
+                  <select
+                    name="kidsLibraryId"
+                    value={settings.kidsLibraryId}
+                    onChange={(e) => setSettings(prev => ({ ...prev, kidsLibraryId: e.target.value }))}
+                  >
+                    <option value="">-- Select Library --</option>
+                    {libraryOptions.map(lib => (
+                      <option key={lib.uuid} value={lib.uuid}>
+                        {lib.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Service Content Library
+                  <select
+                    name="serviceContentLibraryId"
+                    value={settings.serviceContentLibraryId}
+                    onChange={(e) => setSettings(prev => ({ ...prev, serviceContentLibraryId: e.target.value }))}
+                  >
+                    <option value="">-- Select Library --</option>
+                    {libraryOptions.map(lib => (
+                      <option key={lib.uuid} value={lib.uuid}>
+                        {lib.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Template Playlist
+                  <select
+                    name="templatePlaylistId"
+                    value={settings.templatePlaylistId}
+                    onChange={(e) => setSettings(prev => ({ ...prev, templatePlaylistId: e.target.value }))}
+                  >
+                    <option value="">-- Select Playlist --</option>
+                    {playlistTree.flatMap(node => [
+                      node.uuid && !node.isHeader ? { uuid: node.uuid, name: node.breadcrumb.join(' / ') } : null,
+                      ...node.children.flatMap(child =>
+                        child.uuid && !child.isHeader ? { uuid: child.uuid, name: child.breadcrumb.join(' / ') } : null
+                      )
+                    ]).filter(Boolean).map(playlist => (
+                      <option key={playlist!.uuid} value={playlist!.uuid}>
+                        {playlist!.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <div className="modal-footer">
+                <button className="accent" onClick={handleSaveSettings} type="button">
+                  Save defaults
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showSettings && (
           <div className="settings-overlay" role="dialog" aria-modal="true">
@@ -768,6 +884,7 @@ function App(): JSX.Element {
                   </button>
                 </div>
               </div>
+
               <div className="modal-footer">
                 <button className="accent" onClick={handleSaveSettings} type="button">
                   Save defaults

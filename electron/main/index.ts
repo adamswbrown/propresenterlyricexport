@@ -25,6 +25,11 @@ interface AppSettings {
   italic: boolean;
   logoPath?: string | null;
   lastPlaylistId?: string;
+  // Service Generator libraries
+  worshipLibraryId?: string | null;
+  kidsLibraryId?: string | null;
+  serviceContentLibraryId?: string | null;
+  templatePlaylistId?: string | null;
 }
 
 interface ConnectionConfig {

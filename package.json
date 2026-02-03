@@ -28,15 +28,20 @@
   "type": "commonjs",
   "dependencies": {
     "electron-store": "^8.2.0",
+    "fuse.js": "^7.1.0",
+    "pdf-parse": "^2.4.5",
     "pptxgenjs": "^3.10.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "renewedvision-propresenter": "^7.7.2"
+    "renewedvision-propresenter": "^7.7.2",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/node": "^25.2.0",
+    "@types/pdf-parse": "^1.1.5",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.2",
+    "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^4.3.1",
     "electron": "^31.2.0",
     "electron-builder": "^24.13.3",
