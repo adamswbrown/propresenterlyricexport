@@ -41,3 +41,6 @@ service-lyrics-*.pptx
 # OS files
 .DS_Store
 Thumbs.db
+
+# Test data - Order of Service PDFs
+OSS/
