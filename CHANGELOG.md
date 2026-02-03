@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-02-03
+
 ### Added
 - **Font Detection & Curated Dropdown** - Smart font selection in the desktop app settings
   - Cross-platform font detection (macOS, Windows, Linux)
@@ -22,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Font family input replaced with curated dropdown in desktop app settings
 - Settings modal now shows font availability status
+
+### Improved
+- Better user experience for font selection and management
+- Prevents font typos and invalid font names in PPTX exports
 
 ## [1.0.1] - 2026-02-02
 
