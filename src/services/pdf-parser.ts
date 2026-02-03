@@ -64,8 +64,19 @@ export class PDFParser {
    * Tracks section markers to determine praise slot:
    * - After "Call to Worship" → Praise 1
    * - After "Prayers for Others" / "Praying for Others" → Praise 2
+   * - After "Sermon" → Praise 2 (for communion services without "Praying for Others")
+   * - After "Reflection:" → Praise 2 (for Good Friday services)
    * - After "Time of Prayerful Reflection" → Praise 3
+   * - After "Act of Communion" / "Sacrament of Communion" → Praise 3 (for communion/Good Friday)
+   * - After "Epilogue" → Praise 3 (for Nativity/Kids Ministry)
    * - Kids videos are marked as "kids" slot
+   *
+   * Supports multiple service formats:
+   * - Regular Sunday AM
+   * - Communion services
+   * - Good Friday (uses SCRIPTURE:, REFLECTION:, SACRAMENT OF COMMUNION)
+   * - Nativity/Kids Ministry (uses PRAISE & PLAY:, EPILOGUE)
+   * - Remembrance (uses VIDEO: for standalone videos)
    */
   private extractSections(lines: string[]): ServiceSection[] {
     const sections: ServiceSection[] = [];
@@ -81,24 +92,52 @@ export class PDFParser {
         continue;
       }
 
-      // Track section markers to determine current praise slot
+      // ===== PRAISE SLOT MARKERS =====
+
       // After "Call to Worship" or "Opening Prayer" → Praise 1
       if (lineLower.includes('call to worship') || lineLower.includes('opening prayer')) {
         currentPraiseSlot = 'praise1';
         continue;
       }
 
-      // After "Prayers for Others" / "Praying for Others" → Praise 2
+      // After "Prayers for Others" / "Praying for Others" → Praise 2 (regular services)
       if (lineLower.includes('praying for others') || lineLower.includes('prayers for others')) {
         currentPraiseSlot = 'praise2';
         continue;
       }
 
-      // After "Time of Prayerful Reflection" or "Prayerful Reflection and Response" → Praise 3
+      // After "Sermon" → Praise 2 (communion services - song before communion)
+      // This also works for regular services since it comes after "Praying for Others"
+      if (lineLower.startsWith('sermon:') || lineLower === 'sermon') {
+        currentPraiseSlot = 'praise2';
+        continue;
+      }
+
+      // After "Reflection:" → Praise 2 (Good Friday services)
+      if (lineLower.startsWith('reflection:') || lineLower === 'reflection') {
+        currentPraiseSlot = 'praise2';
+        continue;
+      }
+
+      // After "Time of Prayerful Reflection" or "Prayerful Reflection and Response" → Praise 3 (regular services)
       if (lineLower.includes('prayerful reflection') || lineLower.includes('reflection and response')) {
         currentPraiseSlot = 'praise3';
         continue;
       }
+
+      // After "Act of Communion" or "Sacrament of Communion" → Praise 3 (communion/Good Friday)
+      if (lineLower.includes('act of communion') || lineLower.includes('sacrament of communion') || lineLower.includes('communion:')) {
+        currentPraiseSlot = 'praise3';
+        continue;
+      }
+
+      // After "Epilogue" → Praise 3 (Nativity, Kids Ministry special services)
+      if (lineLower.startsWith('epilogue')) {
+        currentPraiseSlot = 'praise3';
+        continue;
+      }
+
+      // ===== EXTRACTABLE ITEMS =====
 
       // Check for song or kids video (PRAISE:)
       if (line.match(/^PRAISE:/i)) {
@@ -109,9 +148,31 @@ export class PDFParser {
         continue;
       }
 
-      // Check for Bible reading
+      // Check for "PRAISE & PLAY:" (Nativity all-together services)
+      if (line.match(/^PRAISE\s*&\s*PLAY:/i)) {
+        const song = this.extractPraiseAndPlay(line, position++);
+        song.praiseSlot = song.isVideo ? 'kids' : currentPraiseSlot;
+        sections.push(song);
+        continue;
+      }
+
+      // Check for standalone VIDEO: (Remembrance services)
+      if (line.match(/^VIDEO:/i)) {
+        const video = this.extractVideo(line, position++);
+        video.praiseSlot = 'kids'; // Standalone videos go to kids slot
+        sections.push(video);
+        continue;
+      }
+
+      // Check for Bible reading (BIBLE READING:)
       if (line.match(/^BIBLE READING:/i)) {
         sections.push(this.extractBibleReading(line, position++));
+        continue;
+      }
+
+      // Check for Scripture reading (SCRIPTURE:) - Good Friday format
+      if (line.match(/^SCRIPTURE:/i)) {
+        sections.push(this.extractScripture(line, position++));
         continue;
       }
 
@@ -182,6 +243,78 @@ export class PDFParser {
       title: reference,
       leader,
       position
+    };
+  }
+
+  /**
+   * Extract Scripture reading (Good Friday format)
+   * Similar to Bible reading but uses "SCRIPTURE:" prefix
+   */
+  private extractScripture(line: string, position: number): ServiceSection {
+    // Remove "SCRIPTURE:" prefix
+    const content = line.replace(/^SCRIPTURE:\s*/i, '').trim();
+
+    // Extract reference and leader
+    const leaderMatch = content.match(/\(([^)]+)\)$/);
+    const leader = leaderMatch ? leaderMatch[1] : undefined;
+    const reference = leader ? content.replace(/\s*\([^)]+\)$/, '').trim() : content;
+
+    return {
+      type: 'bible',
+      title: reference,
+      leader,
+      position
+    };
+  }
+
+  /**
+   * Extract "PRAISE & PLAY:" songs (Nativity all-together services)
+   * Same format as regular PRAISE: lines
+   */
+  private extractPraiseAndPlay(line: string, position: number): ServiceSection {
+    // Remove "PRAISE & PLAY:" prefix (with flexible whitespace)
+    const content = line.replace(/^PRAISE\s*&\s*PLAY:\s*/i, '').trim();
+
+    // Check if video
+    const isVideo = content.includes('(Video)');
+    const title = content.replace(/\s*\(Video\)\s*/i, '').trim();
+
+    // Extract leader if present
+    const leaderMatch = content.match(/\(([^)]+)\)$/);
+    const leader = leaderMatch ? leaderMatch[1] : undefined;
+
+    // Clean title (remove leader designation)
+    const cleanTitle = leader ? title.replace(/\s*\([^)]+\)$/, '').trim() : title;
+
+    const type: ServiceSectionType = isVideo ? 'video' : 'song';
+
+    return {
+      type,
+      title: cleanTitle,
+      leader,
+      position,
+      isVideo
+    };
+  }
+
+  /**
+   * Extract standalone VIDEO: lines (Remembrance services)
+   */
+  private extractVideo(line: string, position: number): ServiceSection {
+    // Remove "VIDEO:" prefix
+    const content = line.replace(/^VIDEO:\s*/i, '').trim();
+
+    // Extract leader if present
+    const leaderMatch = content.match(/\(([^)]+)\)$/);
+    const leader = leaderMatch ? leaderMatch[1] : undefined;
+    const title = leader ? content.replace(/\s*\([^)]+\)$/, '').trim() : content;
+
+    return {
+      type: 'video',
+      title,
+      leader,
+      position,
+      isVideo: true
     };
   }
 

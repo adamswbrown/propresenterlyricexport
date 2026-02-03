@@ -407,6 +407,87 @@ npm run build:exe
 
 ---
 
+### 13. Communion Service Support (Phase 5 - Feb 3, 2026)
+
+**Objective:** Support communion service order format which has different section markers.
+
+**Problem:** Communion services don't have "Praying for Others" or "Prayerful Reflection" markers. Instead, they have "Sermon" and "Act of Communion" sections.
+
+**Service Format Comparison:**
+
+| Regular Service | Communion Service |
+|-----------------|-------------------|
+| Call to Worship → Praise 1 | Call to Worship → Praise 1 |
+| Praying for Others → Praise 2 | Sermon → Praise 2 |
+| Prayerful Reflection → Praise 3 | Act of Communion → Praise 3 |
+
+**Example from OS 04.01.26.pdf (Communion):**
+- "Cornerstone" → Praise 1 (after Call to Worship)
+- "Hey! Jesus loves me!" → Kids (video)
+- "When I survey the wondrous cross" → Praise 2 (after Sermon)
+- "Power of the Cross" → Praise 3 (after Act of Communion)
+
+**Implementation:**
+- Added SERMON marker in [pdf-parser.ts:97-100](src/services/pdf-parser.ts:97-100):
+  - Detects `sermon:` or `sermon` lines
+  - Sets praise slot to `praise2`
+- Added ACT OF COMMUNION marker in [pdf-parser.ts:107-110](src/services/pdf-parser.ts:107-110):
+  - Detects `act of communion` or `communion:` lines
+  - Sets praise slot to `praise3`
+
+**Backward Compatibility:** These markers work with regular services too:
+- SERMON comes after "Praying for Others" (already praise2, no change)
+- "Prayerful Reflection" still takes precedence for regular services
+
+**Result:** Parser now correctly handles both regular and communion service formats.
+
+---
+
+### 14. Multi-Service Type Support (Phase 5 - Feb 3, 2026)
+
+**Objective:** Support all service types found in the OSS folder (Good Friday, Nativity, Kids Ministry, Remembrance).
+
+**Problem:** After analyzing 10 PDFs in the OSS folder, discovered that several service types use different markers and line prefixes that weren't being parsed.
+
+**Service Types Analyzed:**
+| Service Type | Files | Status Before |
+|--------------|-------|---------------|
+| Regular Sunday AM | OS 30.11.25, OS 23.11.25, OS 22.06.25, OS 02.02.26 | ✅ Supported |
+| Communion | OS 04.01.26 | ✅ Supported |
+| Communion with Members | OS 07.12.25 | ✅ Supported |
+| Good Friday | OS 18.04.2025 | ⚠️ Needed work |
+| Nativity/Kids Ministry | OS 14.12.25, OS 21.12.25 | ⚠️ Needed work |
+| Remembrance | OS 09.11.25 | ⚠️ Needed work |
+
+**Implementation:**
+
+Added new praise slot markers in [pdf-parser.ts:56-78](src/services/pdf-parser.ts:56-78):
+- `REFLECTION:` → Praise 2 (Good Friday services)
+- `SACRAMENT OF COMMUNION` → Praise 3 (Good Friday communion format)
+- `EPILOGUE` → Praise 3 (Nativity/Kids Ministry special endings)
+
+Added new extractable item types:
+- `SCRIPTURE:` lines → Bible readings (Good Friday uses this instead of `BIBLE READING:`)
+- `VIDEO:` lines → Standalone videos (Remembrance service has non-kids videos)
+- `PRAISE & PLAY:` lines → All-together songs (Nativity all-ages services)
+
+New extraction methods in [pdf-parser.ts:220-279](src/services/pdf-parser.ts:220-279):
+- `extractScripture()` - Handles Good Friday `SCRIPTURE:` format
+- `extractPraiseAndPlay()` - Handles Nativity `PRAISE & PLAY:` format
+- `extractVideo()` - Handles standalone `VIDEO:` entries
+
+**Testing Results:**
+| Service Type | Items Found | Praise Slots |
+|--------------|-------------|--------------|
+| Good Friday | 7 items | ✅ praise1, praise3, kids, bible |
+| Christmas/Nativity | 5 items | ✅ praise1, praise2, praise3, kids |
+| Remembrance | 7 items | ✅ praise1, praise2, praise3, kids (videos) |
+| Regular Service | 5 items | ✅ praise1, praise2, praise3, kids |
+
+**Result:** All 10 service types in OSS folder now parse correctly with proper praise slot assignment.
+
+---
+
 ## Next Steps
 
 See [plans/remaining-implementation.md](plans/remaining-implementation.md) for detailed implementation plan.
@@ -415,11 +496,12 @@ See [plans/remaining-implementation.md](plans/remaining-implementation.md) for d
 1. ✅ PDF upload and parsing - COMPLETE
 2. ✅ PDF parser simplification (songs, kids videos, verses only) - COMPLETE
 3. ✅ Praise slot tracking (Praise 1/2/3, Kids) - COMPLETE
-4. 🔄 Song matching IPC handler - IN PROGRESS (currently placeholder)
-5. 🔄 Match Step UI with confidence scores - IN PROGRESS
-6. ⏳ Build Step UI and playlist assembly - PENDING
-7. ⏳ Bible verse workflow - DEFERRED (will add after songs working)
-8. ⏳ End-to-end testing - PENDING
+4. ✅ Multi-service type support (Good Friday, Nativity, Remembrance) - COMPLETE
+5. 🔄 Song matching IPC handler - IN PROGRESS (currently placeholder)
+6. 🔄 Match Step UI with confidence scores - IN PROGRESS
+7. ⏳ Build Step UI and playlist assembly - PENDING
+8. ⏳ Bible verse workflow - DEFERRED (will add after songs working)
+9. ⏳ End-to-end testing - PENDING
 
 **Strategy:** Get complete song workflow working end-to-end first (upload → parse → match → build), then add verse functionality.
 
@@ -434,4 +516,4 @@ See [plans/remaining-implementation.md](plans/remaining-implementation.md) for d
 
 **Last Updated:** 2026-02-03
 **Version:** 2.1.1
-**Status:** Phase 5 in progress - PDF parsing complete with praise slot tracking, implementing song matching
+**Status:** Phase 5 in progress - Multi-service PDF parsing complete (all service types supported), implementing song matching
