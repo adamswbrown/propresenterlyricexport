@@ -15,10 +15,59 @@ This document outlines the remaining work to complete the ProPresenter Service G
 - Settings persistence across sessions
 - **Mode toggle architecture** - Separate view for Service Generator
 - **Feature flag** - Enable/disable Service Generator in settings
+- **Backend IPC integration** - All services wired up (PDF parser, song matcher, verse fetcher, playlist builder)
+- **Setup step** - Library configuration and playlist selection
+- **Upload step** - PDF file picker with auto-parse
+- **Parse step** - Display parsed items with auto-matching trigger
+- **Working playlist tracking** - Auto-select and persist selected playlist
+
+### 🔄 Current Focus: Songs-Only Workflow
+
+**Strategy:** Implement complete song workflow (PDF → parse songs → match → build playlist) before adding verse functionality. This allows testing end-to-end flow with fewer variables.
 
 ### 🔄 Remaining Work
 
-#### 5.0 Architecture Refactor (IN PROGRESS)
+#### 5.0 Songs-Only Workflow (PRIORITY - IN PROGRESS)
+
+**Objective:** Complete end-to-end song workflow before adding verse functionality.
+
+**Rationale:**
+- Simpler to test and debug with fewer variables
+- Songs are the primary use case
+- Verses can be added as enhancement once core workflow proven
+- Allows iterative development and testing
+
+**Implementation Tasks:**
+
+1. **Match Step UI** (NEXT)
+   - Display song matching results with confidence scores
+   - Show top 3 matches per song
+   - Allow manual selection of best match
+   - Handle "skip song" for unmatched items
+   - Auto-select matches with >90% confidence
+
+2. **Build Step UI** (AFTER MATCH)
+   - Skip verse fetching for now
+   - Display final song list for review
+   - Show item order with song names
+   - Create playlist button
+   - Success confirmation
+
+3. **End-to-End Testing**
+   - Test with real PDF service order
+   - Verify song matching accuracy
+   - Confirm playlist creation in ProPresenter
+   - Validate error handling
+
+**Once Songs Working:**
+- Add verse parsing back in (currently skipped)
+- Implement verse fetching step
+- Integrate verses into final playlist build
+- Test complete workflow with songs + verses
+
+---
+
+#### 5.0 Architecture Refactor (COMPLETED)
 
 **Objective:** Refactor from modal-based to mode toggle with dedicated view.
 

@@ -294,17 +294,84 @@ npm run build:exe
 
 ---
 
+### 8. Service Generator Backend Integration (Phase 5 - Feb 3, 2026)
+
+**Objective:** Wire up Service Generator UI to existing backend services.
+
+**Implementation:**
+- Added 5 new IPC API methods in [electron/preload/index.ts](electron/preload/index.ts:92-98):
+  - `choosePDF()` - PDF file picker dialog
+  - `parsePDF(filePath)` - Parse PDF and extract items
+  - `matchSongs(songs, config, libraryIds)` - Match songs to libraries
+  - `fetchVerses(references)` - Fetch Bible verses
+  - `buildServicePlaylist(config, playlistId, items)` - Build final playlist
+
+- Added 5 new IPC handlers in [electron/main/index.ts](electron/main/index.ts:653-693):
+  - Imported existing services: `PDFParser`, `SongMatcher`, `BibleFetcher`, `PlaylistBuilder`
+  - Connected IPC calls to service methods
+  - Implemented error handling and result formatting
+
+**Result:** Backend infrastructure complete for service generation workflow.
+
+---
+
+### 9. Service Generator Workflow UI (Phase 5 - Feb 3, 2026)
+
+**Objective:** Implement PDF upload, parsing, and workflow progression.
+
+**Implementation:**
+
+**Upload Step** ([ServiceGeneratorView.tsx:195-298](electron/renderer/src/ServiceGeneratorView.tsx:195-298)):
+- PDF file picker with `window.api.choosePDF()`
+- Auto-parse on selection with progress notification
+- Display selected PDF with item count
+- Clear button to reset workflow
+
+**Parse Step** ([ServiceGeneratorView.tsx:300-421](electron/renderer/src/ServiceGeneratorView.tsx:300-421)):
+- Display all parsed items with icons (🎵 songs, 📖 verses, 📋 headings)
+- Show item counts and statistics
+- Auto-start song matching on "Continue" button
+- Navigate back to upload or forward to matching
+
+**Workflow State** ([ServiceGeneratorView.tsx:62-68](electron/renderer/src/ServiceGeneratorView.tsx:62-68)):
+- `pdfPath` and `pdfName` - Selected PDF file
+- `parsedItems` - Extracted items from PDF
+- `matchResults` - Song matching results
+- `verseResults` - Bible verse fetching results
+- `isProcessing` - Loading state for async operations
+
+**Result:** First 3 steps (Setup, Upload, Parse) fully functional.
+
+---
+
+### 10. Working Playlist Selection (Phase 5 - Feb 3, 2026)
+
+**Objective:** Auto-select created playlists and track working playlist throughout workflow.
+
+**Implementation:**
+- Added `selectedPlaylistName` and `selectedPlaylistId` state
+- Auto-select on successful playlist creation
+- Display selected playlist with checkmark (✓) in Setup step
+- Show working playlist badge in all subsequent steps
+- Prevent proceeding to Upload without playlist selection
+
+**Result:** Clear workflow progression with persistent playlist context.
+
+---
+
 ## Next Steps
 
-See [plans/remaining-implementation.md](plans/remaining-implementation.md) for detailed implementation plan of remaining work.
+See [plans/remaining-implementation.md](plans/remaining-implementation.md) for detailed implementation plan.
 
-**Immediate priorities:**
-1. PDF upload interface in Electron
-2. Service parsing and song matching UI
-3. Verse fetching and preview
-4. Playlist building and assembly
-5. Comprehensive error handling
-6. End-to-end testing
+**Current Focus:** Songs-only workflow (Phase 5 priority)
+1. ✅ PDF upload and parsing - COMPLETE
+2. 🔄 Song matching UI - IN PROGRESS
+3. 🔄 Playlist building - IN PROGRESS
+4. ⏳ Bible verse workflow - DEFERRED (will add after songs working)
+5. ⏳ Error handling - PENDING
+6. ⏳ End-to-end testing - PENDING
+
+**Strategy:** Get complete song workflow working end-to-end first (upload → parse → match → build), then add verse functionality.
 
 ---
 
@@ -317,4 +384,4 @@ See [plans/remaining-implementation.md](plans/remaining-implementation.md) for d
 
 **Last Updated:** 2026-02-03
 **Version:** 2.1.1
-**Status:** Phase 5 in progress (UI foundation complete, service workflow pending)
+**Status:** Phase 5 in progress - Backend integrated, implementing song-only workflow

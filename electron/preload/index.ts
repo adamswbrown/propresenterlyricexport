@@ -89,6 +89,14 @@ const api = {
   listFonts: (): Promise<FontStatus[]> => ipcRenderer.invoke('fonts:list'),
   checkFont: (fontName: string): Promise<FontStatus | null> => ipcRenderer.invoke('fonts:check', fontName),
   downloadFont: (url: string): Promise<{ success: boolean }> => ipcRenderer.invoke('fonts:download', url),
+  // Service Generator
+  choosePDF: () => ipcRenderer.invoke('pdf:choose'),
+  parsePDF: (filePath: string) => ipcRenderer.invoke('pdf:parse', filePath),
+  matchSongs: (songs: string[], config: ConnectionConfig, libraryIds: string[]) =>
+    ipcRenderer.invoke('songs:match', songs, config, libraryIds),
+  fetchVerses: (references: string[]) => ipcRenderer.invoke('verses:fetch', references),
+  buildServicePlaylist: (config: ConnectionConfig, playlistId: string, items: any[]) =>
+    ipcRenderer.invoke('playlist:build-service', config, playlistId, items),
 };
 
 contextBridge.exposeInMainWorld('api', api);

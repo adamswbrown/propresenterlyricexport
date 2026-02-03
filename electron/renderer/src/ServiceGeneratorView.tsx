@@ -32,6 +32,24 @@ const STEPS: { id: Step; label: string }[] = [
   { id: 'build', label: 'Build' },
 ];
 
+type ParsedItem = {
+  type: 'song' | 'verse' | 'heading';
+  text: string;
+  reference?: string;
+};
+
+type MatchResult = {
+  songName: string;
+  matches: Array<{ uuid: string; name: string; confidence: number }>;
+  selectedMatch?: { uuid: string; name: string };
+};
+
+type VerseResult = {
+  reference: string;
+  text: string;
+  error?: string;
+};
+
 export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
   const [currentStep, setCurrentStep] = useState<Step>('setup');
   const [newPlaylistName, setNewPlaylistName] = useState('');
@@ -40,6 +58,14 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>('');
   const [selectedPlaylistName, setSelectedPlaylistName] = useState<string>('');
+
+  // Workflow state
+  const [pdfPath, setPdfPath] = useState<string>('');
+  const [pdfName, setPdfName] = useState<string>('');
+  const [parsedItems, setParsedItems] = useState<ParsedItem[]>([]);
+  const [matchResults, setMatchResults] = useState<MatchResult[]>([]);
+  const [verseResults, setVerseResults] = useState<VerseResult[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Auto-dismiss notification after 4 seconds
   useEffect(() => {
@@ -253,9 +279,87 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                   <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '4px' }}>Working Playlist</div>
                   <div style={{ fontWeight: 600, color: 'var(--accent)' }}>{selectedPlaylistName}</div>
                 </div>
-                <div className="empty-state" style={{ padding: '60px 20px' }}>
-                  PDF upload interface coming soon...
-                </div>
+
+                {!pdfPath ? (
+                  <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>📄</div>
+                    <h3 style={{ margin: '0 0 12px' }}>Select Service Order PDF</h3>
+                    <p style={{ margin: '0 0 24px', color: 'var(--muted)', fontSize: '14px' }}>
+                      Choose your PDF file to extract songs and verses
+                    </p>
+                    <button
+                      className="primary"
+                      onClick={async () => {
+                        setIsProcessing(true);
+                        try {
+                          const result = await window.api.choosePDF();
+                          if (!result.canceled && result.filePath) {
+                            setPdfPath(result.filePath);
+                            setPdfName(result.filePath.split('/').pop() || 'service-order.pdf');
+                            setNotification({ message: 'PDF selected, parsing...', type: 'info' });
+
+                            // Auto-parse the PDF
+                            const parseResult = await window.api.parsePDF(result.filePath);
+                            if (parseResult.success) {
+                              setParsedItems(parseResult.items);
+                              setNotification({
+                                message: `Found ${parseResult.items.length} items in PDF`,
+                                type: 'success'
+                              });
+                              setCurrentStep('parse');
+                            } else {
+                              setNotification({
+                                message: parseResult.error || 'Failed to parse PDF',
+                                type: 'error'
+                              });
+                            }
+                          }
+                        } catch (error: any) {
+                          setNotification({
+                            message: error?.message || 'Error selecting PDF',
+                            type: 'error'
+                          });
+                        } finally {
+                          setIsProcessing(false);
+                        }
+                      }}
+                      disabled={isProcessing}
+                      type="button"
+                    >
+                      {isProcessing ? 'Processing...' : 'Select PDF File'}
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ padding: '20px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--panel-border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                      <span style={{ fontSize: '24px' }}>✓</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, marginBottom: '4px' }}>{pdfName}</div>
+                        <div style={{ fontSize: '13px', color: 'var(--muted)' }}>{parsedItems.length} items parsed</div>
+                      </div>
+                      <button
+                        className="ghost small"
+                        onClick={() => {
+                          setPdfPath('');
+                          setPdfName('');
+                          setParsedItems([]);
+                          setMatchResults([]);
+                          setVerseResults([]);
+                        }}
+                        type="button"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                    <button
+                      className="primary"
+                      onClick={() => setCurrentStep('parse')}
+                      type="button"
+                    >
+                      Review Parsed Items →
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -272,9 +376,115 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                 <div style={{ fontWeight: 600, color: 'var(--accent)' }}>{selectedPlaylistName}</div>
               </div>
             )}
-            <div className="empty-state" style={{ padding: '60px 20px' }}>
-              Parser interface coming soon...
-            </div>
+
+            {parsedItems.length === 0 ? (
+              <div className="empty-state" style={{ padding: '60px 20px' }}>
+                No items parsed yet. Go back to Upload to select a PDF.
+              </div>
+            ) : (
+              <div>
+                <div style={{ marginBottom: '16px', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', fontSize: '14px' }}>
+                  <strong>{parsedItems.length} items found:</strong>{' '}
+                  {parsedItems.filter(i => i.type === 'song').length} songs,{' '}
+                  {parsedItems.filter(i => i.type === 'verse').length} verses,{' '}
+                  {parsedItems.filter(i => i.type === 'heading').length} headings
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
+                  {parsedItems.map((item, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        padding: '12px 16px',
+                        background: 'rgba(255,255,255,0.03)',
+                        borderRadius: '10px',
+                        border: '1px solid var(--panel-border)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px'
+                      }}
+                    >
+                      <span style={{ fontSize: '18px' }}>
+                        {item.type === 'song' ? '🎵' : item.type === 'verse' ? '📖' : '📋'}
+                      </span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '2px' }}>
+                          {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+                        </div>
+                        <div style={{ fontWeight: 500 }}>{item.text}</div>
+                        {item.reference && (
+                          <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
+                            {item.reference}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    className="ghost"
+                    onClick={() => setCurrentStep('upload')}
+                    type="button"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    className="primary"
+                    onClick={async () => {
+                      setIsProcessing(true);
+                      setCurrentStep('match');
+
+                      // Auto-start matching
+                      try {
+                        const songs = parsedItems
+                          .filter(item => item.type === 'song')
+                          .map(item => item.text);
+
+                        if (songs.length > 0) {
+                          setNotification({ message: `Matching ${songs.length} songs...`, type: 'info' });
+
+                          const libraryIds = [
+                            props.settings.worshipLibraryId,
+                            props.settings.kidsLibraryId
+                          ].filter(Boolean);
+
+                          const result = await window.api.matchSongs(songs, {
+                            host: '192.168.68.58', // TODO: get from settings
+                            port: 61166
+                          }, libraryIds);
+
+                          if (result.success) {
+                            setMatchResults(result.results);
+                            setNotification({
+                              message: `Matched ${result.results.length} songs`,
+                              type: 'success'
+                            });
+                          } else {
+                            setNotification({
+                              message: result.error || 'Failed to match songs',
+                              type: 'error'
+                            });
+                          }
+                        }
+                      } catch (error: any) {
+                        setNotification({
+                          message: error?.message || 'Error matching songs',
+                          type: 'error'
+                        });
+                      } finally {
+                        setIsProcessing(false);
+                      }
+                    }}
+                    disabled={isProcessing}
+                    type="button"
+                  >
+                    {isProcessing ? 'Processing...' : 'Continue to Matching →'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         );
 

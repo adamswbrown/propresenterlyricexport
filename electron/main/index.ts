@@ -11,6 +11,10 @@ import { collectPlaylistLyrics, PlaylistProgressEvent } from '../../src/services
 import { mapPlaylistTree, PlaylistTreeNode } from '../../src/utils/playlist-utils';
 import { findLogoPath } from '../../src/services/logo';
 import { exportToPowerPoint, DEFAULT_PPTX_TEXT_STYLE, PptxTextStyle } from '../../src/pptx-exporter';
+import { PDFParser } from '../../src/services/pdf-parser';
+import { SongMatcher } from '../../src/services/song-matcher';
+import { BibleFetcher } from '../../src/services/bible-fetcher';
+import { PlaylistBuilder } from '../../src/services/playlist-builder';
 
 interface AppSettings {
   host: string;
@@ -639,5 +643,66 @@ ipcMain.handle('playlist:create-from-template', async (_event, config: Connectio
     return { success: true, playlistId: newPlaylistId };
   } catch (error: any) {
     return { success: false, error: error.message || 'Failed to create playlist from template' };
+  }
+});
+
+// Service Generator IPC handlers
+ipcMain.handle('pdf:choose', async () => {
+  const result = await dialog.showOpenDialog({
+    title: 'Select Service Order PDF',
+    properties: ['openFile'],
+    filters: [
+      { name: 'PDF Files', extensions: ['pdf'] },
+    ],
+  });
+
+  if (result.canceled || !result.filePaths[0]) {
+    return { canceled: true };
+  }
+
+  return { canceled: false, filePath: result.filePaths[0] };
+});
+
+ipcMain.handle('pdf:parse', async (_event, filePath: string) => {
+  try {
+    const parser = new PDFParser();
+    const items = await parser.parse(filePath);
+    return { success: true, items };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Failed to parse PDF' };
+  }
+});
+
+ipcMain.handle('songs:match', async (_event, songNames: string[], config: ConnectionConfig, libraryIds: string[]) => {
+  try {
+    const client = createClient(config);
+    await client.connect();
+    const matcher = new SongMatcher(client);
+    const results = await matcher.matchSongs(songNames, libraryIds);
+    return { success: true, results };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Failed to match songs' };
+  }
+});
+
+ipcMain.handle('verses:fetch', async (_event, references: string[]) => {
+  try {
+    const fetcher = new BibleFetcher();
+    const verses = await fetcher.fetchVerses(references);
+    return { success: true, verses };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Failed to fetch verses' };
+  }
+});
+
+ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig, playlistId: string, items: any[]) => {
+  try {
+    const client = createClient(config);
+    await client.connect();
+    const builder = new PlaylistBuilder(client);
+    await builder.buildPlaylist(playlistId, items);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Failed to build playlist' };
   }
 });
