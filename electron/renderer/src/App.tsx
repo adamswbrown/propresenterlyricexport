@@ -533,7 +533,7 @@ function App(): JSX.Element {
     setSettings(prev => ({ ...prev, logoPath: result.filePath }));
   }
 
-  async function handleCreatePlaylistFromTemplate(playlistName: string): Promise<{ success: boolean; error?: string }> {
+  async function handleCreatePlaylistFromTemplate(playlistName: string): Promise<{ success: boolean; error?: string; playlistId?: string }> {
     if (!settings.templatePlaylistId) {
       const errorMsg = 'No template playlist selected';
       setStatusNote(errorMsg);
@@ -561,7 +561,7 @@ function App(): JSX.Element {
       // Refresh playlists
       await handleConnect();
 
-      return { success: true };
+      return { success: true, playlistId: result.playlistId };
     } catch (error: any) {
       const errorMsg = error?.message || 'Failed to create playlist';
       setStatusNote(`Error: ${errorMsg}`);
@@ -614,6 +614,9 @@ function App(): JSX.Element {
 
   // Service Generator mode
   if (mode === 'serviceGen') {
+    const host = settings.host.trim() || DEFAULT_HOST;
+    const port = Number(settings.port) || DEFAULT_PORT;
+
     return (
       <ServiceGeneratorView
         settings={{
@@ -622,6 +625,7 @@ function App(): JSX.Element {
           serviceContentLibraryId: settings.serviceContentLibraryId,
           templatePlaylistId: settings.templatePlaylistId,
         }}
+        connectionConfig={{ host, port }}
         libraryOptions={libraryOptions}
         templatePlaylists={templatePlaylists}
         connectionState={connectionState}

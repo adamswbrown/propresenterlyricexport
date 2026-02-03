@@ -7,12 +7,13 @@ type ServiceGeneratorViewProps = {
     serviceContentLibraryId: string;
     templatePlaylistId: string;
   };
+  connectionConfig: { host: string; port: number };
   libraryOptions: Array<{ uuid: string; name: string }>;
   templatePlaylists: Array<{ uuid: string; name: string }>;
   connectionState: 'idle' | 'testing' | 'connecting' | 'connected' | 'error';
   onSettingsChange: (updates: Partial<ServiceGeneratorViewProps['settings']>) => void;
   onSaveSettings: () => void;
-  onCreatePlaylist: (playlistName: string) => Promise<{ success: boolean; error?: string }>;
+  onCreatePlaylist: (playlistName: string) => Promise<{ success: boolean; error?: string; playlistId?: string }>;
   onBack: () => void;
 };
 
@@ -55,7 +56,10 @@ function formatPraiseSlot(slot?: PraiseSlot): string {
 
 type MatchResult = {
   songName: string;
-  matches: Array<{ uuid: string; name: string; confidence: number }>;
+  praiseSlot?: PraiseSlot;
+  matches: Array<{ uuid: string; name: string; library: string; confidence: number }>;
+  bestMatch?: { uuid: string; name: string; library: string; confidence: number };
+  requiresReview: boolean;
   selectedMatch?: { uuid: string; name: string };
 };
 
@@ -242,6 +246,9 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                           if (result.success) {
                             // Auto-select the newly created playlist
                             setSelectedPlaylistName(playlistName);
+                            if (result.playlistId) {
+                              setSelectedPlaylistId(result.playlistId);
+                            }
                             setNotification({
                               message: `Playlist "${playlistName}" created and selected`,
                               type: 'success'
@@ -465,28 +472,36 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
 
                       // Auto-start matching (includes both regular songs and kids videos)
                       try {
-                        const songs = parsedItems
-                          .filter(item => item.type === 'song' || item.type === 'kids_video')
-                          .map(item => item.text);
+                        const songsToMatch = parsedItems
+                          .filter(item => item.type === 'song' || item.type === 'kids_video');
+                        const songNames = songsToMatch.map(item => item.text);
 
-                        if (songs.length > 0) {
-                          setNotification({ message: `Matching ${songs.length} items...`, type: 'info' });
+                        if (songNames.length > 0) {
+                          setNotification({ message: `Matching ${songNames.length} items...`, type: 'info' });
 
                           const libraryIds = [
                             props.settings.worshipLibraryId,
                             props.settings.kidsLibraryId
                           ].filter(Boolean);
 
-                          const result = await window.api.matchSongs(songs, {
-                            host: '192.168.68.58', // TODO: get from settings
-                            port: 61166
-                          }, libraryIds);
+                          const result = await window.api.matchSongs(
+                            songNames,
+                            props.connectionConfig,
+                            libraryIds
+                          );
 
                           if (result.success) {
-                            setMatchResults(result.results);
+                            // Add praiseSlot from parsed items to match results
+                            const resultsWithSlots = result.results.map((r: MatchResult, idx: number) => ({
+                              ...r,
+                              praiseSlot: songsToMatch[idx]?.praiseSlot
+                            }));
+                            setMatchResults(resultsWithSlots);
+                            const autoMatched = resultsWithSlots.filter((r: MatchResult) => r.selectedMatch).length;
+                            const needsReview = resultsWithSlots.filter((r: MatchResult) => r.requiresReview).length;
                             setNotification({
-                              message: `Matched ${result.results.length} songs`,
-                              type: 'success'
+                              message: `${autoMatched} auto-matched, ${needsReview} need review`,
+                              type: needsReview > 0 ? 'info' : 'success'
                             });
                           } else {
                             setNotification({
@@ -516,19 +531,145 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
         );
 
       case 'match':
+        const autoMatchedCount = matchResults.filter(r => r.selectedMatch && !r.requiresReview).length;
+        const needsReviewCount = matchResults.filter(r => r.requiresReview).length;
+        const noMatchCount = matchResults.filter(r => r.matches.length === 0).length;
+
         return (
           <div className="service-step-content">
             <h2>Match Songs</h2>
-            <p className="hint">Match parsed songs to your ProPresenter libraries</p>
+            <p className="hint">Review and confirm song matches from your ProPresenter libraries</p>
             {selectedPlaylistName && (
               <div style={{ marginBottom: '16px', padding: '12px 16px', background: 'rgba(47, 212, 194, 0.1)', borderRadius: '10px', border: '1px solid rgba(47, 212, 194, 0.3)' }}>
                 <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '4px' }}>Working Playlist</div>
                 <div style={{ fontWeight: 600, color: 'var(--accent)' }}>{selectedPlaylistName}</div>
               </div>
             )}
-            <div className="empty-state" style={{ padding: '60px 20px' }}>
-              Song matching interface coming soon...
-            </div>
+
+            {matchResults.length === 0 ? (
+              <div className="empty-state" style={{ padding: '60px 20px' }}>
+                {isProcessing ? 'Matching songs...' : 'No songs to match. Go back to Parse step.'}
+              </div>
+            ) : (
+              <div>
+                {/* Statistics */}
+                <div style={{ marginBottom: '16px', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', fontSize: '14px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                  <span><strong>{matchResults.length}</strong> total songs</span>
+                  <span style={{ color: 'var(--accent)' }}>✓ <strong>{autoMatchedCount}</strong> auto-matched</span>
+                  {needsReviewCount > 0 && (
+                    <span style={{ color: '#ffc107' }}>⚠ <strong>{needsReviewCount}</strong> need review</span>
+                  )}
+                  {noMatchCount > 0 && (
+                    <span style={{ color: '#f44336' }}>✗ <strong>{noMatchCount}</strong> not found</span>
+                  )}
+                </div>
+
+                {/* Match List */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+                  {matchResults.map((result, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        padding: '16px',
+                        background: 'rgba(255,255,255,0.03)',
+                        borderRadius: '12px',
+                        border: `1px solid ${
+                          result.selectedMatch && !result.requiresReview ? 'rgba(47, 212, 194, 0.3)'
+                          : result.requiresReview ? 'rgba(255, 193, 7, 0.3)'
+                          : 'rgba(244, 67, 54, 0.3)'
+                        }`
+                      }}
+                    >
+                      {/* Song header */}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+                        <span style={{ fontSize: '18px' }}>
+                          {result.selectedMatch && !result.requiresReview ? '✓' : result.requiresReview ? '⚠' : '✗'}
+                        </span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                            <span style={{ fontWeight: 600 }}>{result.songName}</span>
+                            {result.praiseSlot && (
+                              <span style={{
+                                padding: '2px 8px',
+                                background: result.praiseSlot === 'kids' ? 'rgba(255, 193, 7, 0.2)' : 'rgba(47, 212, 194, 0.2)',
+                                borderRadius: '4px',
+                                fontSize: '11px',
+                                fontWeight: 600,
+                                color: result.praiseSlot === 'kids' ? '#ffc107' : 'var(--accent)'
+                              }}>
+                                {formatPraiseSlot(result.praiseSlot)}
+                              </span>
+                            )}
+                          </div>
+                          {result.bestMatch && (
+                            <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
+                              Best match: {result.bestMatch.confidence}% confidence
+                              {result.bestMatch.library && ` • ${result.bestMatch.library}`}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Match selection dropdown */}
+                      <div style={{ marginLeft: '30px' }}>
+                        <select
+                          value={result.selectedMatch?.uuid || ''}
+                          onChange={(e) => {
+                            const uuid = e.target.value;
+                            const match = result.matches.find(m => m.uuid === uuid);
+                            setMatchResults(prev => prev.map((r, i) =>
+                              i === index
+                                ? { ...r, selectedMatch: match ? { uuid: match.uuid, name: match.name } : undefined }
+                                : r
+                            ));
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '10px 12px',
+                            borderRadius: '8px',
+                            border: '1px solid var(--panel-border)',
+                            background: 'var(--bg)',
+                            color: 'var(--text)',
+                            fontSize: '14px'
+                          }}
+                        >
+                          <option value="">-- Select a match --</option>
+                          {result.matches.map((match) => (
+                            <option key={match.uuid} value={match.uuid}>
+                              {match.name} ({match.confidence}%){match.library ? ` - ${match.library}` : ''}
+                            </option>
+                          ))}
+                        </select>
+                        {result.matches.length === 0 && (
+                          <div style={{ marginTop: '8px', fontSize: '13px', color: '#f44336' }}>
+                            No matches found in libraries. Song will be skipped.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    className="ghost"
+                    onClick={() => setCurrentStep('parse')}
+                    type="button"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    className="primary"
+                    onClick={() => setCurrentStep('build')}
+                    disabled={matchResults.filter(r => r.selectedMatch).length === 0}
+                    type="button"
+                  >
+                    Continue to Build ({matchResults.filter(r => r.selectedMatch).length} songs) →
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         );
 
@@ -550,19 +691,174 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
         );
 
       case 'build':
+        const selectedSongs = matchResults.filter(r => r.selectedMatch);
+        const songsGroupedBySlot = {
+          praise1: selectedSongs.filter(s => s.praiseSlot === 'praise1'),
+          praise2: selectedSongs.filter(s => s.praiseSlot === 'praise2'),
+          praise3: selectedSongs.filter(s => s.praiseSlot === 'praise3'),
+          kids: selectedSongs.filter(s => s.praiseSlot === 'kids'),
+          other: selectedSongs.filter(s => !s.praiseSlot)
+        };
+
         return (
           <div className="service-step-content">
             <h2>Build Playlist</h2>
-            <p className="hint">Review and finalize your service playlist</p>
+            <p className="hint">Review and add songs to your working playlist</p>
             {selectedPlaylistName && (
               <div style={{ marginBottom: '16px', padding: '12px 16px', background: 'rgba(47, 212, 194, 0.1)', borderRadius: '10px', border: '1px solid rgba(47, 212, 194, 0.3)' }}>
-                <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '4px' }}>Working Playlist</div>
+                <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '4px' }}>Target Playlist</div>
                 <div style={{ fontWeight: 600, color: 'var(--accent)' }}>{selectedPlaylistName}</div>
               </div>
             )}
-            <div className="empty-state" style={{ padding: '60px 20px' }}>
-              Playlist building interface coming soon...
-            </div>
+
+            {selectedSongs.length === 0 ? (
+              <div className="empty-state" style={{ padding: '60px 20px' }}>
+                No songs selected. Go back to Match step and select songs.
+              </div>
+            ) : (
+              <div>
+                {/* Summary by section */}
+                <div style={{ marginBottom: '24px' }}>
+                  <h3 style={{ fontSize: '16px', marginBottom: '12px' }}>Songs to Add ({selectedSongs.length})</h3>
+
+                  {/* Praise 1 */}
+                  {songsGroupedBySlot.praise1.length > 0 && (
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--accent)', marginBottom: '8px' }}>
+                        Praise 1 ({songsGroupedBySlot.praise1.length})
+                      </div>
+                      {songsGroupedBySlot.praise1.map((song, idx) => (
+                        <div key={idx} style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span>🎵</span>
+                          <span>{song.selectedMatch?.name || song.songName}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Kids */}
+                  {songsGroupedBySlot.kids.length > 0 && (
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#ffc107', marginBottom: '8px' }}>
+                        Kids ({songsGroupedBySlot.kids.length})
+                      </div>
+                      {songsGroupedBySlot.kids.map((song, idx) => (
+                        <div key={idx} style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span>🎬</span>
+                          <span>{song.selectedMatch?.name || song.songName}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Praise 2 */}
+                  {songsGroupedBySlot.praise2.length > 0 && (
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--accent)', marginBottom: '8px' }}>
+                        Praise 2 ({songsGroupedBySlot.praise2.length})
+                      </div>
+                      {songsGroupedBySlot.praise2.map((song, idx) => (
+                        <div key={idx} style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span>🎵</span>
+                          <span>{song.selectedMatch?.name || song.songName}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Praise 3 */}
+                  {songsGroupedBySlot.praise3.length > 0 && (
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--accent)', marginBottom: '8px' }}>
+                        Praise 3 ({songsGroupedBySlot.praise3.length})
+                      </div>
+                      {songsGroupedBySlot.praise3.map((song, idx) => (
+                        <div key={idx} style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span>🎵</span>
+                          <span>{song.selectedMatch?.name || song.songName}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Other (no slot) */}
+                  {songsGroupedBySlot.other.length > 0 && (
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--muted)', marginBottom: '8px' }}>
+                        Other ({songsGroupedBySlot.other.length})
+                      </div>
+                      {songsGroupedBySlot.other.map((song, idx) => (
+                        <div key={idx} style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span>🎵</span>
+                          <span>{song.selectedMatch?.name || song.songName}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    className="ghost"
+                    onClick={() => setCurrentStep('match')}
+                    type="button"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    className="accent"
+                    onClick={async () => {
+                      if (!selectedPlaylistId) {
+                        setNotification({ message: 'No playlist selected', type: 'error' });
+                        return;
+                      }
+
+                      setIsProcessing(true);
+                      setNotification({ message: 'Adding songs to playlist...', type: 'info' });
+
+                      try {
+                        // Build items array for API
+                        const items = selectedSongs.map(song => ({
+                          type: 'presentation',
+                          uuid: song.selectedMatch!.uuid,
+                          name: song.selectedMatch!.name
+                        }));
+
+                        const result = await window.api.buildServicePlaylist(
+                          props.connectionConfig,
+                          selectedPlaylistId,
+                          items
+                        );
+
+                        if (result.success) {
+                          setNotification({
+                            message: `Added ${items.length} songs to playlist!`,
+                            type: 'success'
+                          });
+                        } else {
+                          setNotification({
+                            message: result.error || 'Failed to build playlist',
+                            type: 'error'
+                          });
+                        }
+                      } catch (error: any) {
+                        setNotification({
+                          message: error?.message || 'Error building playlist',
+                          type: 'error'
+                        });
+                      } finally {
+                        setIsProcessing(false);
+                      }
+                    }}
+                    disabled={isProcessing || !selectedPlaylistId}
+                    type="button"
+                  >
+                    {isProcessing ? 'Adding...' : `Add ${selectedSongs.length} Songs to Playlist`}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         );
 

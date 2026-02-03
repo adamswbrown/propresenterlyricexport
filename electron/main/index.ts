@@ -688,16 +688,73 @@ ipcMain.handle('pdf:parse', async (_event, filePath: string) => {
 
 ipcMain.handle('songs:match', async (_event, songNames: string[], config: ConnectionConfig, libraryIds: string[]) => {
   try {
-    // TODO: Implement proper song matching
-    // This requires fetching library presentations from ProPresenter and using SongMatcher
-    // For now, return placeholder results
-    const results = songNames.map(name => ({
-      songName: name,
-      matches: [],
-      selectedMatch: undefined
+    const { ProPresenterClient } = await import('../../src/propresenter-client');
+    const { SongMatcher } = await import('../../src/services/song-matcher');
+
+    const client = new ProPresenterClient(config);
+    const matcher = new SongMatcher(0.7); // 70% confidence threshold
+
+    // Fetch presentations from all specified libraries
+    const allPresentations: Array<{ uuid: string; name: string; library: string; libraryId: string }> = [];
+
+    for (const libraryId of libraryIds) {
+      if (!libraryId) continue;
+      try {
+        const presentations = await client.getLibraryPresentations(libraryId);
+        // Get library name for display
+        const libraries = await client.getLibraries();
+        const library = libraries.find(l => l.uuid === libraryId);
+        const libraryName = library?.name || 'Unknown';
+
+        for (const pres of presentations) {
+          allPresentations.push({
+            uuid: pres.uuid,
+            name: pres.name,
+            library: libraryName,
+            libraryId: libraryId
+          });
+        }
+      } catch (err) {
+        console.error(`Failed to fetch library ${libraryId}:`, err);
+      }
+    }
+
+    // Create service sections from song names for matcher
+    const songSections = songNames.map((name, index) => ({
+      type: 'song' as const,
+      title: name,
+      position: index
     }));
+
+    // Match songs
+    const matches = await matcher.matchSongs(songSections, allPresentations);
+
+    // Convert to UI format
+    const results = matches.map(match => ({
+      songName: match.pdfTitle,
+      praiseSlot: undefined, // Will be set by caller
+      matches: match.matches.map(m => ({
+        uuid: m.presentation.uuid,
+        name: m.presentation.name,
+        library: m.presentation.library,
+        confidence: Math.round(m.confidence * 100)
+      })),
+      bestMatch: match.bestMatch ? {
+        uuid: match.bestMatch.presentation.uuid,
+        name: match.bestMatch.presentation.name,
+        library: match.bestMatch.presentation.library,
+        confidence: Math.round(match.bestMatch.confidence * 100)
+      } : undefined,
+      requiresReview: match.requiresReview,
+      selectedMatch: match.bestMatch && !match.requiresReview ? {
+        uuid: match.bestMatch.presentation.uuid,
+        name: match.bestMatch.presentation.name
+      } : undefined
+    }));
+
     return { success: true, results };
   } catch (error: any) {
+    console.error('Song matching error:', error);
     return { success: false, error: error.message || 'Failed to match songs' };
   }
 });
@@ -720,11 +777,70 @@ ipcMain.handle('verses:fetch', async (_event, references: string[]) => {
 
 ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig, playlistId: string, items: any[]) => {
   try {
-    // TODO: Implement playlist building
-    // This requires proper service content configuration
-    // For now, return success
-    return { success: true };
+    // Items should be an array of { type, uuid, name } representing songs/videos to add
+    // We'll add these items to the playlist via PUT request
+
+    // Build playlist items array for ProPresenter API
+    const playlistItems = items.map((item, index) => {
+      if (item.type === 'presentation') {
+        // Library presentation (song or video)
+        return {
+          id: {
+            name: item.name,
+            uuid: '', // New item, no UUID yet
+            index: index
+          },
+          type: 'presentation',
+          is_hidden: false,
+          is_pco: false,
+          presentation_info: {
+            presentation_uuid: item.uuid // UUID of the library presentation
+          }
+        };
+      } else if (item.type === 'header') {
+        // Section header
+        return {
+          id: {
+            name: item.name,
+            uuid: '',
+            index: index
+          },
+          type: 'header',
+          is_hidden: false,
+          is_pco: false
+        };
+      }
+      // Default to presentation type
+      return {
+        id: {
+          name: item.name || 'Unknown',
+          uuid: '',
+          index: index
+        },
+        type: 'presentation',
+        is_hidden: false,
+        is_pco: false,
+        presentation_info: {
+          presentation_uuid: item.uuid
+        }
+      };
+    });
+
+    // Send PUT request to update playlist items
+    const response = await fetch(`http://${config.host}:${config.port}/v1/playlist/${playlistId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(playlistItems)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to update playlist: ${response.status} ${errorText}`);
+    }
+
+    return { success: true, itemCount: items.length };
   } catch (error: any) {
+    console.error('Playlist build error:', error);
     return { success: false, error: error.message || 'Failed to build playlist' };
   }
 });
