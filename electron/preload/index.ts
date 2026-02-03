@@ -45,6 +45,13 @@ type ProgressEventPayload = {
   outputPath?: string;
 };
 
+type FontStatus = {
+  name: string;
+  category: 'sans-serif' | 'serif' | 'display';
+  installed: boolean;
+  downloadUrl?: string;
+};
+
 const api = {
   loadSettings: () => ipcRenderer.invoke('settings:load'),
   saveSettings: (data: SettingsPayload) => ipcRenderer.invoke('settings:save', data),
@@ -60,6 +67,10 @@ const api = {
       ipcRenderer.removeListener('export:progress', handler);
     };
   },
+  // Font management
+  listFonts: (): Promise<FontStatus[]> => ipcRenderer.invoke('fonts:list'),
+  checkFont: (fontName: string): Promise<FontStatus | null> => ipcRenderer.invoke('fonts:check', fontName),
+  downloadFont: (url: string): Promise<{ success: boolean }> => ipcRenderer.invoke('fonts:download', url),
 };
 
 contextBridge.exposeInMainWorld('api', api);

@@ -31,6 +31,13 @@ type LibraryOption = {
 type ConnectionState = 'idle' | 'testing' | 'connected' | 'error';
 type ExportState = 'idle' | 'running' | 'complete' | 'error';
 
+type FontStatus = {
+  name: string;
+  category: 'sans-serif' | 'serif' | 'display';
+  installed: boolean;
+  downloadUrl?: string;
+};
+
 type ProgressEntry = {
   id: string;
   playlistId: string;
@@ -127,6 +134,9 @@ function App(): JSX.Element {
   const [latestOutput, setLatestOutput] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [libraryOptions, setLibraryOptions] = useState<LibraryOption[]>([]);
+  const [fontList, setFontList] = useState<FontStatus[]>([]);
+  const [fontsLoading, setFontsLoading] = useState(false);
+  const [selectedFontStatus, setSelectedFontStatus] = useState<FontStatus | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -151,6 +161,53 @@ function App(): JSX.Element {
       }
     })();
   }, []);
+
+  // Load font list when settings modal opens
+  useEffect(() => {
+    if (showSettings && fontList.length === 0) {
+      loadFonts();
+    }
+  }, [showSettings]);
+
+  // Update selected font status when font changes
+  useEffect(() => {
+    if (settings.fontFace && fontList.length > 0) {
+      const found = fontList.find(f => f.name.toLowerCase() === settings.fontFace.toLowerCase());
+      if (found) {
+        setSelectedFontStatus(found);
+      } else {
+        // Check custom font
+        window.api.checkFont(settings.fontFace).then(status => {
+          setSelectedFontStatus(status);
+        });
+      }
+    }
+  }, [settings.fontFace, fontList]);
+
+  async function loadFonts(): Promise<void> {
+    setFontsLoading(true);
+    try {
+      const fonts = await window.api.listFonts();
+      setFontList(fonts);
+    } catch (error) {
+      console.error('Failed to load fonts:', error);
+    } finally {
+      setFontsLoading(false);
+    }
+  }
+
+  async function handleRefreshFonts(): Promise<void> {
+    await loadFonts();
+    // Re-check current font status
+    if (settings.fontFace) {
+      const status = await window.api.checkFont(settings.fontFace);
+      setSelectedFontStatus(status);
+    }
+  }
+
+  async function handleDownloadFont(url: string): Promise<void> {
+    await window.api.downloadFont(url);
+  }
 
   useEffect(() => {
     const unsubscribe = window.api.onExportProgress((event: RendererProgressEvent) => {
@@ -241,6 +298,24 @@ function App(): JSX.Element {
     const { name, checked } = event.target;
     setSettings(prev => ({ ...prev, [name]: checked }));
   }
+
+  function handleFontSelect(event: React.ChangeEvent<HTMLSelectElement>): void {
+    const fontName = event.target.value;
+    setSettings(prev => ({ ...prev, fontFace: fontName }));
+  }
+
+  // Group fonts by category for the dropdown
+  const groupedFonts = useMemo(() => {
+    const groups: Record<string, FontStatus[]> = {
+      'sans-serif': [],
+      'serif': [],
+      'display': [],
+    };
+    fontList.forEach(font => {
+      groups[font.category].push(font);
+    });
+    return groups;
+  }, [fontList]);
 
   async function handleConnect(): Promise<void> {
     const host = settings.host.trim() || DEFAULT_HOST;
@@ -545,11 +620,77 @@ function App(): JSX.Element {
                 />
                 Include song title slides
               </label>
-              <div className="form-grid">
+              <div className="font-section">
                 <label>
                   Font family
-                  <input name="fontFace" value={settings.fontFace} onChange={handleInputChange} />
+                  <div className="font-select-row">
+                    <select
+                      name="fontFace"
+                      value={settings.fontFace}
+                      onChange={handleFontSelect}
+                      className="font-select"
+                      disabled={fontsLoading}
+                    >
+                      {fontsLoading ? (
+                        <option>Loading fonts...</option>
+                      ) : (
+                        <>
+                          <optgroup label="Sans-Serif (Clean & Modern)">
+                            {groupedFonts['sans-serif'].map(font => (
+                              <option key={font.name} value={font.name}>
+                                {font.name} {font.installed ? '✓' : '○'}
+                              </option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="Serif (Traditional)">
+                            {groupedFonts['serif'].map(font => (
+                              <option key={font.name} value={font.name}>
+                                {font.name} {font.installed ? '✓' : '○'}
+                              </option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="Display (Bold Headlines)">
+                            {groupedFonts['display'].map(font => (
+                              <option key={font.name} value={font.name}>
+                                {font.name} {font.installed ? '✓' : '○'}
+                              </option>
+                            ))}
+                          </optgroup>
+                        </>
+                      )}
+                    </select>
+                    <button
+                      className="icon-button small"
+                      type="button"
+                      onClick={handleRefreshFonts}
+                      disabled={fontsLoading}
+                      title="Refresh font list"
+                    >
+                      ↻
+                    </button>
+                  </div>
                 </label>
+                {selectedFontStatus && (
+                  <div className={`font-status ${selectedFontStatus.installed ? 'installed' : 'missing'}`}>
+                    <span className="font-status-icon">{selectedFontStatus.installed ? '✓' : '!'}</span>
+                    <span className="font-status-text">
+                      {selectedFontStatus.installed
+                        ? `${selectedFontStatus.name} is installed`
+                        : `${selectedFontStatus.name} is not installed`}
+                    </span>
+                    {!selectedFontStatus.installed && selectedFontStatus.downloadUrl && (
+                      <button
+                        className="ghost small"
+                        type="button"
+                        onClick={() => handleDownloadFont(selectedFontStatus.downloadUrl!)}
+                      >
+                        Download
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="form-grid">
                 <label>
                   Lyric font size
                   <input name="fontSize" value={settings.fontSize} onChange={handleInputChange} />
