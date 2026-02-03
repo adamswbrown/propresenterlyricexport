@@ -5,6 +5,16 @@ type ConnectionConfig = {
   port: number;
 };
 
+type ConnectionResult = {
+  success: boolean;
+  version?: string;
+  name?: string;
+  platform?: string;
+  error?: string;
+  needsManualLaunch?: boolean;
+  proPresenterRunning?: boolean;
+};
+
 type SettingsPayload = {
   host?: string;
   port?: number;
@@ -55,7 +65,7 @@ type FontStatus = {
 const api = {
   loadSettings: () => ipcRenderer.invoke('settings:load'),
   saveSettings: (data: SettingsPayload) => ipcRenderer.invoke('settings:save', data),
-  testConnection: (config: ConnectionConfig) => ipcRenderer.invoke('connection:test', config),
+  testConnection: (config: ConnectionConfig): Promise<ConnectionResult> => ipcRenderer.invoke('connection:test', config),
   fetchPlaylists: (config: ConnectionConfig) => ipcRenderer.invoke('playlists:list', config),
   fetchLibraries: (config: ConnectionConfig) => ipcRenderer.invoke('libraries:list', config),
   startExport: (payload: ExportPayload) => ipcRenderer.invoke('export:start', payload),

@@ -414,9 +414,132 @@ ipcMain.handle('logo:choose', async () => {
   return { canceled: false, filePath: result.filePaths[0] };
 });
 
+/**
+ * Check if ProPresenter is running
+ */
+async function isProPresenterRunning(): Promise<boolean> {
+  try {
+    if (process.platform === 'darwin') {
+      const { stdout } = await execAsync('pgrep -x ProPresenter');
+      return stdout.trim().length > 0;
+    } else if (process.platform === 'win32') {
+      const { stdout } = await execAsync('tasklist /FI "IMAGENAME eq ProPresenter.exe" /NH');
+      return stdout.includes('ProPresenter.exe');
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Launch ProPresenter application
+ */
+async function launchProPresenter(): Promise<void> {
+  if (process.platform === 'darwin') {
+    await execAsync('open -a ProPresenter');
+  } else if (process.platform === 'win32') {
+    // Try common installation paths
+    const paths = [
+      'C:\\Program Files\\Renewed Vision\\ProPresenter\\ProPresenter.exe',
+      'C:\\Program Files (x86)\\Renewed Vision\\ProPresenter\\ProPresenter.exe',
+    ];
+
+    for (const path of paths) {
+      try {
+        await execAsync(`start "" "${path}"`);
+        return;
+      } catch {
+        continue;
+      }
+    }
+    throw new Error('ProPresenter installation not found');
+  } else {
+    throw new Error('Unsupported platform for auto-launch');
+  }
+}
+
+/**
+ * Poll API until available or timeout
+ */
+async function waitForAPI(
+  config: ConnectionConfig,
+  maxAttempts: number = 20,
+  delayMs: number = 1000
+): Promise<{ success: boolean; error?: string }> {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      const client = createClient(config);
+      await client.connect();
+      return { success: true };
+    } catch (error: any) {
+      // Check if it's a connection refused error (ProPresenter not ready)
+      if (error.message?.includes('ECONNREFUSED') ||
+          error.message?.includes('Failed to connect')) {
+        // Wait and retry
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        continue;
+      }
+      // Other errors (API disabled, wrong host, etc.)
+      return {
+        success: false,
+        error: error.message || 'Unknown error'
+      };
+    }
+  }
+
+  return {
+    success: false,
+    error: 'Timeout waiting for ProPresenter API. Please enable Network API in ProPresenter settings (Preferences → Network → Enable Network).'
+  };
+}
+
 ipcMain.handle('connection:test', async (_event, config: ConnectionConfig) => {
-  const client = createClient(config);
-  return client.connect();
+  try {
+    // Step 1: Check if ProPresenter is running
+    const isRunning = await isProPresenterRunning();
+
+    if (!isRunning) {
+      // Step 2: Launch ProPresenter
+      try {
+        await launchProPresenter();
+
+        // Step 3: Wait for ProPresenter to start (give it a few seconds)
+        await new Promise(resolve => setTimeout(resolve, 3000));
+      } catch (launchError: any) {
+        return {
+          success: false,
+          error: `Failed to launch ProPresenter: ${launchError.message}`,
+          needsManualLaunch: true,
+        };
+      }
+    }
+
+    // Step 4: Poll API until available
+    const result = await waitForAPI(config, 20, 1000);
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error || 'Failed to connect to ProPresenter API',
+        proPresenterRunning: isRunning,
+      };
+    }
+
+    // Step 5: Get version info on successful connection
+    const client = createClient(config);
+    const versionInfo = await client.connect();
+
+    return {
+      success: true,
+      ...versionInfo,
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: error.message || 'Unknown connection error',
+    };
+  }
 });
 
 ipcMain.handle('playlists:list', async (_event, config: ConnectionConfig) => {

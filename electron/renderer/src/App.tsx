@@ -323,22 +323,56 @@ function App(): JSX.Element {
     const libraryFilter = settings.libraryFilter.trim();
 
     setConnectionState('testing');
-    setStatusNote('Connecting to ProPresenter...');
+    setStatusNote('Checking ProPresenter...');
     setErrorMessage(null);
     setLibraryOptions([]);
 
     try {
       await window.api.saveSettings({ host, port, libraryFilter: libraryFilter || null });
-      await window.api.testConnection({ host, port });
+
+      // Enhanced connection with auto-launch and polling
+      setStatusNote('Connecting to ProPresenter API...');
+      const connectionResult = await window.api.testConnection({ host, port });
+
+      // Check if connection was successful
+      if (!connectionResult.success) {
+        setConnectionState('error');
+        setStatusNote('Connection failed');
+
+        // Provide specific error messages
+        let errorMsg = connectionResult.error || 'Could not connect to ProPresenter';
+        if (connectionResult.needsManualLaunch) {
+          errorMsg += '\n\nPlease launch ProPresenter manually and try again.';
+        } else if (connectionResult.error?.includes('Network API')) {
+          errorMsg = 'ProPresenter is running but Network API is disabled.\n\nPlease enable it in:\nProPresenter → Preferences → Network → Enable Network';
+        }
+
+        setErrorMessage(errorMsg);
+        setLibraryOptions([]);
+        return;
+      }
+
+      // Success - load playlists and libraries
+      setStatusNote('Loading playlists...');
       const playlistPromise = window.api.fetchPlaylists({ host, port });
       const librariesPromise = window.api.fetchLibraries({ host, port }).catch(() => []);
       const [playlistData, discoveredLibraries] = await Promise.all([playlistPromise, librariesPromise]);
+
       setPlaylistTree(playlistData);
       setExpandedNodes(defaultExpansion(playlistData));
       setLibraryOptions(discoveredLibraries);
-      setStatusNote(`Connected to ${host}:${port}`);
+
+      // Only show version if we have valid data (not empty or "undefined.undefined.undefined")
+      const hasVersion = connectionResult.version &&
+                        connectionResult.version !== '' &&
+                        !connectionResult.version.includes('undefined');
+      const versionInfo = hasVersion
+        ? ` (ProPresenter ${connectionResult.version})`
+        : '';
+      setStatusNote(`Connected to ${host}:${port}${versionInfo}`);
       setConnectionState('connected');
       setExportState('idle');
+
       if (settings.lastPlaylistId) {
         setSelectedId(settings.lastPlaylistId);
       }

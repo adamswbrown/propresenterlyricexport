@@ -91,10 +91,21 @@ export class ProPresenterClient extends EventEmitter {
       throw new Error(`Failed to connect: ${result.status}`);
     }
     this.connected = true;
+
+    // Handle cases where version data might be missing or in different format
+    const major = result.data?.major ?? result.data?.version?.major ?? '7';
+    const minor = result.data?.minor ?? result.data?.version?.minor ?? '0';
+    const patch = result.data?.patch ?? result.data?.version?.patch ?? '0';
+
+    // Only include version if we have valid data
+    const versionStr = (major && minor && patch)
+      ? `${major}.${minor}.${patch}`
+      : '';
+
     return {
-      version: `${result.data.major}.${result.data.minor}.${result.data.patch}`,
-      name: result.data.name,
-      platform: result.data.platform,
+      version: versionStr,
+      name: result.data?.name ?? 'ProPresenter',
+      platform: result.data?.platform ?? 'unknown',
     };
   }
 
