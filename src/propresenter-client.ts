@@ -316,6 +316,111 @@ export class ProPresenterClient extends EventEmitter {
   }
 
   /**
+   * Create a new playlist from a template
+   * Copies all items from the template playlist to a new playlist at the root level
+   */
+  async createPlaylistFromTemplate(templatePlaylistId: string, newPlaylistName: string): Promise<string> {
+    // Step 1: Fetch items from template playlist
+    const templateResult = await this.client.playlistPlaylistIdGet(templatePlaylistId);
+    if (!templateResult.ok || !templateResult.data) {
+      throw new Error('Failed to fetch template playlist items');
+    }
+
+    const templateItems = templateResult.data.items || [];
+
+    // Step 2: Clean up items - keep name but remove UUIDs so ProPresenter generates new ones
+    const cleanedItems = templateItems.map((item: any, index: number) => {
+      const cleaned: any = {
+        id: {
+          name: item.id?.name || item.name || 'Untitled',
+          index: index,
+          uuid: '', // Empty UUID means ProPresenter will generate a new one
+        },
+        type: item.type,
+        is_hidden: item.is_hidden || false,
+        is_pco: item.is_pco || false,
+      };
+
+      // For headers, include color
+      if (item.type === 'header') {
+        if (item.header_color) {
+          cleaned.header_color = item.header_color;
+        }
+      }
+
+      // For presentations, include presentation info and duration
+      if (item.type === 'presentation') {
+        if (item.presentation_info) {
+          cleaned.presentation_info = {
+            presentation_uuid: item.presentation_info.presentation_uuid,
+            arrangement_name: item.presentation_info.arrangement_name || '',
+            arrangement_uuid: item.presentation_info.arrangement_uuid || '',
+          };
+        }
+        if (item.duration) {
+          cleaned.duration = item.duration;
+        }
+      }
+
+      // Include destination
+      if (item.destination) {
+        cleaned.destination = item.destination;
+      }
+
+      return cleaned;
+    });
+
+    // Step 3: Get all root playlists to determine the next index
+    const playlistsResult = await this.client.playlistsGet();
+    if (!playlistsResult.ok || !playlistsResult.data) {
+      throw new Error('Failed to fetch playlists');
+    }
+
+    const nextIndex = (playlistsResult.data as any[]).length;
+
+    // Step 4: Create empty playlist first
+    // Note: POST /v1/playlists only creates the playlist shell, not items
+    const createPlaylistData = {
+      name: newPlaylistName,
+    };
+
+    const createResponse = await fetch(`http://${this.config.host}:${this.config.port}/v1/playlists`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(createPlaylistData),
+    });
+
+    if (!createResponse.ok) {
+      const errorText = await createResponse.text();
+      throw new Error(`Failed to create playlist: ${createResponse.status} ${errorText}`);
+    }
+
+    const createResponseData = await createResponse.json() as any;
+    const newPlaylistId = createResponseData.id?.uuid || createResponseData.uuid || '';
+    if (!newPlaylistId) {
+      throw new Error('No UUID returned from new playlist creation');
+    }
+
+    // Step 5: Update the playlist with items using PUT
+    const updateResponse = await fetch(`http://${this.config.host}:${this.config.port}/v1/playlist/${newPlaylistId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(cleanedItems),
+    });
+
+    if (!updateResponse.ok) {
+      const errorText = await updateResponse.text();
+      throw new Error(`Failed to populate playlist items: ${updateResponse.status} ${errorText}`);
+    }
+
+    return newPlaylistId;
+  }
+
+  /**
    * Register for real-time status updates
    */
   registerStatusUpdates(callbacks: {

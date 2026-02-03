@@ -1,4 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { ServiceGeneratorView } from './ServiceGeneratorView';
+
+type AppMode = 'export' | 'serviceGen';
 
 type SettingsState = {
   host: string;
@@ -13,7 +16,8 @@ type SettingsState = {
   italic: boolean;
   logoPath: string;
   lastPlaylistId?: string;
-  // Service Generator libraries
+  // Service Generator
+  enableServiceGenerator: boolean;
   worshipLibraryId: string;
   kidsLibraryId: string;
   serviceContentLibraryId: string;
@@ -25,6 +29,8 @@ type PlaylistNode = {
   name: string;
   breadcrumb: string[];
   isHeader: boolean;
+  isTemplate: boolean;
+  parentName?: string;
   children: PlaylistNode[];
 };
 
@@ -87,6 +93,23 @@ const findNodeByUuid = (nodes: PlaylistNode[], uuid: string | null): PlaylistNod
   return null;
 };
 
+const removeSystemPlaylists = (nodes: PlaylistNode[]): PlaylistNode[] => {
+  const filtered: PlaylistNode[] = [];
+  for (const node of nodes) {
+    // Skip TEMPLATE folder and instructional playlist
+    if (
+      node.name === 'TEMPLATE' ||
+      node.name === 'TO CREATE A NEW SERVICE USE - CREATE FROM TEMPLATE'
+    ) {
+      continue;
+    }
+    // Recursively filter children
+    const children = removeSystemPlaylists(node.children);
+    filtered.push({ ...node, children });
+  }
+  return filtered;
+};
+
 const filterTree = (nodes: PlaylistNode[], query: string): PlaylistNode[] => {
   if (!query) return nodes;
   const lowered = query.toLowerCase();
@@ -126,11 +149,13 @@ function App(): JSX.Element {
     bold: true,
     italic: true,
     logoPath: '',
+    enableServiceGenerator: false,
     worshipLibraryId: '',
     kidsLibraryId: '',
     serviceContentLibraryId: '',
     templatePlaylistId: '',
   });
+  const [mode, setMode] = useState<AppMode>('export');
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
   const [exportState, setExportState] = useState<ExportState>('idle');
   const [playlistTree, setPlaylistTree] = useState<PlaylistNode[]>([]);
@@ -142,7 +167,6 @@ function App(): JSX.Element {
   const [statusNote, setStatusNote] = useState('Not connected');
   const [latestOutput, setLatestOutput] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [showServiceGenerator, setShowServiceGenerator] = useState(false);
   const [libraryOptions, setLibraryOptions] = useState<LibraryOption[]>([]);
   const [fontList, setFontList] = useState<FontStatus[]>([]);
   const [fontsLoading, setFontsLoading] = useState(false);
@@ -165,6 +189,7 @@ function App(): JSX.Element {
         italic: typeof saved.italic === 'boolean' ? saved.italic : true,
         logoPath: saved.logoPath ?? '',
         lastPlaylistId: saved.lastPlaylistId,
+        enableServiceGenerator: saved.enableServiceGenerator ?? false,
         worshipLibraryId: saved.worshipLibraryId ?? '',
         kidsLibraryId: saved.kidsLibraryId ?? '',
         serviceContentLibraryId: saved.serviceContentLibraryId ?? '',
@@ -254,7 +279,10 @@ function App(): JSX.Element {
     return () => unsubscribe();
   }, []);
 
-  const visibleTree = useMemo(() => filterTree(playlistTree, search.trim()), [playlistTree, search]);
+  const visibleTree = useMemo(() => {
+    const withoutSystem = removeSystemPlaylists(playlistTree);
+    return filterTree(withoutSystem, search.trim());
+  }, [playlistTree, search]);
   const selectedPlaylist = useMemo(() => findNodeByUuid(playlistTree, selectedId), [playlistTree, selectedId]);
   const librarySuggestions = useMemo(() => {
     const seen = new Set<string>();
@@ -270,6 +298,25 @@ function App(): JSX.Element {
       .sort((a, b) => a.localeCompare(b));
   }, [libraryOptions]);
   const hasLibrarySuggestions = librarySuggestions.length > 0;
+
+  // Recursively flatten playlist tree and filter for templates
+  const templatePlaylists = useMemo(() => {
+    const flatten = (nodes: PlaylistNode[]): Array<{ uuid: string; name: string }> => {
+      const result: Array<{ uuid: string; name: string }> = [];
+      for (const node of nodes) {
+        // Include if this playlist is inside a TEMPLATE folder
+        if (node.uuid && !node.isHeader && node.parentName === 'TEMPLATE') {
+          result.push({ uuid: node.uuid, name: node.name });
+        }
+        // Recursively check children
+        if (node.children.length > 0) {
+          result.push(...flatten(node.children));
+        }
+      }
+      return result;
+    };
+    return flatten(playlistTree);
+  }, [playlistTree]);
 
   function mapTone(type: string): ProgressEntry['tone'] {
     if (type === 'song:success' || type === 'pptx:complete') return 'success';
@@ -469,6 +516,7 @@ function App(): JSX.Element {
       bold: settings.bold,
       italic: settings.italic,
       logoPath: settings.logoPath || null,
+      enableServiceGenerator: settings.enableServiceGenerator,
       worshipLibraryId: settings.worshipLibraryId || null,
       kidsLibraryId: settings.kidsLibraryId || null,
       serviceContentLibraryId: settings.serviceContentLibraryId || null,
@@ -477,13 +525,48 @@ function App(): JSX.Element {
     await window.api.saveSettings(payload);
     setStatusNote('Settings saved');
     setShowSettings(false);
-    setShowServiceGenerator(false);
   }
 
   async function handleChooseLogo(): Promise<void> {
     const result = await window.api.chooseLogo();
     if (result?.canceled || !result.filePath) return;
     setSettings(prev => ({ ...prev, logoPath: result.filePath }));
+  }
+
+  async function handleCreatePlaylistFromTemplate(playlistName: string): Promise<{ success: boolean; error?: string }> {
+    if (!settings.templatePlaylistId) {
+      const errorMsg = 'No template playlist selected';
+      setStatusNote(errorMsg);
+      return { success: false, error: errorMsg };
+    }
+
+    const host = settings.host.trim() || DEFAULT_HOST;
+    const port = Number(settings.port) || DEFAULT_PORT;
+
+    try {
+      const result = await window.api.createPlaylistFromTemplate(
+        { host, port },
+        settings.templatePlaylistId,
+        playlistName
+      );
+
+      if (!result.success) {
+        const errorMsg = `Failed to create playlist: ${result.error}`;
+        setStatusNote(errorMsg);
+        return { success: false, error: result.error };
+      }
+
+      setStatusNote(`Playlist "${playlistName}" created successfully`);
+
+      // Refresh playlists
+      await handleConnect();
+
+      return { success: true };
+    } catch (error: any) {
+      const errorMsg = error?.message || 'Failed to create playlist';
+      setStatusNote(`Error: ${errorMsg}`);
+      return { success: false, error: errorMsg };
+    }
   }
 
   const isExportDisabled =
@@ -529,6 +612,28 @@ function App(): JSX.Element {
     });
   };
 
+  // Service Generator mode
+  if (mode === 'serviceGen') {
+    return (
+      <ServiceGeneratorView
+        settings={{
+          worshipLibraryId: settings.worshipLibraryId,
+          kidsLibraryId: settings.kidsLibraryId,
+          serviceContentLibraryId: settings.serviceContentLibraryId,
+          templatePlaylistId: settings.templatePlaylistId,
+        }}
+        libraryOptions={libraryOptions}
+        templatePlaylists={templatePlaylists}
+        connectionState={connectionState}
+        onSettingsChange={(updates) => setSettings(prev => ({ ...prev, ...updates }))}
+        onSaveSettings={handleSaveSettings}
+        onCreatePlaylist={handleCreatePlaylistFromTemplate}
+        onBack={() => setMode('export')}
+      />
+    );
+  }
+
+  // Export mode (default)
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -537,15 +642,17 @@ function App(): JSX.Element {
           <p className="eyebrow">All-playlist PPTX exporter</p>
         </div>
         <div className="header-actions">
-          <button
-            className="icon-button"
-            type="button"
-            aria-label="Service Generator settings"
-            onClick={() => setShowServiceGenerator(true)}
-            title="Service Generator"
-          >
-            📖
-          </button>
+          {settings.enableServiceGenerator && (
+            <button
+              className="icon-button"
+              type="button"
+              aria-label="Service Generator"
+              onClick={() => setMode('serviceGen')}
+              title="Service Generator"
+            >
+              📖
+            </button>
+          )}
           <button
             className="icon-button"
             type="button"
@@ -660,94 +767,6 @@ function App(): JSX.Element {
             ))}
           </div>
         </div>
-
-        {showServiceGenerator && (
-          <div className="settings-overlay" role="dialog" aria-modal="true">
-            <div className="settings-modal">
-              <div className="modal-header">
-                <div>
-                  <h2>Service Generator</h2>
-                  <span className="hint">Configure libraries and template for automated service generation</span>
-                </div>
-                <button className="icon-button" type="button" aria-label="Close" onClick={() => setShowServiceGenerator(false)}>
-                  ×
-                </button>
-              </div>
-              <div className="form-grid">
-                <label>
-                  Worship Library
-                  <select
-                    name="worshipLibraryId"
-                    value={settings.worshipLibraryId}
-                    onChange={(e) => setSettings(prev => ({ ...prev, worshipLibraryId: e.target.value }))}
-                  >
-                    <option value="">-- Select Library --</option>
-                    {libraryOptions.map(lib => (
-                      <option key={lib.uuid} value={lib.uuid}>
-                        {lib.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Kids Songs Library
-                  <select
-                    name="kidsLibraryId"
-                    value={settings.kidsLibraryId}
-                    onChange={(e) => setSettings(prev => ({ ...prev, kidsLibraryId: e.target.value }))}
-                  >
-                    <option value="">-- Select Library --</option>
-                    {libraryOptions.map(lib => (
-                      <option key={lib.uuid} value={lib.uuid}>
-                        {lib.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Service Content Library
-                  <select
-                    name="serviceContentLibraryId"
-                    value={settings.serviceContentLibraryId}
-                    onChange={(e) => setSettings(prev => ({ ...prev, serviceContentLibraryId: e.target.value }))}
-                  >
-                    <option value="">-- Select Library --</option>
-                    {libraryOptions.map(lib => (
-                      <option key={lib.uuid} value={lib.uuid}>
-                        {lib.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Template Playlist
-                  <select
-                    name="templatePlaylistId"
-                    value={settings.templatePlaylistId}
-                    onChange={(e) => setSettings(prev => ({ ...prev, templatePlaylistId: e.target.value }))}
-                  >
-                    <option value="">-- Select Playlist --</option>
-                    {playlistTree.flatMap(node => [
-                      node.uuid && !node.isHeader ? { uuid: node.uuid, name: node.breadcrumb.join(' / ') } : null,
-                      ...node.children.flatMap(child =>
-                        child.uuid && !child.isHeader ? { uuid: child.uuid, name: child.breadcrumb.join(' / ') } : null
-                      )
-                    ]).filter(Boolean).map(playlist => (
-                      <option key={playlist!.uuid} value={playlist!.uuid}>
-                        {playlist!.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-              <div className="modal-footer">
-                <button className="accent" onClick={handleSaveSettings} type="button">
-                  Save defaults
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {showSettings && (
           <div className="settings-overlay" role="dialog" aria-modal="true">
@@ -883,6 +902,20 @@ function App(): JSX.Element {
                     Clear
                   </button>
                 </div>
+              </div>
+
+              <div className="settings-section">
+                <h3>Advanced Features</h3>
+                <label className="checkbox">
+                  <input
+                    type="checkbox"
+                    name="enableServiceGenerator"
+                    checked={settings.enableServiceGenerator}
+                    onChange={handleCheckboxChange}
+                  />
+                  Enable Service Generator
+                </label>
+                <span className="hint">Automated service playlist creation from PDF service orders</span>
               </div>
 
               <div className="modal-footer">

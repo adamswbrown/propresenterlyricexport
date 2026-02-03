@@ -25,7 +25,8 @@ interface AppSettings {
   italic: boolean;
   logoPath?: string | null;
   lastPlaylistId?: string;
-  // Service Generator libraries
+  // Service Generator
+  enableServiceGenerator?: boolean;
   worshipLibraryId?: string | null;
   kidsLibraryId?: string | null;
   serviceContentLibraryId?: string | null;
@@ -628,4 +629,15 @@ ipcMain.handle('fonts:check', async (_event, fontName: string) => {
 ipcMain.handle('fonts:download', async (_event, url: string) => {
   await shell.openExternal(url);
   return { success: true };
+});
+// Playlist template creation
+ipcMain.handle('playlist:create-from-template', async (_event, config: ConnectionConfig, templateId: string, newPlaylistName: string) => {
+  try {
+    const client = createClient(config);
+    await client.connect();
+    const newPlaylistId = await client.createPlaylistFromTemplate(templateId, newPlaylistName);
+    return { success: true, playlistId: newPlaylistId };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Failed to create playlist from template' };
+  }
 });
