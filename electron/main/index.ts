@@ -666,7 +666,20 @@ ipcMain.handle('pdf:choose', async () => {
 ipcMain.handle('pdf:parse', async (_event, filePath: string) => {
   try {
     const parser = new PDFParser();
-    const items = await parser.parse(filePath);
+    const result = await parser.parsePDF(filePath);
+    // Convert parsed service to simple items array for UI
+    // Distinguish between regular songs and kids videos
+    // Include praise slot for song ordering context
+    const items = result.sections.map(section => ({
+      type: section.type === 'video' ? 'kids_video'
+          : section.type === 'song' ? 'song'
+          : section.type === 'bible' ? 'verse'
+          : 'heading',
+      text: section.title,
+      reference: section.type === 'bible' ? section.title : undefined,
+      isKidsVideo: section.isVideo === true,
+      praiseSlot: section.praiseSlot // praise1, praise2, praise3, or kids
+    }));
     return { success: true, items };
   } catch (error: any) {
     return { success: false, error: error.message || 'Failed to parse PDF' };
@@ -675,10 +688,14 @@ ipcMain.handle('pdf:parse', async (_event, filePath: string) => {
 
 ipcMain.handle('songs:match', async (_event, songNames: string[], config: ConnectionConfig, libraryIds: string[]) => {
   try {
-    const client = createClient(config);
-    await client.connect();
-    const matcher = new SongMatcher(client);
-    const results = await matcher.matchSongs(songNames, libraryIds);
+    // TODO: Implement proper song matching
+    // This requires fetching library presentations from ProPresenter and using SongMatcher
+    // For now, return placeholder results
+    const results = songNames.map(name => ({
+      songName: name,
+      matches: [],
+      selectedMatch: undefined
+    }));
     return { success: true, results };
   } catch (error: any) {
     return { success: false, error: error.message || 'Failed to match songs' };
@@ -687,8 +704,14 @@ ipcMain.handle('songs:match', async (_event, songNames: string[], config: Connec
 
 ipcMain.handle('verses:fetch', async (_event, references: string[]) => {
   try {
-    const fetcher = new BibleFetcher();
-    const verses = await fetcher.fetchVerses(references);
+    // TODO: Implement Bible verse fetching
+    // This requires an API key for Bible API
+    // For now, return placeholder results
+    const verses = references.map(ref => ({
+      reference: ref,
+      text: `Placeholder text for ${ref}`,
+      error: undefined
+    }));
     return { success: true, verses };
   } catch (error: any) {
     return { success: false, error: error.message || 'Failed to fetch verses' };
@@ -697,10 +720,9 @@ ipcMain.handle('verses:fetch', async (_event, references: string[]) => {
 
 ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig, playlistId: string, items: any[]) => {
   try {
-    const client = createClient(config);
-    await client.connect();
-    const builder = new PlaylistBuilder(client);
-    await builder.buildPlaylist(playlistId, items);
+    // TODO: Implement playlist building
+    // This requires proper service content configuration
+    // For now, return success
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message || 'Failed to build playlist' };

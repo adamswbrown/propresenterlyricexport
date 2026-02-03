@@ -3,7 +3,7 @@
  * Assembles ProPresenter playlists from parsed PDF and matched songs
  */
 
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { PlaylistItem, PlaylistItemId, TemplateItem } from '../types/playlist';
 import { ParsedService } from '../types/service-order';
 import { SongMatch } from '../types/song-match';
@@ -186,7 +186,7 @@ export class PlaylistBuilder {
       id: {
         name,
         index,
-        uuid: uuidv4()
+        uuid: randomUUID()
       },
       type: 'header',
       is_hidden: false,
@@ -208,7 +208,7 @@ export class PlaylistBuilder {
       id: {
         name,
         index,
-        uuid: uuidv4() // This is the playlist item UUID, not the presentation UUID
+        uuid: randomUUID() // This is the playlist item UUID, not the presentation UUID
       },
       type: 'presentation',
       is_hidden: false,

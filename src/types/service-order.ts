@@ -5,6 +5,8 @@
 
 export type ServiceSectionType = 'header' | 'song' | 'bible' | 'placeholder' | 'kids_song' | 'video';
 
+export type PraiseSlot = 'praise1' | 'praise2' | 'praise3' | 'kids';
+
 export interface ServiceSection {
   type: ServiceSectionType;
   title: string;
@@ -12,6 +14,7 @@ export interface ServiceSection {
   notes?: string;       // e.g., "[Bible verses; Prayer...]"
   position: number;
   isVideo?: boolean;    // For songs marked as "(Video)"
+  praiseSlot?: PraiseSlot;  // Which praise section: praise1, praise2, praise3, or kids
 }
 
 export interface ParsedService {

@@ -32,11 +32,26 @@ const STEPS: { id: Step; label: string }[] = [
   { id: 'build', label: 'Build' },
 ];
 
+type PraiseSlot = 'praise1' | 'praise2' | 'praise3' | 'kids';
+
 type ParsedItem = {
-  type: 'song' | 'verse' | 'heading';
+  type: 'song' | 'kids_video' | 'verse' | 'heading';
   text: string;
   reference?: string;
+  isKidsVideo?: boolean;
+  praiseSlot?: PraiseSlot;
 };
+
+// Helper to format praise slot for display
+function formatPraiseSlot(slot?: PraiseSlot): string {
+  switch (slot) {
+    case 'praise1': return 'Praise 1';
+    case 'praise2': return 'Praise 2';
+    case 'praise3': return 'Praise 3';
+    case 'kids': return 'Kids';
+    default: return '';
+  }
+}
 
 type MatchResult = {
   songName: string;
@@ -386,8 +401,8 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                 <div style={{ marginBottom: '16px', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', fontSize: '14px' }}>
                   <strong>{parsedItems.length} items found:</strong>{' '}
                   {parsedItems.filter(i => i.type === 'song').length} songs,{' '}
-                  {parsedItems.filter(i => i.type === 'verse').length} verses,{' '}
-                  {parsedItems.filter(i => i.type === 'heading').length} headings
+                  {parsedItems.filter(i => i.type === 'kids_video').length} kids videos,{' '}
+                  {parsedItems.filter(i => i.type === 'verse').length} verses
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
@@ -405,11 +420,23 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                       }}
                     >
                       <span style={{ fontSize: '18px' }}>
-                        {item.type === 'song' ? '🎵' : item.type === 'verse' ? '📖' : '📋'}
+                        {item.type === 'song' ? '🎵' : item.type === 'kids_video' ? '🎬' : item.type === 'verse' ? '📖' : '📋'}
                       </span>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '2px' }}>
-                          {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+                        <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span>{item.type === 'kids_video' ? 'Kids Video' : item.type === 'verse' ? 'Verse' : 'Song'}</span>
+                          {item.praiseSlot && (
+                            <span style={{
+                              padding: '2px 8px',
+                              background: item.praiseSlot === 'kids' ? 'rgba(255, 193, 7, 0.2)' : 'rgba(47, 212, 194, 0.2)',
+                              borderRadius: '4px',
+                              fontSize: '11px',
+                              fontWeight: 600,
+                              color: item.praiseSlot === 'kids' ? '#ffc107' : 'var(--accent)'
+                            }}>
+                              {formatPraiseSlot(item.praiseSlot)}
+                            </span>
+                          )}
                         </div>
                         <div style={{ fontWeight: 500 }}>{item.text}</div>
                         {item.reference && (
@@ -436,14 +463,14 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                       setIsProcessing(true);
                       setCurrentStep('match');
 
-                      // Auto-start matching
+                      // Auto-start matching (includes both regular songs and kids videos)
                       try {
                         const songs = parsedItems
-                          .filter(item => item.type === 'song')
+                          .filter(item => item.type === 'song' || item.type === 'kids_video')
                           .map(item => item.text);
 
                         if (songs.length > 0) {
-                          setNotification({ message: `Matching ${songs.length} songs...`, type: 'info' });
+                          setNotification({ message: `Matching ${songs.length} items...`, type: 'info' });
 
                           const libraryIds = [
                             props.settings.worshipLibraryId,

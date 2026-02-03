@@ -359,17 +359,67 @@ npm run build:exe
 
 ---
 
+### 11. PDF Parser Simplification (Phase 5 - Feb 3, 2026)
+
+**Objective:** Simplify PDF parsing to only extract items that need ProPresenter matching.
+
+**Problem:** Parser was extracting too many items (birthday names, headers, sermon sections) that are handled via PowerPoint import by the minister.
+
+**Implementation:**
+- Modified [pdf-parser.ts:64-92](src/services/pdf-parser.ts:64-92) to only extract:
+  - **Songs** - Lines starting with `PRAISE:` (without "(Video)")
+  - **Kids Videos** - Lines starting with `PRAISE:` containing "(Video)"
+  - **Bible Verses** - Lines starting with `BIBLE READING:`
+- Removed extraction for section headers and placeholder content
+- Updated IPC handler to distinguish `'song'` vs `'kids_video'` types
+- Updated UI to show 🎵 for songs and 🎬 for kids videos
+
+**Result:** Parser now focuses only on items requiring ProPresenter matching.
+
+---
+
+### 12. Praise Slot Tracking (Phase 5 - Feb 3, 2026)
+
+**Objective:** Track which praise slot each song belongs to based on its position in the service order.
+
+**Logic:**
+| After this section marker | Songs labeled as |
+|---------------------------|------------------|
+| Call to Worship / Opening Prayer | **Praise 1** |
+| Praying for Others / Prayers for Others | **Praise 2** |
+| Time of Prayerful Reflection | **Praise 3** |
+| (Video) marker | **Kids** |
+
+**Implementation:**
+- Added `PraiseSlot` type to [service-order.ts:8](src/types/service-order.ts:8): `'praise1' | 'praise2' | 'praise3' | 'kids'`
+- Added `praiseSlot` field to `ServiceSection` interface
+- Modified [pdf-parser.ts:70-119](src/services/pdf-parser.ts:70-119):
+  - Tracks `currentPraiseSlot` state while scanning lines
+  - Detects section markers to update current slot
+  - Assigns praise slot to each song (kids videos always get `'kids'`)
+- Updated IPC handler to pass `praiseSlot` to UI
+- Added `formatPraiseSlot()` helper in [ServiceGeneratorView.tsx:46-54](electron/renderer/src/ServiceGeneratorView.tsx:46-54)
+- Updated parse step UI to show colored badges:
+  - Teal badge for Praise 1/2/3
+  - Yellow badge for Kids
+
+**Result:** Songs now display their service position context (e.g., "Song | Praise 2").
+
+---
+
 ## Next Steps
 
 See [plans/remaining-implementation.md](plans/remaining-implementation.md) for detailed implementation plan.
 
 **Current Focus:** Songs-only workflow (Phase 5 priority)
 1. ✅ PDF upload and parsing - COMPLETE
-2. 🔄 Song matching UI - IN PROGRESS
-3. 🔄 Playlist building - IN PROGRESS
-4. ⏳ Bible verse workflow - DEFERRED (will add after songs working)
-5. ⏳ Error handling - PENDING
-6. ⏳ End-to-end testing - PENDING
+2. ✅ PDF parser simplification (songs, kids videos, verses only) - COMPLETE
+3. ✅ Praise slot tracking (Praise 1/2/3, Kids) - COMPLETE
+4. 🔄 Song matching IPC handler - IN PROGRESS (currently placeholder)
+5. 🔄 Match Step UI with confidence scores - IN PROGRESS
+6. ⏳ Build Step UI and playlist assembly - PENDING
+7. ⏳ Bible verse workflow - DEFERRED (will add after songs working)
+8. ⏳ End-to-end testing - PENDING
 
 **Strategy:** Get complete song workflow working end-to-end first (upload → parse → match → build), then add verse functionality.
 
@@ -378,10 +428,10 @@ See [plans/remaining-implementation.md](plans/remaining-implementation.md) for d
 ## Contributors
 
 - Adam Brown - Project development
-- Claude Sonnet 4.5 - AI pair programming assistant
+- Claude Opus 4.5 - AI pair programming assistant
 
 ---
 
 **Last Updated:** 2026-02-03
 **Version:** 2.1.1
-**Status:** Phase 5 in progress - Backend integrated, implementing song-only workflow
+**Status:** Phase 5 in progress - PDF parsing complete with praise slot tracking, implementing song matching

@@ -4,18 +4,24 @@
  */
 
 import * as fs from 'fs';
+import { ParsedService, ServiceSection, ServiceSectionType, PraiseSlot } from '../types/service-order';
+
+// pdf-parse is a CommonJS module, use require with destructuring
 const { PDFParse } = require('pdf-parse');
-import { ParsedService, ServiceSection, ServiceSectionType } from '../types/service-order';
 
 export class PDFParser {
   /**
    * Parse a PDF file and extract service order sections
    */
   async parsePDF(pdfPath: string): Promise<ParsedService> {
-    // Read and parse PDF
-    const dataBuffer = fs.readFileSync(pdfPath);
-    const parser = new PDFParse({ data: dataBuffer });
+    // Read and parse PDF - convert Buffer to Uint8Array as required by pdf-parse v2
+    const nodeBuffer = fs.readFileSync(pdfPath);
+    const uint8Array = new Uint8Array(nodeBuffer.buffer, nodeBuffer.byteOffset, nodeBuffer.byteLength);
+
+    // pdf-parse v2 requires options object with data property
+    const parser = new PDFParse({ data: uint8Array });
     const data = await parser.getText();
+    await parser.destroy(); // Free memory
 
     // Normalize text
     const rawText = data.text.replace(/\r\n/g, '\n');
@@ -52,22 +58,54 @@ export class PDFParser {
 
   /**
    * Extract service sections from lines
+   * Only extracts: songs, kids videos, and Bible verses
+   * Everything else (birthday blessings, sermons, headers) is handled via PowerPoint import
+   *
+   * Tracks section markers to determine praise slot:
+   * - After "Call to Worship" → Praise 1
+   * - After "Prayers for Others" / "Praying for Others" → Praise 2
+   * - After "Time of Prayerful Reflection" → Praise 3
+   * - Kids videos are marked as "kids" slot
    */
   private extractSections(lines: string[]): ServiceSection[] {
     const sections: ServiceSection[] = [];
     let position = 0;
+    let currentPraiseSlot: PraiseSlot = 'praise1'; // Default to praise1 after opening
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
+      const lineLower = line.toLowerCase();
 
       // Skip metadata lines
       if (this.isMetadataLine(line)) {
         continue;
       }
 
-      // Check for song (PRAISE:)
+      // Track section markers to determine current praise slot
+      // After "Call to Worship" or "Opening Prayer" → Praise 1
+      if (lineLower.includes('call to worship') || lineLower.includes('opening prayer')) {
+        currentPraiseSlot = 'praise1';
+        continue;
+      }
+
+      // After "Prayers for Others" / "Praying for Others" → Praise 2
+      if (lineLower.includes('praying for others') || lineLower.includes('prayers for others')) {
+        currentPraiseSlot = 'praise2';
+        continue;
+      }
+
+      // After "Time of Prayerful Reflection" or "Prayerful Reflection and Response" → Praise 3
+      if (lineLower.includes('prayerful reflection') || lineLower.includes('reflection and response')) {
+        currentPraiseSlot = 'praise3';
+        continue;
+      }
+
+      // Check for song or kids video (PRAISE:)
       if (line.match(/^PRAISE:/i)) {
-        sections.push(this.extractSong(line, position++));
+        const song = this.extractSong(line, position++);
+        // Kids videos get 'kids' slot, regular songs get current praise slot
+        song.praiseSlot = song.isVideo ? 'kids' : currentPraiseSlot;
+        sections.push(song);
         continue;
       }
 
@@ -77,17 +115,7 @@ export class PDFParser {
         continue;
       }
 
-      // Check for section headers (ALL CAPS with colon)
-      if (line.match(/^[A-Z\s&]+:/) && !line.match(/^(PRAISE|BIBLE READING):/i)) {
-        sections.push(this.extractHeader(line, position++));
-        continue;
-      }
-
-      // Check for placeholder content (lines with leader names in parentheses)
-      if (line.match(/\([A-Za-z\s]+\)$/)) {
-        sections.push(this.extractPlaceholder(line, position++));
-        continue;
-      }
+      // Everything else is ignored - handled via PowerPoint import by minister
     }
 
     return sections;
@@ -157,48 +185,6 @@ export class PDFParser {
     };
   }
 
-  /**
-   * Extract section header
-   */
-  private extractHeader(line: string, position: number): ServiceSection {
-    // Extract header name (remove colon)
-    const title = line.replace(/:$/, '').trim();
-
-    // Extract leader if on same line
-    const leaderMatch = line.match(/\(([^)]+)\)$/);
-    const leader = leaderMatch ? leaderMatch[1] : undefined;
-    const cleanTitle = leader ? title.replace(/\s*\([^)]+\)$/, '').trim() : title;
-
-    return {
-      type: 'header',
-      title: cleanTitle,
-      leader,
-      position
-    };
-  }
-
-  /**
-   * Extract placeholder content (lines with leader names)
-   */
-  private extractPlaceholder(line: string, position: number): ServiceSection {
-    // Extract leader from parentheses
-    const leaderMatch = line.match(/\(([^)]+)\)$/);
-    const leader = leaderMatch ? leaderMatch[1] : undefined;
-
-    // Extract title (everything before leader)
-    const title = leader ? line.replace(/\s*\([^)]+\)$/, '').trim() : line;
-
-    // Check if it's a kids-related item
-    const isKids = title.toLowerCase().includes('family slot') ||
-                   title.toLowerCase().includes('children');
-
-    return {
-      type: isKids ? 'kids_song' : 'placeholder',
-      title,
-      leader,
-      position
-    };
-  }
 }
 
 // Export singleton instance
