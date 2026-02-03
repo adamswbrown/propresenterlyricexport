@@ -96,7 +96,13 @@ npm run release:bundle
 - **Fix Applied**: Image encoding commented out in `src/pptx-exporter.ts` lines 91-99, 129-137
 - **DO NOT**: Upgrade pptxgenjs without resolving this first
 
-### ✅ Recent Updates (Feb 2, 2026)
+### ✅ Recent Updates (Feb 3, 2026)
+1. **Font detection & curated dropdown** - Smart font selection with installation status and download links
+2. **Cross-platform font checking** - Detects installed fonts on macOS, Windows, and Linux
+3. **25+ curated presentation fonts** - Organized by category (sans-serif, serif, display)
+4. **One-click font downloads** - Opens Google Fonts for missing fonts
+
+### ✅ Previous Updates (Feb 2, 2026)
 1. **Electron GUI added** - Full desktop app with React UI for playlist management
 2. **App icons created** - Professional .icns (macOS) and .ico (Windows) icons
 3. **GitHub Actions workflow** - Automated releases on version tags
@@ -226,6 +232,8 @@ Configuration/
 - ✅ Professional app icons
 - ✅ Settings persistence (electron-store)
 - ✅ Connection validation before operations
+- ✅ Font detection with curated dropdown (25+ fonts)
+- ✅ One-click font download links (Google Fonts)
 
 **Not Recommended:**
 - Upgrading pptxgenjs beyond 3.10.0 (causes crashes in CLI executables)

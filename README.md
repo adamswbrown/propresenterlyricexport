@@ -13,6 +13,7 @@ A modern desktop + CLI toolkit for worship leaders and production teams who need
 - 🏆 **Worship Library Integration** - Automatically filters songs from your Worship library
 - 🌍 **Cross-Platform** - Native support for macOS (ARM64 & Intel) and Windows
 - 📦 **Standalone Executables** - No Node.js installation required
+- 🔤 **Smart Font Detection** - Curated font dropdown with installation status and download links
 
 ## Quick Start
 
@@ -30,6 +31,12 @@ You can now run ProPresenter Lyrics Export two ways:
   - macOS: unzip, drag `ProPresenter Lyrics.app` to `Applications`, then open it (grant network permission on first launch).
   - Windows: run the installer, follow the prompts, then launch “ProPresenter Lyrics”.
 3. **Connect and export:** enter your ProPresenter host/port, load playlists, tweak formatting, and export PPTX directly from the UI. Settings persist between sessions.
+
+**Desktop App Features:**
+- Curated font dropdown with 25+ presentation-ready fonts (sans-serif, serif, display)
+- Font detection shows which fonts are installed on your system
+- One-click download links for missing fonts (Google Fonts)
+- Real-time font status indicator
 
 This path bundles everything — no Node.js, scripts, or manual setup required.
 
@@ -219,7 +226,16 @@ export PPTX_FONT_ITALIC=true             # Default: true
 
 ### PowerPoint Font Configuration
 
-The PowerPoint export uses specific fonts and styling to create professional-looking slide presentations. All styles are fully customizable via environment variables.
+The PowerPoint export uses specific fonts and styling to create professional-looking slide presentations.
+
+**Desktop App:** Use the built-in font dropdown in Settings. It shows 25+ curated fonts organized by category:
+- **Sans-Serif:** Red Hat Display, Arial, Helvetica, Verdana, Open Sans, Roboto, Lato, Montserrat, Poppins, etc.
+- **Serif:** Georgia, Times New Roman, Palatino, Cambria, Merriweather, Playfair Display, Lora, etc.
+- **Display:** Impact, Oswald, Bebas Neue
+
+Each font shows whether it's installed (✓) or not (○). Missing fonts can be downloaded directly from Google Fonts.
+
+**CLI:** All styles are customizable via environment variables.
 
 **Default Font Details:**
 - **Font Family:** Red Hat Display (open-source, modern, highly readable on projectors)
@@ -228,7 +244,7 @@ The PowerPoint export uses specific fonts and styling to create professional-loo
 - **Color:** Dark teal (#2d6a7a) - high contrast against white background
 - **Layout:** 16:9 widescreen (1920×1080)
 
-**Customizing Fonts:**
+**Customizing Fonts (CLI):**
 
 ```bash
 # Use different font
