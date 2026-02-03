@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-02-03
+
+### Added
+- **ProPresenter Auto-Launch** - Desktop app now automatically launches ProPresenter if not running
+  - Detects if ProPresenter is running (macOS/Windows)
+  - Launches ProPresenter automatically on Connect
+  - Polls API with 20-second timeout waiting for startup
+  - Better status messages during connection process
+
+### Fixed
+- Version display showing "undefined.undefined.undefined" in status bar
+- Handle missing/unavailable version data from ProPresenter API gracefully
+- Enhanced error messages distinguishing between different connection failure types:
+  - ProPresenter not running (auto-launched)
+  - Network API disabled (shows setup instructions)
+  - Connection errors (wrong host/port)
+
+### Improved
+- Connection workflow with real-time status updates
+- No immediate failure if ProPresenter isn't running
+- Clear guidance on how to fix configuration issues
+
 ## [2.1.0] - 2026-02-03
 
 ### Added
