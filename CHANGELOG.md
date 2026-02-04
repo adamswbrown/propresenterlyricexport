@@ -10,25 +10,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.2.0] - 2026-02-04
 
 ### Added
-- **Bible Verse Matching** - Service Generator now matches Bible references against your Service Content library
+- **Service Generator** - New workflow to automate Sunday service playlist creation from PDF service orders
+  - Upload a PDF service order (from Planning Center, etc.) and automatically build your ProPresenter playlist
+  - **6-Step Guided Workflow**:
+    1. **Setup** - Select target playlist, worship library, and template
+    2. **Upload PDF** - Choose your service order PDF
+    3. **Parse** - Automatically extracts songs, Bible verses, and service sections
+    4. **Match Songs** - Fuzzy-matches song titles to your ProPresenter library with confidence scores
+    5. **Bible** - Matches verse references against your Service Content library
+    6. **Build** - Populates your ProPresenter playlist with matched items
+  - Smart song matching with confidence scoring (auto-selects high-confidence matches)
+  - Support for multiple worship slots (Praise 1, Praise 2, Praise 3, Kids)
+  - Kids video detection with separate library matching
+
+- **Bible Verse Matching** - Automatically match Bible references against your Service Content library
   - Searches for existing verse presentations by reference (e.g., "Romans 12:1-2")
   - Shows confidence scores and allows selecting from multiple matches
-  - Falls back to manual workflow (copy reference, Bible Gateway link) when no library match found
-  - "Focus in ProPresenter" button to jump to the Reading section in the playlist
-
-### Changed
-- **Renamed "Verses" step to "Bible"** - Clearer naming for the Bible verse handling step
-- **Fixed navigation flow** - Match Songs now correctly proceeds to Bible step before Build
-  - Previous: Upload → Parse → Match Songs → Build (skipped Verses)
-  - Now: Upload → Parse → Match Songs → Bible → Build
+  - Manual workflow fallback when no library match found:
+    - Copy reference to clipboard
+    - Open in Bible Gateway
+    - Focus ProPresenter on Reading section (Cmd+B for Bible panel)
 
 ### Improved
 - **Step Validation Gating** - Cannot proceed to next step until current step is complete
-  - Setup: Must select playlist, worship library, and template
-  - Match Songs: Must select a match for all songs
-  - Bible: Must select matches for verses that have library options (verses without matches can proceed)
-  - Build: Must have selected playlist to build
-- Cleaner Build step UI - removed redundant Bible reference section (now in dedicated Bible step)
+  - Prevents advancing with incomplete song matches or verse selections
+  - Visual indicators show completed (✓) and locked steps
+  - Clear feedback on what's needed to proceed
 
 ## [2.1.1] - 2026-02-03
 
