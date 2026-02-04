@@ -1117,9 +1117,16 @@ ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig
             });
           }
 
-          // Skip original items in this section until next header
-          currentSlot = matchedSlot;
-          skipUntilNextHeader = true;
+          // Only skip original items if we're replacing with new ones
+          // If no new items, keep the originals
+          if (slotItems.length > 0) {
+            currentSlot = matchedSlot;
+            skipUntilNextHeader = true;
+          } else {
+            // No replacements - keep existing items in this slot
+            skipUntilNextHeader = false;
+            currentSlot = null;
+          }
         } else {
           // This is a different header (Birthday Blessings, Announcements, etc.)
           // Stop skipping and keep this header
