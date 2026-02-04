@@ -76,8 +76,10 @@ const api = {
   fetchLibraries: (config: ConnectionConfig) => ipcRenderer.invoke('libraries:list', config),
   startExport: (payload: ExportPayload) => ipcRenderer.invoke('export:start', payload),
   chooseLogo: () => ipcRenderer.invoke('logo:choose'),
-  createPlaylistFromTemplate: (config: ConnectionConfig, templateId: string, playlistName: string) => 
+  createPlaylistFromTemplate: (config: ConnectionConfig, templateId: string, playlistName: string) =>
     ipcRenderer.invoke('playlist:create-from-template', config, templateId, playlistName),
+  // Shell utilities
+  openExternal: (url: string): Promise<{ success: boolean }> => ipcRenderer.invoke('shell:openExternal', url),
   onExportProgress: (callback: (event: ProgressEventPayload) => void) => {
     const handler = (_event: IpcRendererEvent, data: ProgressEventPayload) => callback(data);
     ipcRenderer.on('export:progress', handler);

@@ -535,6 +535,80 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
         const needsReviewCount = matchResults.filter(r => r.requiresReview).length;
         const noMatchCount = matchResults.filter(r => r.matches.length === 0).length;
 
+        // Helper: Copy song name to clipboard
+        const copyToClipboard = async (text: string) => {
+          try {
+            await navigator.clipboard.writeText(text);
+            setNotification({ message: `Copied "${text}" to clipboard`, type: 'success' });
+          } catch {
+            setNotification({ message: 'Failed to copy to clipboard', type: 'error' });
+          }
+        };
+
+        // Helper: Open CCLI SongSelect search
+        const searchCCLI = async (songName: string) => {
+          const searchUrl = `https://songselect.ccli.com/search/results?SearchText=${encodeURIComponent(songName)}`;
+          try {
+            await window.api.openExternal(searchUrl);
+            setNotification({ message: 'Opening CCLI SongSelect in browser...', type: 'info' });
+          } catch {
+            setNotification({ message: 'Failed to open browser', type: 'error' });
+          }
+        };
+
+        // Rescan libraries function
+        const rescanLibraries = async () => {
+          setIsProcessing(true);
+          setNotification({ message: 'Rescanning libraries...', type: 'info' });
+
+          try {
+            const songsToMatch = parsedItems
+              .filter(item => item.type === 'song' || item.type === 'kids_video');
+            const songNames = songsToMatch.map(item => item.text);
+
+            if (songNames.length > 0) {
+              const libraryIds = [
+                props.settings.worshipLibraryId,
+                props.settings.kidsLibraryId
+              ].filter(Boolean);
+
+              const result = await window.api.matchSongs(
+                songNames,
+                props.connectionConfig,
+                libraryIds
+              );
+
+              if (result.success) {
+                // Add praiseSlot from parsed items to match results
+                const resultsWithSlots = result.results.map((r: MatchResult, idx: number) => ({
+                  ...r,
+                  praiseSlot: songsToMatch[idx]?.praiseSlot
+                }));
+                setMatchResults(resultsWithSlots);
+                const autoMatched = resultsWithSlots.filter((r: MatchResult) => r.selectedMatch).length;
+                const needsReview = resultsWithSlots.filter((r: MatchResult) => r.requiresReview).length;
+                const notFound = resultsWithSlots.filter((r: MatchResult) => r.matches.length === 0).length;
+                setNotification({
+                  message: `Rescan complete: ${autoMatched} matched, ${needsReview} need review, ${notFound} not found`,
+                  type: notFound < noMatchCount ? 'success' : 'info'
+                });
+              } else {
+                setNotification({
+                  message: result.error || 'Failed to rescan libraries',
+                  type: 'error'
+                });
+              }
+            }
+          } catch (error: any) {
+            setNotification({
+              message: error?.message || 'Error rescanning libraries',
+              type: 'error'
+            });
+          } finally {
+            setIsProcessing(false);
+          }
+        };
+
         return (
           <div className="service-step-content">
             <h2>Match Songs</h2>
@@ -552,15 +626,28 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
               </div>
             ) : (
               <div>
-                {/* Statistics */}
-                <div style={{ marginBottom: '16px', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', fontSize: '14px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                  <span><strong>{matchResults.length}</strong> total songs</span>
-                  <span style={{ color: 'var(--accent)' }}>✓ <strong>{autoMatchedCount}</strong> auto-matched</span>
-                  {needsReviewCount > 0 && (
-                    <span style={{ color: '#ffc107' }}>⚠ <strong>{needsReviewCount}</strong> need review</span>
-                  )}
+                {/* Statistics and Rescan */}
+                <div style={{ marginBottom: '16px', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', fontSize: '14px', display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                    <span><strong>{matchResults.length}</strong> total songs</span>
+                    <span style={{ color: 'var(--accent)' }}>✓ <strong>{autoMatchedCount}</strong> auto-matched</span>
+                    {needsReviewCount > 0 && (
+                      <span style={{ color: '#ffc107' }}>⚠ <strong>{needsReviewCount}</strong> need review</span>
+                    )}
+                    {noMatchCount > 0 && (
+                      <span style={{ color: '#f44336' }}>✗ <strong>{noMatchCount}</strong> not found</span>
+                    )}
+                  </div>
                   {noMatchCount > 0 && (
-                    <span style={{ color: '#f44336' }}>✗ <strong>{noMatchCount}</strong> not found</span>
+                    <button
+                      className="ghost small"
+                      onClick={rescanLibraries}
+                      disabled={isProcessing}
+                      type="button"
+                      title="Rescan libraries after adding songs to ProPresenter"
+                    >
+                      {isProcessing ? 'Scanning...' : '↻ Rescan Libraries'}
+                    </button>
                   )}
                 </div>
 
@@ -641,8 +728,33 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                           ))}
                         </select>
                         {result.matches.length === 0 && (
-                          <div style={{ marginTop: '8px', fontSize: '13px', color: '#f44336' }}>
-                            No matches found in libraries. Song will be skipped.
+                          <div style={{ marginTop: '12px' }}>
+                            <div style={{ fontSize: '13px', color: '#f44336', marginBottom: '12px' }}>
+                              No matches found in libraries.
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                              <button
+                                className="ghost small"
+                                onClick={() => copyToClipboard(result.songName)}
+                                type="button"
+                                title="Copy song name to clipboard"
+                                style={{ fontSize: '12px', padding: '6px 12px' }}
+                              >
+                                📋 Copy Name
+                              </button>
+                              <button
+                                className="ghost small"
+                                onClick={() => searchCCLI(result.songName)}
+                                type="button"
+                                title="Search CCLI SongSelect for this song"
+                                style={{ fontSize: '12px', padding: '6px 12px' }}
+                              >
+                                🔍 Search CCLI
+                              </button>
+                            </div>
+                            <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '8px' }}>
+                              Add the song to ProPresenter, then click "Rescan Libraries" above.
+                            </div>
                           </div>
                         )}
                       </div>

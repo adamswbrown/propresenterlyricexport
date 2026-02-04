@@ -530,6 +530,57 @@ New extraction methods in [pdf-parser.ts:220-279](src/services/pdf-parser.ts:220
 
 ---
 
+### 16. Web-Assisted CCLI Lookup (Phase 5 - Feb 4, 2026)
+
+**Objective:** Help users find and add songs that aren't in their ProPresenter library by providing CCLI SongSelect integration.
+
+**Problem:** When songs in the PDF don't match any presentation in ProPresenter libraries, users need a way to:
+1. Find the official song details (title, CCLI number)
+2. Add the song to ProPresenter
+3. Re-match without restarting the entire workflow
+
+**Implementation:**
+
+**1. Shell API for External URLs** ([electron/main/index.ts:636-640](electron/main/index.ts:636-640)):
+- Added `shell:openExternal` IPC handler
+- Uses Electron's `shell.openExternal()` to open URLs in default browser
+
+**2. Preload API Extension** ([electron/preload/index.ts:80](electron/preload/index.ts:80)):
+- Added `openExternal(url)` function to exposed API
+- Returns promise for success status
+
+**3. Match Step Enhancements** ([ServiceGeneratorView.tsx:533-674](electron/renderer/src/ServiceGeneratorView.tsx:533-674)):
+
+For unmatched songs, added:
+- **📋 Copy Name** button - Copies song name to clipboard using `navigator.clipboard.writeText()`
+- **🔍 Search CCLI** button - Opens browser to `https://songselect.ccli.com/search/results?SearchText={songName}`
+- Helper text: "Add the song to ProPresenter, then click 'Rescan Libraries' above."
+
+**Rescan Libraries** button (in statistics bar):
+- Only appears when there are unmatched songs
+- Re-fetches all presentations from configured libraries
+- Re-runs fuzzy matching on all songs
+- Shows updated statistics after rescan
+- Preserves existing selections for already-matched songs
+
+**User Workflow:**
+1. User sees "No matches found" for a song
+2. Clicks "Copy Name" to copy song title to clipboard
+3. Clicks "Search CCLI" to open SongSelect in browser
+4. Finds the song on CCLI, gets official title/CCLI number
+5. Adds the song to ProPresenter via SongSelect integration or manual import
+6. Clicks "Rescan Libraries" to re-match
+7. Song now appears in matches, workflow continues
+
+**Files Modified:**
+- [electron/main/index.ts](electron/main/index.ts) - Added `shell:openExternal` IPC handler
+- [electron/preload/index.ts](electron/preload/index.ts) - Added `openExternal` API function
+- [electron/renderer/src/ServiceGeneratorView.tsx](electron/renderer/src/ServiceGeneratorView.tsx) - Added CCLI buttons and rescan functionality
+
+**Result:** Users can now seamlessly handle missing songs without leaving the Service Generator workflow.
+
+---
+
 ## Next Steps
 
 See [plans/remaining-implementation.md](plans/remaining-implementation.md) for detailed implementation plan.
@@ -556,6 +607,6 @@ See [plans/remaining-implementation.md](plans/remaining-implementation.md) for d
 
 ---
 
-**Last Updated:** 2026-02-03
+**Last Updated:** 2026-02-04
 **Version:** 2.1.1
-**Status:** Phase 5 songs workflow COMPLETE - PDF → Parse → Match → Build pipeline working, ready for e2e testing
+**Status:** Phase 5 songs workflow COMPLETE - PDF → Parse → Match → Build pipeline working with CCLI lookup for missing songs

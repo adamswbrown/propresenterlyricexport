@@ -634,6 +634,12 @@ ipcMain.handle('fonts:download', async (_event, url: string) => {
   await shell.openExternal(url);
   return { success: true };
 });
+
+// Open external URL in default browser
+ipcMain.handle('shell:openExternal', async (_event, url: string) => {
+  await shell.openExternal(url);
+  return { success: true };
+});
 // Playlist template creation
 ipcMain.handle('playlist:create-from-template', async (_event, config: ConnectionConfig, templateId: string, newPlaylistName: string) => {
   try {
