@@ -30,7 +30,7 @@ const STEPS: { id: Step; label: string }[] = [
   { id: 'upload', label: 'Upload PDF' },
   { id: 'parse', label: 'Parse' },
   { id: 'match', label: 'Match Songs' },
-  { id: 'verse', label: 'Verses' },
+  { id: 'verse', label: 'Bible' },
   { id: 'build', label: 'Build' },
 ];
 
@@ -70,6 +70,14 @@ type VerseResult = {
   error?: string;
 };
 
+type BibleMatch = {
+  reference: string;
+  matches: Array<{ uuid: string; name: string; confidence: number }>;
+  bestMatch?: { uuid: string; name: string; confidence: number };
+  requiresReview: boolean;
+  selectedMatch?: { uuid: string; name: string };
+};
+
 export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
   const [currentStep, setCurrentStep] = useState<Step>('setup');
   const [newPlaylistName, setNewPlaylistName] = useState('');
@@ -84,8 +92,53 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
   const [pdfName, setPdfName] = useState<string>('');
   const [parsedItems, setParsedItems] = useState<ParsedItem[]>([]);
   const [matchResults, setMatchResults] = useState<MatchResult[]>([]);
+  const [bibleMatches, setBibleMatches] = useState<BibleMatch[]>([]);
   const [verseResults, setVerseResults] = useState<VerseResult[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Step validation - check if step is complete
+  const isStepComplete = (step: Step): boolean => {
+    switch (step) {
+      case 'setup':
+        return Boolean(selectedPlaylistId && props.settings.worshipLibraryId && props.settings.templatePlaylistId);
+      case 'upload':
+        return Boolean(pdfPath);
+      case 'parse':
+        return parsedItems.length > 0;
+      case 'match':
+        // All songs must have a selected match
+        const songsToMatch = matchResults.length;
+        const matchedSongs = matchResults.filter(r => r.selectedMatch).length;
+        return songsToMatch > 0 && matchedSongs === songsToMatch;
+      case 'verse':
+        // Verses are complete if:
+        // - No verses to match, OR
+        // - All verses with library matches have a selection (verses with no matches = manual workflow, OK to skip)
+        const versesWithMatches = bibleMatches.filter(v => v.matches.length > 0);
+        const versesWithSelection = versesWithMatches.filter(v => v.selectedMatch).length;
+        return bibleMatches.length === 0 || versesWithSelection === versesWithMatches.length;
+      case 'build':
+        return true; // Final step
+      default:
+        return false;
+    }
+  };
+
+  // Check if user can navigate to a step
+  const canNavigateToStep = (targetStep: Step): boolean => {
+    const stepOrder: Step[] = ['setup', 'upload', 'parse', 'match', 'verse', 'build'];
+    const targetIndex = stepOrder.indexOf(targetStep);
+    const currentIndex = stepOrder.indexOf(currentStep);
+
+    // Can always go back
+    if (targetIndex <= currentIndex) return true;
+
+    // Check all previous steps are complete
+    for (let i = 0; i < targetIndex; i++) {
+      if (!isStepComplete(stepOrder[i])) return false;
+    }
+    return true;
+  };
 
   // Auto-dismiss notification after 4 seconds
   useEffect(() => {
@@ -791,11 +844,14 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                   </button>
                   <button
                     className="primary"
-                    onClick={() => setCurrentStep('build')}
-                    disabled={matchResults.filter(r => r.selectedMatch).length === 0}
+                    onClick={() => setCurrentStep('verse')}
+                    disabled={!isStepComplete('match')}
                     type="button"
                   >
-                    Continue to Build ({matchResults.filter(r => r.selectedMatch).length} songs) →
+                    {isStepComplete('match')
+                      ? `Continue to Bible (${matchResults.filter(r => r.selectedMatch).length} songs matched) →`
+                      : `Match all songs first (${matchResults.filter(r => r.selectedMatch).length}/${matchResults.length})`
+                    }
                   </button>
                 </div>
               </div>
@@ -804,19 +860,329 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
         );
 
       case 'verse':
+        // Extract Bible verses from parsed items
+        const verseItems = parsedItems.filter(item => item.type === 'verse');
+
+        // Statistics
+        const autoMatchedVerses = bibleMatches.filter(v => v.selectedMatch && !v.requiresReview).length;
+        const needsReviewVerses = bibleMatches.filter(v => v.requiresReview && v.matches.length > 0).length;
+        const noMatchVerses = bibleMatches.filter(v => v.matches.length === 0).length;
+
+        // Helper: Copy Bible reference to clipboard
+        const copyVerseRef = async (reference: string) => {
+          try {
+            await navigator.clipboard.writeText(reference);
+            setNotification({ message: `Copied "${reference}" to clipboard`, type: 'success' });
+          } catch {
+            setNotification({ message: 'Failed to copy to clipboard', type: 'error' });
+          }
+        };
+
+        // Helper: Open Bible Gateway
+        const openVerseInBibleGateway = async (reference: string) => {
+          const searchRef = encodeURIComponent(reference);
+          const url = `https://www.biblegateway.com/passage/?search=${searchRef}&version=NIV`;
+          try {
+            await window.api.openExternal(url);
+            setNotification({ message: 'Opening Bible Gateway...', type: 'info' });
+          } catch {
+            setNotification({ message: 'Failed to open browser', type: 'error' });
+          }
+        };
+
+        // Helper: Focus ProPresenter on Reading section
+        const focusReading = async () => {
+          if (!selectedPlaylistId) {
+            setNotification({ message: 'No playlist selected', type: 'error' });
+            return;
+          }
+          try {
+            const result = await window.api.focusPlaylistItem(
+              props.connectionConfig,
+              selectedPlaylistId,
+              'reading'
+            );
+            if (result.success) {
+              setNotification({ message: 'Focused ProPresenter on Reading section', type: 'success' });
+            } else {
+              setNotification({ message: result.error || 'Could not find Reading section', type: 'error' });
+            }
+          } catch (error: any) {
+            setNotification({ message: error?.message || 'Failed to focus ProPresenter', type: 'error' });
+          }
+        };
+
+        // Match verses against service content library
+        const matchBibleVerses = async () => {
+          if (verseItems.length === 0) return;
+
+          setIsProcessing(true);
+          setNotification({ message: 'Searching for Bible verses in library...', type: 'info' });
+
+          try {
+            const references = verseItems.map(v => v.text || v.reference || '');
+            const result = await window.api.matchVerses(
+              references,
+              props.connectionConfig,
+              props.settings.serviceContentLibraryId
+            );
+
+            if (result.success && result.results) {
+              setBibleMatches(result.results);
+              const matched = result.results.filter(r => r.selectedMatch).length;
+              const needReview = result.results.filter(r => r.requiresReview).length;
+              setNotification({
+                message: matched > 0
+                  ? `Found ${matched} verse(s) in library, ${needReview} need review`
+                  : 'No verses found in library - use manual workflow below',
+                type: matched > 0 ? 'success' : 'info'
+              });
+            } else {
+              setNotification({
+                message: result.error || 'Failed to search for verses',
+                type: 'error'
+              });
+            }
+          } catch (error: any) {
+            setNotification({
+              message: error?.message || 'Error searching for verses',
+              type: 'error'
+            });
+          } finally {
+            setIsProcessing(false);
+          }
+        };
+
         return (
           <div className="service-step-content">
-            <h2>Fetch Verses</h2>
-            <p className="hint">Retrieve Bible verses from API</p>
+            <h2>Bible Verses</h2>
+            <p className="hint">Match Bible verses from your service content library or add manually</p>
             {selectedPlaylistName && (
               <div style={{ marginBottom: '16px', padding: '12px 16px', background: 'rgba(47, 212, 194, 0.1)', borderRadius: '10px', border: '1px solid rgba(47, 212, 194, 0.3)' }}>
                 <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '4px' }}>Working Playlist</div>
                 <div style={{ fontWeight: 600, color: 'var(--accent)' }}>{selectedPlaylistName}</div>
               </div>
             )}
-            <div className="empty-state" style={{ padding: '60px 20px' }}>
-              Verse fetching interface coming soon...
-            </div>
+
+            {verseItems.length === 0 ? (
+              <div className="empty-state" style={{ padding: '60px 20px' }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>📖</div>
+                <h3 style={{ margin: '0 0 8px', color: 'var(--muted)' }}>No Bible Verses Found</h3>
+                <p style={{ margin: '0 0 24px', color: 'var(--muted)', fontSize: '14px' }}>
+                  No Bible references were detected in the PDF.
+                </p>
+                <button
+                  className="primary"
+                  onClick={() => setCurrentStep('build')}
+                  type="button"
+                >
+                  Continue to Build →
+                </button>
+              </div>
+            ) : (
+              <div>
+                {/* Search Button */}
+                {bibleMatches.length === 0 && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <button
+                      className="primary"
+                      onClick={matchBibleVerses}
+                      disabled={isProcessing || !props.settings.serviceContentLibraryId}
+                      type="button"
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                    >
+                      {isProcessing ? 'Searching...' : '🔍 Search Service Content Library'}
+                    </button>
+                    {!props.settings.serviceContentLibraryId && (
+                      <div style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '8px' }}>
+                        Configure a Service Content Library in Setup to enable automatic matching.
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Statistics (after search) */}
+                {bibleMatches.length > 0 && (
+                  <div style={{ marginBottom: '16px', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', fontSize: '14px', display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                      <span><strong>{bibleMatches.length}</strong> verses</span>
+                      {autoMatchedVerses > 0 && (
+                        <span style={{ color: 'var(--accent)' }}>✓ <strong>{autoMatchedVerses}</strong> matched</span>
+                      )}
+                      {needsReviewVerses > 0 && (
+                        <span style={{ color: '#ffc107' }}>⚠ <strong>{needsReviewVerses}</strong> need review</span>
+                      )}
+                      {noMatchVerses > 0 && (
+                        <span style={{ color: '#f44336' }}>✗ <strong>{noMatchVerses}</strong> not found</span>
+                      )}
+                    </div>
+                    <button
+                      className="ghost small"
+                      onClick={matchBibleVerses}
+                      disabled={isProcessing}
+                      type="button"
+                    >
+                      {isProcessing ? 'Searching...' : '↻ Rescan'}
+                    </button>
+                  </div>
+                )}
+
+                {/* Verse List with Matching */}
+                <h3 style={{ fontSize: '15px', marginBottom: '12px', color: 'var(--muted)' }}>
+                  Bible Verses ({verseItems.length})
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+                  {verseItems.map((verse, idx) => {
+                    const verseRef = verse.text || verse.reference || '';
+                    const match = bibleMatches[idx];
+                    const hasMatch = match?.selectedMatch;
+                    const needsReview = match?.requiresReview;
+                    const noMatches = match && match.matches.length === 0;
+
+                    return (
+                      <div key={idx} style={{
+                        padding: '16px',
+                        background: 'rgba(255,255,255,0.03)',
+                        borderRadius: '12px',
+                        border: `1px solid ${
+                          hasMatch && !needsReview ? 'rgba(47, 212, 194, 0.3)'
+                          : needsReview && match?.matches.length > 0 ? 'rgba(255, 193, 7, 0.3)'
+                          : noMatches ? 'rgba(244, 67, 54, 0.3)'
+                          : 'var(--panel-border)'
+                        }`
+                      }}>
+                        {/* Verse header */}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: match ? '12px' : '0' }}>
+                          <span style={{ fontSize: '18px' }}>
+                            {hasMatch && !needsReview ? '✓' : needsReview && match?.matches.length > 0 ? '⚠' : noMatches ? '✗' : '📖'}
+                          </span>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 600, fontSize: '16px' }}>{verseRef}</div>
+                            {match?.bestMatch && (
+                              <div style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '4px' }}>
+                                Best match: {match.bestMatch.confidence}% confidence
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Match selection or manual workflow */}
+                        {match && match.matches.length > 0 ? (
+                          <div style={{ marginLeft: '30px' }}>
+                            <select
+                              value={match.selectedMatch?.uuid || ''}
+                              onChange={(e) => {
+                                const uuid = e.target.value;
+                                const selectedMatchItem = match.matches.find(m => m.uuid === uuid);
+                                setBibleMatches(prev => prev.map((v, i) =>
+                                  i === idx
+                                    ? { ...v, selectedMatch: selectedMatchItem ? { uuid: selectedMatchItem.uuid, name: selectedMatchItem.name } : undefined }
+                                    : v
+                                ));
+                              }}
+                              style={{
+                                width: '100%',
+                                padding: '10px 12px',
+                                borderRadius: '8px',
+                                border: '1px solid var(--panel-border)',
+                                background: 'var(--bg)',
+                                color: 'var(--text)',
+                                fontSize: '14px'
+                              }}
+                            >
+                              <option value="">-- Select a match --</option>
+                              {match.matches.map((m) => (
+                                <option key={m.uuid} value={m.uuid}>
+                                  {m.name} ({m.confidence}%)
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        ) : match ? (
+                          /* No matches found - show manual workflow */
+                          <div style={{ marginLeft: '30px', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
+                            <div style={{ fontSize: '13px', color: '#f44336', marginBottom: '10px' }}>
+                              Not found in library. Add manually using ProPresenter's Bible panel:
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                              <button
+                                className="ghost small"
+                                onClick={() => copyVerseRef(verseRef)}
+                                type="button"
+                                style={{ fontSize: '12px', padding: '6px 12px' }}
+                              >
+                                📋 Copy Reference
+                              </button>
+                              <button
+                                className="ghost small"
+                                onClick={() => openVerseInBibleGateway(verseRef)}
+                                type="button"
+                                style={{ fontSize: '12px', padding: '6px 12px' }}
+                              >
+                                🔗 Bible Gateway
+                              </button>
+                              <button
+                                className="ghost small"
+                                onClick={focusReading}
+                                type="button"
+                                style={{ fontSize: '12px', padding: '6px 12px' }}
+                              >
+                                🎯 Focus Reading
+                              </button>
+                            </div>
+                            <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '8px' }}>
+                              Use <kbd style={{ background: 'rgba(255,255,255,0.1)', padding: '1px 4px', borderRadius: '3px', fontSize: '10px' }}>Cmd+B</kbd> to open Bible panel in ProPresenter
+                            </div>
+                          </div>
+                        ) : (
+                          /* Not searched yet - show basic buttons */
+                          <div style={{ marginLeft: '30px', display: 'flex', gap: '8px' }}>
+                            <button
+                              className="ghost small"
+                              onClick={() => copyVerseRef(verseRef)}
+                              type="button"
+                              style={{ fontSize: '12px', padding: '6px 12px' }}
+                            >
+                              📋 Copy
+                            </button>
+                            <button
+                              className="ghost small"
+                              onClick={() => openVerseInBibleGateway(verseRef)}
+                              type="button"
+                              style={{ fontSize: '12px', padding: '6px 12px' }}
+                            >
+                              🔗 Bible Gateway
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    className="ghost"
+                    onClick={() => setCurrentStep('match')}
+                    type="button"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    className="primary"
+                    onClick={() => setCurrentStep('build')}
+                    disabled={!isStepComplete('verse')}
+                    type="button"
+                  >
+                    {isStepComplete('verse')
+                      ? 'Continue to Build →'
+                      : `Select verses with matches first (${bibleMatches.filter(v => v.matches.length > 0 && v.selectedMatch).length}/${bibleMatches.filter(v => v.matches.length > 0).length})`
+                    }
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         );
 
@@ -829,6 +1195,9 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
           kids: selectedSongs.filter(s => s.praiseSlot === 'kids'),
           other: selectedSongs.filter(s => !s.praiseSlot)
         };
+
+        // Get matched Bible verses for the build
+        const matchedBibleVerses = bibleMatches.filter(v => v.selectedMatch);
 
         return (
           <div className="service-step-content">
@@ -927,11 +1296,24 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                   )}
                 </div>
 
+                {/* Bible Verses Summary */}
+                {matchedBibleVerses.length > 0 && (
+                  <div style={{ marginBottom: '24px' }}>
+                    <h3 style={{ fontSize: '16px', marginBottom: '12px' }}>Bible Verses ({matchedBibleVerses.length})</h3>
+                    {matchedBibleVerses.map((verse, idx) => (
+                      <div key={idx} style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>📖</span>
+                        <span>{verse.selectedMatch?.name || verse.reference}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Actions */}
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <button
                     className="ghost"
-                    onClick={() => setCurrentStep('match')}
+                    onClick={() => setCurrentStep('verse')}
                     type="button"
                   >
                     ← Back
@@ -1026,16 +1408,24 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
             Steps
           </h3>
           <nav className="service-nav">
-            {STEPS.map((step) => (
-              <button
-                key={step.id}
-                type="button"
-                className={`service-nav-item ${currentStep === step.id ? 'active' : ''}`}
-                onClick={() => setCurrentStep(step.id)}
-              >
-                {step.label}
-              </button>
-            ))}
+            {STEPS.map((step) => {
+              const canNavigate = canNavigateToStep(step.id);
+              const isComplete = isStepComplete(step.id);
+              const isCurrent = currentStep === step.id;
+              return (
+                <button
+                  key={step.id}
+                  type="button"
+                  className={`service-nav-item ${isCurrent ? 'active' : ''} ${!canNavigate ? 'disabled' : ''} ${isComplete && !isCurrent ? 'complete' : ''}`}
+                  onClick={() => canNavigate && setCurrentStep(step.id)}
+                  disabled={!canNavigate}
+                  title={!canNavigate ? 'Complete previous steps first' : undefined}
+                >
+                  {isComplete && !isCurrent && <span style={{ marginRight: '6px' }}>✓</span>}
+                  {step.label}
+                </button>
+              );
+            })}
           </nav>
         </aside>
 

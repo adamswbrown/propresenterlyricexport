@@ -127,7 +127,23 @@ interface ElectronAPI {
     kidsLibraryId?: string
   ) => Promise<{ success: boolean; results?: SongMatch[]; error?: string }>;
   fetchVerses: (references: string[]) => Promise<any[]>;
+  matchVerses: (
+    verseReferences: string[],
+    config: ConnectionConfig,
+    serviceContentLibraryId: string
+  ) => Promise<{
+    success: boolean;
+    results?: Array<{
+      reference: string;
+      matches: Array<{ uuid: string; name: string; confidence: number }>;
+      bestMatch?: { uuid: string; name: string; confidence: number };
+      requiresReview: boolean;
+      selectedMatch?: { uuid: string; name: string };
+    }>;
+    error?: string;
+  }>;
   buildServicePlaylist: (config: ConnectionConfig, playlistId: string, items: any[]) => Promise<{ success: boolean; error?: string }>;
+  focusPlaylistItem: (config: ConnectionConfig, playlistId: string, headerName: string) => Promise<{ success: boolean; error?: string; index?: number }>;
 }
 
 declare global {

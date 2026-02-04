@@ -101,8 +101,25 @@ const api = {
     kidsLibraryId?: string
   ) => ipcRenderer.invoke('songs:match', songItems, config, libraryIds, kidsLibraryId),
   fetchVerses: (references: string[]) => ipcRenderer.invoke('verses:fetch', references),
+  matchVerses: (
+    verseReferences: string[],
+    config: ConnectionConfig,
+    serviceContentLibraryId: string
+  ): Promise<{
+    success: boolean;
+    results?: Array<{
+      reference: string;
+      matches: Array<{ uuid: string; name: string; confidence: number }>;
+      bestMatch?: { uuid: string; name: string; confidence: number };
+      requiresReview: boolean;
+      selectedMatch?: { uuid: string; name: string };
+    }>;
+    error?: string;
+  }> => ipcRenderer.invoke('verses:match', verseReferences, config, serviceContentLibraryId),
   buildServicePlaylist: (config: ConnectionConfig, playlistId: string, items: any[]) =>
     ipcRenderer.invoke('playlist:build-service', config, playlistId, items),
+  focusPlaylistItem: (config: ConnectionConfig, playlistId: string, headerName: string): Promise<{ success: boolean; error?: string; index?: number }> =>
+    ipcRenderer.invoke('playlist:focus-item', config, playlistId, headerName),
 };
 
 contextBridge.exposeInMainWorld('api', api);

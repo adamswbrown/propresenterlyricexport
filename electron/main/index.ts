@@ -891,6 +891,134 @@ ipcMain.handle('verses:fetch', async (_event, references: string[]) => {
   }
 });
 
+// Match Bible verses against service content library
+ipcMain.handle('verses:match', async (_event, verseReferences: string[], config: ConnectionConfig, serviceContentLibraryId: string) => {
+  try {
+    if (!serviceContentLibraryId) {
+      // No service content library configured, return empty matches
+      return {
+        success: true,
+        results: verseReferences.map(ref => ({
+          reference: ref,
+          matches: [],
+          bestMatch: undefined,
+          requiresReview: true,
+          selectedMatch: undefined
+        }))
+      };
+    }
+
+    const { ProPresenterClient } = await import('../../src/propresenter-client');
+
+    // ProPresenter API is REST/HTTP - no persistent connection needed
+    const client = new ProPresenterClient(config);
+
+    // Fetch presentations from service content library
+    const presentations = await client.getLibraryPresentations(serviceContentLibraryId);
+    console.log(`[verses:match] Loaded ${presentations.length} presentations from service content library`);
+
+    // Match each verse reference against presentations
+    const results = verseReferences.map(reference => {
+      const normalizedRef = reference.toLowerCase().trim();
+
+      // Find presentations that contain the reference in their name
+      const matches = presentations
+        .filter(pres => {
+          const presName = pres.name.toLowerCase();
+          // Check if presentation name contains the reference
+          // e.g., "Luke 12:35-59" should match "Luke 12:35-59" or "Luke 12" etc.
+          return presName.includes(normalizedRef) ||
+                 normalizedRef.includes(presName) ||
+                 // Also check for partial book/chapter match
+                 presName.split(/[:\s-]+/).some(part => normalizedRef.includes(part) && part.length > 2);
+        })
+        .map(pres => {
+          // Calculate a simple confidence based on string similarity
+          const presName = pres.name.toLowerCase();
+          let confidence = 0;
+          if (presName === normalizedRef) {
+            confidence = 100;
+          } else if (presName.includes(normalizedRef) || normalizedRef.includes(presName)) {
+            confidence = 85;
+          } else {
+            confidence = 60;
+          }
+          return {
+            uuid: pres.uuid,
+            name: pres.name,
+            confidence
+          };
+        })
+        .sort((a, b) => b.confidence - a.confidence)
+        .slice(0, 5); // Top 5 matches
+
+      const bestMatch = matches[0];
+      const requiresReview = !bestMatch || bestMatch.confidence < 85;
+
+      return {
+        reference,
+        matches,
+        bestMatch,
+        requiresReview,
+        selectedMatch: bestMatch && !requiresReview ? { uuid: bestMatch.uuid, name: bestMatch.name } : undefined
+      };
+    });
+
+    return { success: true, results };
+  } catch (error: any) {
+    console.error('Bible verse matching error:', error);
+    return { success: false, error: error.message || 'Failed to match Bible verses' };
+  }
+});
+
+// Focus ProPresenter on a specific playlist item (by header name)
+ipcMain.handle('playlist:focus-item', async (_event, config: ConnectionConfig, playlistId: string, headerName: string) => {
+  try {
+    // Step 1: Fetch playlist items to find the header index
+    const getResponse = await fetch(`http://${config.host}:${config.port}/v1/playlist/${playlistId}`);
+    if (!getResponse.ok) {
+      throw new Error(`Failed to fetch playlist: ${getResponse.status}`);
+    }
+    const playlistData = await getResponse.json() as any;
+    const items = playlistData.items || [];
+
+    // Step 2: Find the header matching the name (case-insensitive)
+    const normalizedSearch = headerName.toLowerCase().trim();
+    let targetIndex = -1;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type === 'header') {
+        const itemName = (item.id?.name || item.name || '').toLowerCase().trim();
+        if (itemName.includes(normalizedSearch) || normalizedSearch.includes(itemName)) {
+          targetIndex = i;
+          break;
+        }
+      }
+    }
+
+    if (targetIndex === -1) {
+      return { success: false, error: `Could not find "${headerName}" section in playlist` };
+    }
+
+    // Step 3: Focus the playlist first
+    const focusResponse = await fetch(`http://${config.host}:${config.port}/v1/playlist/${playlistId}/focus`, {
+      method: 'GET'
+    });
+
+    // Step 4: Trigger the specific item to select it
+    // ProPresenter API: POST /v1/playlist/{id}/{index}/trigger
+    const triggerResponse = await fetch(`http://${config.host}:${config.port}/v1/playlist/${playlistId}/${targetIndex}/trigger`, {
+      method: 'GET'
+    });
+
+    return { success: true, index: targetIndex };
+  } catch (error: any) {
+    console.error('Playlist focus error:', error);
+    return { success: false, error: error.message || 'Failed to focus playlist item' };
+  }
+});
+
 ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig, playlistId: string, items: any[]) => {
   try {
     // Items should be an array of { type, uuid, name, praiseSlot } representing songs/videos
