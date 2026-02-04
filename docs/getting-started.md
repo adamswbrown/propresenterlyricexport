@@ -29,25 +29,24 @@ Get ProPresenter Lyrics Export up and running in just a few minutes.
 
 ## Installation
 
-Choose your preferred method:
+Choose your preferred method below.
 
-<details open>
-<summary><strong>🖥️ Desktop App (Recommended)</strong> - Click to expand/collapse</summary>
+---
 
-<br>
+### 🖥️ Desktop App (Recommended)
 
 The easiest way to get started with a full graphical interface.
 
-#### Download
+**Download:**
 - Go to [GitHub Releases](https://github.com/adamswbrown/propresenterlyricexport/releases)
 - Download the latest version for your platform:
   - **macOS**: `ProPresenter-Lyrics-vX.Y.Z-mac.zip`
   - **Windows**: `ProPresenter-Lyrics-vX.Y.Z-win.exe`
 
-#### Install & Launch
+**Install & Launch:**
 
 <details>
-<summary><strong>macOS Instructions</strong></summary>
+<summary><strong>📱 macOS Installation</strong></summary>
 
 ```bash
 # 1. Unzip the downloaded file
@@ -65,36 +64,33 @@ open /Applications/ProPresenter\ Lyrics.app
 </details>
 
 <details>
-<summary><strong>Windows Instructions</strong></summary>
+<summary><strong>🪟 Windows Installation</strong></summary>
 
 1. Run the installer (`.exe`)
 2. Follow the installation wizard
 3. Launch "ProPresenter Lyrics" from your Start menu
 </details>
 
-#### First Run
+**First Run:**
 1. Open the app
 2. Enter your ProPresenter **host** and **port**
 3. Click **"Connect & Load Playlists"**
 4. Browse your playlists and export!
 
-</details>
+---
 
-<details>
-<summary><strong>💻 CLI Executables</strong> - Click to expand/collapse</summary>
-
-<br>
+### 💻 CLI Executables (Advanced Users)
 
 Lightweight standalone binaries for power users and automation.
 
-#### Download
+**Download:**
 - Go to [GitHub Releases](https://github.com/adamswbrown/propresenterlyricexport/releases)
 - Download for your platform:
   - **macOS (Intel)**: `propresenter-lyrics-macos-x64`
   - **macOS (Apple Silicon)**: `propresenter-lyrics-macos-arm64`
   - **Windows**: `propresenter-lyrics-win-x64.exe`
 
-#### Setup
+**Setup:**
 
 **macOS:**
 ```bash
@@ -111,9 +107,7 @@ chmod +x propresenter-lyrics-macos-x64
 propresenter-lyrics-win-x64.exe status
 ```
 
-#### Environment Variables (Optional)
-Set these to avoid typing host/port every time:
-
+**Environment Variables (Optional):**
 ```bash
 # macOS/Linux
 export PROPRESENTER_HOST=192.168.1.100
@@ -123,8 +117,6 @@ export PROPRESENTER_PORT=1025
 $env:PROPRESENTER_HOST='192.168.1.100'
 $env:PROPRESENTER_PORT='1025'
 ```
-
-</details>
 
 ## Next Steps
 
