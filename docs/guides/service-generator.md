@@ -248,6 +248,14 @@ Scripture references are matched against presentations in your Service Content l
 - **Not found?** - Create the presentation in Service Content library first, then re-run
 - **Multiple versions?** - You pick which translation/version to use
 
+#### Adding Bible Verses to ProPresenter
+
+If a Bible verse isn't found in your Service Content library, you'll need to add it manually to ProPresenter. Watch this short video to learn how:
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/-QcnpuenVno" title="Adding Bible Verses to ProPresenter" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+Once you've added the verse to your Service Content library, return to Service Generator and click **"Re-scan Library"** to find the newly added verse.
+
 ### Worship Slot Detection
 
 The app automatically identifies worship segments:
