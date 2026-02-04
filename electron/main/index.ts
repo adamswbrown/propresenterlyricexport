@@ -738,7 +738,7 @@ ipcMain.handle('pdf:parse', async (_event, filePath: string) => {
           : 'heading',
       text: section.title,
       reference: section.type === 'bible' ? section.title : undefined,
-      isKidsVideo: section.isVideo === true,
+      isKidsVideo: section.isKidsVideo === true,  // Only if explicitly marked as kids
       praiseSlot: section.praiseSlot // praise1, praise2, praise3, or kids
     }));
     return { success: true, items };

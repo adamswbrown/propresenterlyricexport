@@ -13,7 +13,8 @@ export interface ServiceSection {
   leader?: string;      // e.g., "(Mark)", "(Peter J)"
   notes?: string;       // e.g., "[Bible verses; Prayer...]"
   position: number;
-  isVideo?: boolean;    // For songs marked as "(Video)"
+  isVideo?: boolean;    // For any items marked as "(Video)"
+  isKidsVideo?: boolean; // Specifically for "(Video)" items marked with "kids" keyword
   praiseSlot?: PraiseSlot;  // Which praise section: praise1, praise2, praise3, or kids
 }
 

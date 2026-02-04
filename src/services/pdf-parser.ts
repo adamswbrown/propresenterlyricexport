@@ -262,8 +262,13 @@ export class PDFParser {
       .replace(/^MP\s*\d+\s*/i, '')  // Remove "MP 59" etc.
       .trim();
 
-    // Check if video
+    // Check if video and determine type
     const isVideo = content.includes('(Video)');
+    
+    // Check if it's specifically kids content by looking for "kids" keyword
+    // Kids content has explicit markers like "Kids Video", "Kids -", etc.
+    const isKidsContent = /\b(kids?|children's?|children)\b/i.test(content);
+    
     const title = content.replace(/\s*\(Video\)\s*/i, '').trim();
 
     // Extract leader if present (e.g., "(Praise Team)")
@@ -275,6 +280,9 @@ export class PDFParser {
     let cleanTitle = leader ? title.replace(/\s*\([^)]+\)$/, '').trim() : title;
     cleanTitle = cleanTitle.replace(/^[\u0027\u0022\u0060\u2018\u2019\u201C\u201D]+|[\u0027\u0022\u0060\u2018\u2019\u201C\u201D]+$/g, '').trim();
 
+    // Determine type: 
+    // - If it's a kids video, mark as "video" and it will be treated as kids content
+    // - If it's another type of video (hymn video, memorial, etc), still mark as "video" but the handler should treat it as regular content
     const type: ServiceSectionType = isVideo ? 'video' : 'song';
 
     return {
@@ -282,7 +290,8 @@ export class PDFParser {
       title: cleanTitle,
       leader,
       position,
-      isVideo
+      isVideo,
+      isKidsVideo: isVideo && isKidsContent  // New field to distinguish kids videos from other videos
     };
   }
 
