@@ -7,35 +7,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.1] - 2026-02-04
+
+### Improved
+- **Playlist Tree Expansion** - All nested folder levels now expanded by default
+  - Deeply nested playlists are now immediately visible without manual clicking
+  - Users can still collapse folders as needed for better organization
+  - Makes browsing large nested playlist structures faster and easier
+
 ## [2.2.0] - 2026-02-04
 
 ### Added
-- **Service Generator** - New workflow to automate Sunday service playlist creation from PDF service orders
-  - Upload a PDF service order (from Planning Center, etc.) and automatically build your ProPresenter playlist
-  - **6-Step Guided Workflow**:
-    1. **Setup** - Select target playlist, worship library, and template
-    2. **Upload PDF** - Choose your service order PDF
-    3. **Parse** - Automatically extracts songs, Bible verses, and service sections
-    4. **Match Songs** - Fuzzy-matches song titles to your ProPresenter library with confidence scores
-    5. **Bible** - Matches verse references against your Service Content library
-    6. **Build** - Populates your ProPresenter playlist with matched items
-  - Smart song matching with confidence scoring (auto-selects high-confidence matches)
-  - Support for multiple worship slots (Praise 1, Praise 2, Praise 3, Kids)
-  - Kids video detection with separate library matching
+- **🎯 Service Generator** - Revolutionary workflow that automates Sunday service playlist creation from PDF service orders
+  - **What it does**: Upload a PDF service order (from Planning Center, Proclaim, ChurchPlanner, etc.) and automatically populate your ProPresenter playlist with matched songs, Bible passages, and service structure
+  - **Time-saving automation**: What typically takes 15-20 minutes of manual playlist building now takes 2-3 minutes
+  - **6-Step Guided Workflow** with validation and step-by-step progress:
+    1. **Setup** - Configure your worship library, kids library, service content library, and target playlist (one-time setup)
+    2. **Upload PDF** - Drag-and-drop or browse to select your service order PDF
+    3. **Parse** - Intelligent PDF parsing automatically extracts songs, Bible verses, service sections, and kids videos
+    4. **Match Songs** - Fuzzy-match engine finds songs in your ProPresenter library with confidence scoring
+       - Auto-selects high-confidence matches (>90%)
+       - Shows alternatives for uncertain matches
+       - Manual override support to choose correct song
+    5. **Bible** - Match Bible verse references against your existing Service Content library presentations
+       - Automatically finds matching verses (e.g., "Romans 12:1-2")
+       - Shows confidence scores for each match
+       - Fallback: copy to clipboard, open Bible Gateway, manually add to ProPresenter
+    6. **Build** - Automatically populates your target playlist with matched items in correct order
 
-- **Bible Verse Matching** - Automatically match Bible references against your Service Content library
-  - Searches for existing verse presentations by reference (e.g., "Romans 12:1-2")
-  - Shows confidence scores and allows selecting from multiple matches
-  - Manual workflow fallback when no library match found:
-    - Copy reference to clipboard
-    - Open in Bible Gateway
-    - Focus ProPresenter on Reading section (Cmd+B for Bible panel)
+  - **Intelligent Parsing**:
+    - Detects worship slots automatically (Praise 1, Praise 2, Praise 3)
+    - Kids video detection and separate library matching for children's content
+    - Service announcements, prayers, and special content automatically categorized
+    - Handles multiple formats and PDF layouts intelligently
+
+  - **Workflow Protection**:
+    - Step-by-step validation prevents proceeding with incomplete data
+    - Visual completion indicators (✓) show which steps are ready
+    - Locked steps clearly indicate what must be completed before advancing
+    - Clear feedback messages guide you through each step
+
+  - **Professional Result**: After completion, your ProPresenter playlist is built with proper structure:
+    - All songs matched to your library with time markers
+    - Bible passages linked to Service Content presentations
+    - Service announcements and transitions properly positioned
+    - Just Drop in your Birthday Bucket, Sermon and Kids Talk PPTs (TIP: Use the Import PPT as Presenration feature for editable slides!)
+    - Ready for immediate use in your Sunday service
+
+- **Bible Verse Matching** - Professional Bible reference matching system
+  - Searches across your Service Content library for matching verse presentations
+  - Confidence scoring shows match quality
+  - Fallback workflow for unmached verses:
+    - One-click copy reference to clipboard
+    - One-click open reference in Bible Gateway
+    - Focus ProPresenter's Bible reading panel (Cmd+B) for manual addition
 
 ### Improved
-- **Step Validation Gating** - Cannot proceed to next step until current step is complete
+- **Step Validation Gating** - Professional workflow ensuring data integrity
   - Prevents advancing with incomplete song matches or verse selections
-  - Visual indicators show completed (✓) and locked steps
-  - Clear feedback on what's needed to proceed
+  - Visual indicators show completed (✓) and locked (🔒) steps
+  - Clear error messages explain what's needed before proceeding
+  - Ensures no data is lost in the build process
 
 ## [2.1.1] - 2026-02-03
 
