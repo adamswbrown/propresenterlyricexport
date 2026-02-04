@@ -1,5 +1,9 @@
 # PPTX Export Guide
 
+[← Back to Home](../index.md) | [User Guide](../user-guide)
+
+---
+
 Master the art of creating beautiful, presentation-ready PowerPoint files.
 
 ## PPTX Export Basics

@@ -1,5 +1,9 @@
 # CLI Guide
 
+[← Back to Home](../index.md) | [User Guide](../user-guide)
+
+---
+
 Complete command reference for the ProPresenter Lyrics Export command-line interface.
 
 ## Installation

@@ -1,5 +1,9 @@
 # Building & Distribution
 
+[← Back to Developer Guide](./index.md)
+
+---
+
 Create releases and distribute the application.
 
 ## Overview

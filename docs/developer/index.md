@@ -1,5 +1,9 @@
 # Developer Guide
 
+[← Back to Home](../index.md)
+
+---
+
 Information for developers and contributors.
 
 ## For Developers Contributing Code
