@@ -64,8 +64,9 @@ export class ProPresenterClient extends EventEmitter {
   constructor(config: ConnectionConfig) {
     super();
     this.config = config;
-    // Use longer timeout (10 seconds) for slow network requests
-    this.client = new ProPresenter(config.host, config.port, 10000);
+    // Use longer timeout (30 seconds) for slow network requests
+    // Some ProPresenter operations can be slow especially with large libraries
+    this.client = new ProPresenter(config.host, config.port, 30000);
   }
 
   /**

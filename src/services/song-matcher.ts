@@ -115,6 +115,51 @@ export class SongMatcher {
       });
     }
 
+    // Try "starts-with" matching - if library title appears at the START of input title
+    // e.g., "Faithful One" (library) matches "Faithful One, so unchanging" (input)
+    for (const presentation of presentations) {
+      const normalizedLibraryTitle = this.normalizeSongTitle(presentation.name);
+
+      // Skip if already in candidates with high confidence
+      if (candidates.some(c => c.presentation.uuid === presentation.uuid && c.confidence >= 0.9)) {
+        continue;
+      }
+
+      // Check if input starts with library title OR library starts with input (with word boundary)
+      // Case 1: "Faithful One" (library) matches "Faithful One, so unchanging" (input)
+      // Case 2: "King of Kings" (input) matches "King of Kings (Hillsong)" (library)
+      const inputStartsWithLibrary = normalizedTitle.startsWith(normalizedLibraryTitle + ' ') ||
+                                      normalizedTitle === normalizedLibraryTitle;
+      const libraryStartsWithInput = normalizedLibraryTitle.startsWith(normalizedTitle + ' ') ||
+                                      normalizedLibraryTitle === normalizedTitle;
+
+      if (inputStartsWithLibrary || libraryStartsWithInput) {
+        // Calculate confidence based on how much overlap there is
+        const shorter = Math.min(normalizedLibraryTitle.length, normalizedTitle.length);
+        const longer = Math.max(normalizedLibraryTitle.length, normalizedTitle.length);
+        const coverage = shorter / longer;
+        const confidence = Math.max(0.92, coverage); // At least 92% confidence for starts-with
+
+        const existingIndex = candidates.findIndex(c => c.presentation.uuid === presentation.uuid);
+        if (existingIndex >= 0) {
+          // Update existing if our confidence is higher
+          if (confidence > candidates[existingIndex].confidence) {
+            candidates[existingIndex].confidence = confidence;
+            candidates[existingIndex].distance = Math.round((1 - confidence) * 100);
+          }
+        } else {
+          candidates.push({
+            presentation,
+            confidence,
+            distance: Math.round((1 - confidence) * 100)
+          });
+        }
+      }
+    }
+
+    // Re-sort by confidence after starts-with matching
+    candidates.sort((a, b) => b.confidence - a.confidence);
+
     // Also try partial/prefix matching (first 3-5 significant words)
     const titleWords = normalizedTitle.split(' ').filter(w => w.length > 2).slice(0, 5);
     if (titleWords.length >= 3 && candidates.length === 0) {

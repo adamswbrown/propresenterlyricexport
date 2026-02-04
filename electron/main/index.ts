@@ -553,16 +553,71 @@ ipcMain.handle('connection:test', async (_event, config: ConnectionConfig) => {
 });
 
 ipcMain.handle('playlists:list', async (_event, config: ConnectionConfig) => {
-  const client = createClient(config);
-  await client.connect();
-  const playlists = await client.getPlaylists();
-  return mapPlaylistTree(playlists);
+  try {
+    console.log(`[playlists:list] Connecting to ${config.host}:${config.port}...`);
+
+    // Try direct fetch first to bypass renewedvision-propresenter library timeout issues
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+    try {
+      const response = await fetch(`http://${config.host}:${config.port}/v1/playlists`, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log(`[playlists:list] Got ${(data as any[]).length} playlists via direct fetch`);
+
+      // Parse the raw response into our format
+      const playlists = (data as any[]).map((item: any) => ({
+        uuid: item.id?.uuid || item.uuid || '',
+        name: item.id?.name || item.name || 'Unnamed',
+        type: item.field_type || item.type || 'unknown',
+        isHeader: item.field_type === 'header' || item.type === 'header',
+        children: item.children ? item.children.map((child: any) => ({
+          uuid: child.id?.uuid || child.uuid || '',
+          name: child.id?.name || child.name || 'Unnamed',
+          type: child.field_type || child.type || 'unknown',
+          isHeader: child.field_type === 'header' || child.type === 'header',
+        })) : undefined,
+      }));
+
+      return mapPlaylistTree(playlists);
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      console.error('[playlists:list] Direct fetch failed:', fetchError.message);
+      // Fall back to library approach
+      const client = createClient(config);
+      await client.connect();
+      console.log('[playlists:list] Connected via library, fetching playlists...');
+      const playlists = await client.getPlaylists();
+      console.log(`[playlists:list] Got ${playlists.length} playlists via library`);
+      return mapPlaylistTree(playlists);
+    }
+  } catch (error: any) {
+    console.error('[playlists:list] Error:', error);
+    throw error;
+  }
 });
 
 ipcMain.handle('libraries:list', async (_event, config: ConnectionConfig) => {
-  const client = createClient(config);
-  await client.connect();
-  return client.getLibraries();
+  try {
+    console.log(`[libraries:list] Connecting to ${config.host}:${config.port}...`);
+    const client = createClient(config);
+    await client.connect();
+    console.log('[libraries:list] Connected, fetching libraries...');
+    const libraries = await client.getLibraries();
+    console.log(`[libraries:list] Got ${libraries.length} libraries`);
+    return libraries;
+  } catch (error: any) {
+    console.error('[libraries:list] Error:', error);
+    throw error;
+  }
 });
 
 ipcMain.handle('export:start', async (event, payload: ExportPayload) => {
@@ -785,60 +840,124 @@ ipcMain.handle('verses:fetch', async (_event, references: string[]) => {
 
 ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig, playlistId: string, items: any[]) => {
   try {
-    // Items should be an array of { type, uuid, name } representing songs/videos to add
-    // We'll add these items to the playlist via PUT request
+    // Items should be an array of { type, uuid, name, praiseSlot } representing songs/videos
+    // praiseSlot can be: 'praise1', 'praise2', 'praise3', 'kids'
 
-    // Build playlist items array for ProPresenter API
-    const playlistItems = items.map((item, index) => {
-      if (item.type === 'presentation') {
-        // Library presentation (song or video)
-        return {
-          id: {
-            name: item.name,
-            uuid: '', // New item, no UUID yet
-            index: index
-          },
-          type: 'presentation',
-          is_hidden: false,
-          is_pco: false,
-          presentation_info: {
-            presentation_uuid: item.uuid // UUID of the library presentation
-          }
-        };
-      } else if (item.type === 'header') {
-        // Section header
-        return {
-          id: {
-            name: item.name,
-            uuid: '',
-            index: index
-          },
-          type: 'header',
-          is_hidden: false,
-          is_pco: false
-        };
+    // Step 1: Fetch current playlist items to preserve structure
+    console.log('[playlist:build-service] Fetching current playlist items...');
+    const getResponse = await fetch(`http://${config.host}:${config.port}/v1/playlist/${playlistId}`);
+    if (!getResponse.ok) {
+      throw new Error(`Failed to fetch playlist: ${getResponse.status}`);
+    }
+    const playlistData = await getResponse.json() as any;
+    const currentItems = playlistData.items || [];
+    console.log(`[playlist:build-service] Found ${currentItems.length} existing items`);
+
+    // Step 2: Group incoming items by praise slot
+    const itemsBySlot: Record<string, any[]> = {
+      praise1: [],
+      praise2: [],
+      praise3: [],
+      kids: []
+    };
+    for (const item of items) {
+      const slot = item.praiseSlot || 'praise1';
+      if (itemsBySlot[slot]) {
+        itemsBySlot[slot].push(item);
       }
-      // Default to presentation type
-      return {
-        id: {
-          name: item.name || 'Unknown',
-          uuid: '',
-          index: index
-        },
-        type: 'presentation',
-        is_hidden: false,
-        is_pco: false,
-        presentation_info: {
-          presentation_uuid: item.uuid
+    }
+    console.log('[playlist:build-service] Items by slot:',
+      Object.entries(itemsBySlot).map(([k, v]) => `${k}: ${v.length}`).join(', '));
+
+    // Step 3: Map header names to slots
+    // These are the headers we look for in the template
+    const headerToSlot: Record<string, string> = {
+      'praise 1': 'praise1',
+      'praise1': 'praise1',
+      'praise 2': 'praise2',
+      'praise2': 'praise2',
+      'praise 3': 'praise3',
+      'praise3': 'praise3',
+      'kids talk': 'kids',
+      'kids': 'kids',
+      'kids song': 'kids',
+      'kids video': 'kids'
+    };
+
+    // Step 4: Build new playlist by replacing items in each section
+    const newItems: any[] = [];
+    let currentSlot: string | null = null;
+    let skipUntilNextHeader = false;
+
+    for (let i = 0; i < currentItems.length; i++) {
+      const item = currentItems[i];
+      const isHeader = item.type === 'header';
+      const itemName = (item.id?.name || item.name || '').toLowerCase().trim();
+
+      if (isHeader) {
+        // Check if this header marks a praise section
+        const matchedSlot = headerToSlot[itemName];
+
+        if (matchedSlot) {
+          // This is a praise section header - keep the header
+          newItems.push(item);
+
+          // Insert our matched songs for this slot
+          const slotItems = itemsBySlot[matchedSlot] || [];
+          for (const songItem of slotItems) {
+            newItems.push({
+              id: {
+                name: songItem.name,
+                uuid: '',
+                index: newItems.length
+              },
+              type: 'presentation',
+              is_hidden: false,
+              is_pco: false,
+              presentation_info: {
+                presentation_uuid: songItem.uuid,
+                arrangement_name: '',
+                arrangement_uuid: ''
+              }
+            });
+          }
+
+          // Skip original items in this section until next header
+          currentSlot = matchedSlot;
+          skipUntilNextHeader = true;
+        } else {
+          // This is a different header (Birthday Blessings, Announcements, etc.)
+          // Stop skipping and keep this header
+          skipUntilNextHeader = false;
+          currentSlot = null;
+          newItems.push(item);
         }
-      };
+      } else {
+        // Non-header item
+        if (skipUntilNextHeader) {
+          // Skip this item - it's a placeholder in a praise section we're replacing
+          continue;
+        } else {
+          // Keep this item - it's not in a praise section
+          newItems.push(item);
+        }
+      }
+    }
+
+    // Update indices
+    newItems.forEach((item, index) => {
+      if (item.id) {
+        item.id.index = index;
+      }
     });
 
-    // Send PUT request to update playlist items
+    console.log(`[playlist:build-service] Built ${newItems.length} items (was ${currentItems.length})`);
+
+    // Step 5: Send PUT request with modified items
     const response = await fetch(`http://${config.host}:${config.port}/v1/playlist/${playlistId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(playlistItems)
+      body: JSON.stringify(newItems)
     });
 
     if (!response.ok) {
@@ -846,7 +965,7 @@ ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig
       throw new Error(`Failed to update playlist: ${response.status} ${errorText}`);
     }
 
-    return { success: true, itemCount: items.length };
+    return { success: true, itemCount: newItems.length };
   } catch (error: any) {
     console.error('Playlist build error:', error);
     return { success: false, error: error.message || 'Failed to build playlist' };

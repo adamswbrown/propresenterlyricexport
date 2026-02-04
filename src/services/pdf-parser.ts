@@ -27,11 +27,14 @@ export class PDFParser {
     const rawText = data.text.replace(/\r\n/g, '\n');
     const lines = rawText.split('\n').map((l: string) => l.trim()).filter((l: string) => l.length > 0);
 
+    // Deduplicate lines (handles 2-up PDF layouts where content is printed twice)
+    const deduplicatedLines = this.deduplicateLines(lines);
+
     // Extract date from first line
-    const date = this.extractDate(lines[0]);
+    const date = this.extractDate(deduplicatedLines[0]);
 
     // Parse sections
-    const sections = this.extractSections(lines);
+    const sections = this.extractSections(deduplicatedLines);
 
     return {
       date,
@@ -39,6 +42,43 @@ export class PDFParser {
       sections,
       rawText
     };
+  }
+
+  /**
+   * Deduplicate lines for PDFs with 2-up layouts (content printed twice)
+   * Detects when the second half of the document is a repeat
+   */
+  private deduplicateLines(lines: string[]): string[] {
+    if (lines.length < 10) return lines;
+
+    // Find if there's a repeated header (e.g., "ST ANDREW'S PRESBYTERIAN CHURCH")
+    const firstLine = lines[0];
+    let repeatIndex = -1;
+
+    // Look for the first line appearing again later in the document
+    for (let i = Math.floor(lines.length / 3); i < lines.length; i++) {
+      if (lines[i] === firstLine) {
+        // Check if the next few lines also match (to confirm it's a true duplicate)
+        let matchCount = 0;
+        for (let j = 0; j < Math.min(5, lines.length - i); j++) {
+          if (lines[j] === lines[i + j]) {
+            matchCount++;
+          }
+        }
+        // If at least 4 of the first 5 lines match, it's a duplicate section
+        if (matchCount >= 4) {
+          repeatIndex = i;
+          break;
+        }
+      }
+    }
+
+    // If we found a repeat, return only the first half
+    if (repeatIndex > 0) {
+      return lines.slice(0, repeatIndex);
+    }
+
+    return lines;
   }
 
   /**
@@ -139,11 +179,21 @@ export class PDFParser {
 
       // ===== EXTRACTABLE ITEMS =====
 
-      // Check for song or kids video (PRAISE:)
-      if (line.match(/^PRAISE:/i)) {
+      // Check for song or kids video (PRAISE: or PRAISE without colon)
+      // Formats: "PRAISE: Song Title" or "PRAISE 'Song Title'" or "PRAISE MP 59 'Song Title'"
+      // Note: Must check before PRAISE & PLAY to avoid conflicts
+      if (line.match(/^PRAISE:/i) || line.match(/^PRAISE\s+(?!&)/i)) {
         const song = this.extractSong(line, position++);
         // Kids videos get 'kids' slot, regular songs get current praise slot
         song.praiseSlot = song.isVideo ? 'kids' : currentPraiseSlot;
+        sections.push(song);
+        continue;
+      }
+
+      // Check for COMMUNITY SINGING: (funeral/special services)
+      if (line.match(/^COMMUNITY SINGING:/i)) {
+        const song = this.extractCommunitySinging(line, position++);
+        song.praiseSlot = currentPraiseSlot;
         sections.push(song);
         continue;
       }
@@ -198,11 +248,19 @@ export class PDFParser {
   }
 
   /**
-   * Extract song from PRAISE: line
+   * Extract song from PRAISE: line or PRAISE (no colon) line
+   * Formats:
+   *   - "PRAISE: Song Title"
+   *   - "PRAISE	'Song Title'"
+   *   - "PRAISE	MP 59 'Song Title'"
    */
   private extractSong(line: string, position: number): ServiceSection {
-    // Remove "PRAISE:" prefix
-    const content = line.replace(/^PRAISE:\s*/i, '').trim();
+    // Remove "PRAISE:" or "PRAISE" prefix (with optional MP number)
+    let content = line
+      .replace(/^PRAISE:\s*/i, '')
+      .replace(/^PRAISE\s+/i, '')
+      .replace(/^MP\s*\d+\s*/i, '')  // Remove "MP 59" etc.
+      .trim();
 
     // Check if video
     const isVideo = content.includes('(Video)');
@@ -212,8 +270,10 @@ export class PDFParser {
     const leaderMatch = content.match(/\(([^)]+)\)$/);
     const leader = leaderMatch ? leaderMatch[1] : undefined;
 
-    // Clean title (remove leader designation)
-    const cleanTitle = leader ? title.replace(/\s*\([^)]+\)$/, '').trim() : title;
+    // Clean title (remove leader designation and surrounding quotes - including smart quotes)
+    // Uses explicit character codes: ' (39), " (34), ` (96), ' (8216), ' (8217), " (8220), " (8221)
+    let cleanTitle = leader ? title.replace(/\s*\([^)]+\)$/, '').trim() : title;
+    cleanTitle = cleanTitle.replace(/^[\u0027\u0022\u0060\u2018\u2019\u201C\u201D]+|[\u0027\u0022\u0060\u2018\u2019\u201C\u201D]+$/g, '').trim();
 
     const type: ServiceSectionType = isVideo ? 'video' : 'song';
 
@@ -315,6 +375,26 @@ export class PDFParser {
       leader,
       position,
       isVideo: true
+    };
+  }
+
+  /**
+   * Extract "COMMUNITY SINGING:" songs (funeral/special services)
+   * Format: "COMMUNITY SINGING:	'In Christ Alone'"
+   */
+  private extractCommunitySinging(line: string, position: number): ServiceSection {
+    // Remove "COMMUNITY SINGING:" prefix
+    const content = line.replace(/^COMMUNITY SINGING:\s*/i, '').trim();
+
+    // Clean up quotes from title (including smart quotes)
+    // Uses explicit character codes: ' (39), " (34), ` (96), ' (8216), ' (8217), " (8220), " (8221)
+    const title = content.replace(/^[\u0027\u0022\u0060\u2018\u2019\u201C\u201D]+|[\u0027\u0022\u0060\u2018\u2019\u201C\u201D]+$/g, '').trim();
+
+    return {
+      type: 'song',
+      title,
+      position,
+      isVideo: false
     };
   }
 

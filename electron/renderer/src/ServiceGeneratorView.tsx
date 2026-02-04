@@ -933,11 +933,12 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                       setNotification({ message: 'Adding songs to playlist...', type: 'info' });
 
                       try {
-                        // Build items array for API
+                        // Build items array for API, including praiseSlot for proper placement
                         const items = selectedSongs.map(song => ({
                           type: 'presentation',
                           uuid: song.selectedMatch!.uuid,
-                          name: song.selectedMatch!.name
+                          name: song.selectedMatch!.name,
+                          praiseSlot: song.praiseSlot // Required for surgical placement in template sections
                         }));
 
                         const result = await window.api.buildServicePlaylist(
