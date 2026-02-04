@@ -103,9 +103,9 @@ Each extracted song is matched against your Worship Library:
 
 ![Song Search (CCLI/Song Library)](../assets/ccli_search.png)
 
-#### Can't Find a Song? Use CCLI
+#### Can't Find a Song? Use CCLI Song Select
 
-If Service Generator can't find a song in your Worship Library, you can search for it using CCLI (Church Copyright Licensing Inc.):
+If Service Generator can't find a song in your Worship Library, you can search for it using CCLI Song Select:
 
 **Step-by-step:**
 
@@ -226,7 +226,7 @@ The fuzzy-match engine searches for songs in three ways:
 
 **No match (<70%):**
 - Probably not in your library yet
-- See [Can't Find a Song? Use CCLI](#cant-find-a-song-use-ccli) in Step 4 above
+- See [Can't Find a Song? Use CCLI Song Select](#cant-find-a-song-use-ccli-song-select) in Step 4 above
 
 ### Bible Matching
 
