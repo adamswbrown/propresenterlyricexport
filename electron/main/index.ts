@@ -920,25 +920,33 @@ ipcMain.handle('verses:match', async (_event, verseReferences: string[], config:
     // Match each verse reference against presentations
     const results = verseReferences.map(reference => {
       const normalizedRef = reference.toLowerCase().trim();
+      // Normalize: remove punctuation (colons, underscores, hyphens, parentheses) for better matching
+      const normalizedRefStripped = normalizedRef.replace(/[:\-_()]/g, '').trim();
 
       // Find presentations that contain the reference in their name
       const matches = presentations
         .filter(pres => {
           const presName = pres.name.toLowerCase();
+          const presNameStripped = presName.replace(/[:\-_()]/g, '').trim();
+          
           // Check if presentation name contains the reference
-          // e.g., "Luke 12:35-59" should match "Luke 12:35-59" or "Luke 12" etc.
+          // e.g., "Luke 12:35-59" should match "Luke 12_35-59 (NIV)-1"
           return presName.includes(normalizedRef) ||
+                 presNameStripped.includes(normalizedRefStripped) ||
                  normalizedRef.includes(presName) ||
+                 normalizedRefStripped.includes(presNameStripped) ||
                  // Also check for partial book/chapter match
-                 presName.split(/[:\s-]+/).some(part => normalizedRef.includes(part) && part.length > 2);
+                 presName.split(/[:\s\-_()]+/).some(part => normalizedRef.includes(part) && part.length > 2);
         })
         .map(pres => {
           // Calculate a simple confidence based on string similarity
           const presName = pres.name.toLowerCase();
+          const presNameStripped = presName.replace(/[:\-_()]/g, '').trim();
           let confidence = 0;
-          if (presName === normalizedRef) {
+          if (presName === normalizedRef || presNameStripped === normalizedRefStripped) {
             confidence = 100;
-          } else if (presName.includes(normalizedRef) || normalizedRef.includes(presName)) {
+          } else if (presName.includes(normalizedRef) || normalizedRef.includes(presName) ||
+                     presNameStripped.includes(normalizedRefStripped) || normalizedRefStripped.includes(presNameStripped)) {
             confidence = 85;
           } else {
             confidence = 60;
