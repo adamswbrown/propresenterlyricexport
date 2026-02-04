@@ -191,8 +191,9 @@ If Service Generator can't find a song in your Worship Library, you can search f
    - In the Service Generator interface, click the **"Copy Name"** field next to the unmatched song
    - This copies the song title to your clipboard
 
-2. **Search CCLI Online**
-   - Click **"Search CCLI"** button (or manually go to https://www.ccli.com/)
+2. **Search CCLI Song Select**
+   - Click **"Search CCLI"** button in Service Generator
+   - This opens your default browser to **CCLI Song Select** (ccli.com/songsselect)
    - Log in with your CCLI username and password
    - Paste the song name in the search field
    - Find the correct song in the results
