@@ -566,7 +566,8 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                             songItems,
                             props.connectionConfig,
                             libraryIds,
-                            props.settings.kidsLibraryId || undefined
+                            props.settings.kidsLibraryId || undefined,
+                            props.settings.serviceContentLibraryId || undefined
                           );
 
                           if (result.success) {
@@ -661,7 +662,8 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                 songItems,
                 props.connectionConfig,
                 libraryIds,
-                props.settings.kidsLibraryId || undefined
+                props.settings.kidsLibraryId || undefined,
+                props.settings.serviceContentLibraryId || undefined
               );
 
               if (result.success) {

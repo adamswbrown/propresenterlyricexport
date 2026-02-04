@@ -759,7 +759,7 @@ type SongItemToMatch = {
   specialServiceType?: string | null;  // Type of service (remembrance, christmas, etc.)
 };
 
-ipcMain.handle('songs:match', async (_event, songItems: SongItemToMatch[], config: ConnectionConfig, libraryIds: string[], kidsLibraryId?: string) => {
+ipcMain.handle('songs:match', async (_event, songItems: SongItemToMatch[], config: ConnectionConfig, libraryIds: string[], kidsLibraryId?: string, serviceContentLibraryId?: string) => {
   try {
     const { ProPresenterClient } = await import('../../src/propresenter-client');
     const { SongMatcher } = await import('../../src/services/song-matcher');
@@ -771,10 +771,10 @@ ipcMain.handle('songs:match', async (_event, songItems: SongItemToMatch[], confi
     // Get library names for display
     const libraries = await client.getLibraries();
 
-    // Fetch presentations from worship libraries (non-kids)
+    // Fetch presentations from worship libraries (non-kids, non-service-content)
     const worshipPresentations: Array<{ uuid: string; name: string; library: string; libraryId: string }> = [];
     for (const libraryId of libraryIds) {
-      if (!libraryId || libraryId === kidsLibraryId) continue; // Skip kids library here
+      if (!libraryId || libraryId === kidsLibraryId || libraryId === serviceContentLibraryId) continue;
       try {
         const presentations = await client.getLibraryPresentations(libraryId);
         const library = libraries.find(l => l.uuid === libraryId);
@@ -790,6 +790,27 @@ ipcMain.handle('songs:match', async (_event, songItems: SongItemToMatch[], confi
         }
       } catch (err) {
         console.error(`Failed to fetch library ${libraryId}:`, err);
+      }
+    }
+
+    // Fetch presentations from service content library (for videos)
+    const serviceContentPresentations: Array<{ uuid: string; name: string; library: string; libraryId: string }> = [];
+    if (serviceContentLibraryId) {
+      try {
+        const presentations = await client.getLibraryPresentations(serviceContentLibraryId);
+        const library = libraries.find(l => l.uuid === serviceContentLibraryId);
+        const libraryName = library?.name || 'Service Content';
+
+        for (const pres of presentations) {
+          serviceContentPresentations.push({
+            uuid: pres.uuid,
+            name: pres.name,
+            library: libraryName,
+            libraryId: serviceContentLibraryId
+          });
+        }
+      } catch (err) {
+        console.error(`Failed to fetch service content library ${serviceContentLibraryId}:`, err);
       }
     }
 
@@ -814,7 +835,7 @@ ipcMain.handle('songs:match', async (_event, songItems: SongItemToMatch[], confi
       }
     }
 
-    console.log(`[songs:match] Loaded ${worshipPresentations.length} worship songs, ${kidsPresentations.length} kids songs`);
+    console.log(`[songs:match] Loaded ${worshipPresentations.length} worship songs, ${serviceContentPresentations.length} service content items, ${kidsPresentations.length} kids songs`);
 
     // Debug: Log received songItems
     console.log(`[songs:match] Received ${songItems.length} song items:`);
@@ -826,12 +847,15 @@ ipcMain.handle('songs:match', async (_event, songItems: SongItemToMatch[], confi
     const results = [];
     for (let i = 0; i < songItems.length; i++) {
       const item = songItems[i];
-      // For special services like Remembrance, Christmas, Easter, Carol - videos are NOT kids content
-      // Only videos explicitly marked as "kids" (e.g., "John 3:16 Song (Kids Video)") should go to kids library
+      
+      // Determine library to search based on content type:
+      // - Kids videos (explicitly marked): Kids library
+      // - Non-kids videos (videos in special services, transition videos, closing videos): Service Content library
+      // - Songs: Worship library
+      
       const isKids = item.isKidsVideo || item.praiseSlot === 'kids';
-      const isSpecialServiceVideo = item.praiseSlot === 'kids' && 
-                                     !item.isKidsVideo &&
-                                     ['remembrance', 'christmas', 'easter', 'carol', 'good-friday', 'nativity'].includes(item.specialServiceType || '');
+      const isVideo = item.praiseSlot === 'kids_video' || (item.text && item.text.includes('(Video)'));
+      const isNonKidsVideo = isVideo && !isKids;
 
       // Ensure text is a string
       const songText = typeof item.text === 'string' ? item.text : String(item.text || '');
@@ -841,9 +865,23 @@ ipcMain.handle('songs:match', async (_event, songItems: SongItemToMatch[], confi
       }
 
       // Choose which library to match against
-      // Special service videos (non-kids) should be searched in worship library
-      const presentationsToMatch = (isKids && !isSpecialServiceVideo) ? kidsPresentations : worshipPresentations;
-      const matchContext = isSpecialServiceVideo ? `special service video (${item.specialServiceType})` : isKids ? 'kids' : 'worship';
+      let presentationsToMatch: Array<{ uuid: string; name: string; library: string; libraryId: string }>;
+      let matchContext: string;
+
+      if (isKids) {
+        // Kids content goes to kids library
+        presentationsToMatch = kidsPresentations;
+        matchContext = `kids`;
+      } else if (isNonKidsVideo) {
+        // Non-kids videos (closing videos, transition videos, special service videos) go to Service Content
+        presentationsToMatch = serviceContentPresentations;
+        matchContext = `service video (${item.specialServiceType || 'regular'})`;
+      } else {
+        // Regular songs go to worship library
+        presentationsToMatch = worshipPresentations;
+        matchContext = 'worship';
+      }
+
       console.log(`[songs:match] Matching "${songText}" (${matchContext}) against ${presentationsToMatch.length} presentations`);
 
       // Create service section for matcher

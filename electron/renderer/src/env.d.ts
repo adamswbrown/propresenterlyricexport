@@ -121,10 +121,11 @@ interface ElectronAPI {
   choosePDF: () => Promise<{ canceled: boolean; filePath?: string }>;
   parsePDF: (filePath: string) => Promise<ParsedService>;
   matchSongs: (
-    songItems: Array<{ text: string; isKidsVideo?: boolean; praiseSlot?: string }>,
+    songItems: Array<{ text: string; isKidsVideo?: boolean; praiseSlot?: string; specialServiceType?: string | null }>,
     config: ConnectionConfig,
     libraryIds: string[],
-    kidsLibraryId?: string
+    kidsLibraryId?: string,
+    serviceContentLibraryId?: string
   ) => Promise<{ success: boolean; results?: SongMatch[]; error?: string }>;
   fetchVerses: (references: string[]) => Promise<any[]>;
   matchVerses: (
