@@ -178,8 +178,51 @@ The fuzzy-match engine searches for songs in three ways:
 - You pick which one
 
 **No match (<70%):**
-- Probably not in your library
-- You can search manually or skip
+- Probably not in your library yet
+- Use the CCLI lookup workflow below to find and import the song
+
+#### Finding Missing Songs via CCLI
+
+If Service Generator can't find a song in your Worship Library, you can search for it using CCLI (Church Copyright Licensing Inc.):
+
+**Step-by-step:**
+
+1. **Copy the song name**
+   - In the Service Generator interface, click the **"Copy Name"** field next to the unmatched song
+   - This copies the song title to your clipboard
+
+2. **Search CCLI Online**
+   - Click **"Search CCLI"** button (or manually go to https://www.ccli.com/)
+   - Log in with your CCLI username and password
+   - Paste the song name in the search field
+   - Find the correct song in the results
+
+3. **Get the CCLI Song Number**
+   - Once you've found the song, note its **CCLI Song Number** (a unique 7-8 digit code)
+   - Copy this number
+
+4. **Search in ProPresenter**
+   - Open ProPresenter
+   - Click the **Search icon** (magnifying glass)
+   - Enter the CCLI Song Number in the search field
+   - ProPresenter will search its database for songs matching that number
+
+![ProPresenter CCLI Song Search](../assets/PP-CCLI-search.png)
+
+5. **Import into Your Worship Library**
+   - When ProPresenter finds the song, select it from the results
+   - **Import it into your Worship Library** (the same library you configured in Service Generator Step 1 - typically "Worship")
+   - Save the import
+
+6. **Re-run Service Generator**
+   - Return to Service Generator
+   - Click **"Re-scan Library"** or restart from Step 4 (Match Songs)
+   - Service Generator will now find the newly imported song and match it automatically
+
+**Tips:**
+- Make sure to import into the correct library (your "Worship" library, not a different one)
+- If the song still doesn't match, try a slightly different spelling or search again
+- Some songs may have multiple CCLI numbers (different arrangements); try different results if the first doesn't work
 
 ### Bible Matching
 
