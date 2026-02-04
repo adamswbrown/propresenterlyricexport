@@ -191,8 +191,6 @@ The app **automatically creates your playlist** with:
 
 ![Service Build Preview](../assets/sevice_build.png)
 
-![Service Build Complete](../assets/build.png)
-
 **Final touches:**
 - Drop in your Birthday Bucket, Sermon, and Kids Talk PowerPoints manually
 - Use ProPresenter's "Import PPT as Presentation" for editable slides
