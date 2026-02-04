@@ -1,6 +1,21 @@
 # User Guide
 
-Complete guide to using ProPresenter Lyrics Export desktop app and CLI.
+Complete guide to exporting lyrics from ProPresenter playlists.
+
+## What Does This Tool Do?
+
+ProPresenter Lyrics Export extracts song lyrics from your ProPresenter presentations and exports them to:
+- **PowerPoint** - Formatted slides ready for projection or printing
+- **Text** - Plain text format for lyric sheets or setlists
+- **JSON** - Structured data for custom integrations
+
+**Common use cases:**
+- Create lyric slides for overflow rooms or online streaming
+- Generate printed lyric sheets for worship team
+- Export setlists for archival or planning
+- Create PowerPoint backups of your worship library
+
+---
 
 ## Desktop App Guide
 
@@ -48,14 +63,29 @@ Open the **⚙ Settings** button to customize your PowerPoint exports:
 - Click to browse for `.png` or `.jpg` files
 - Logo is resized proportionally to fit the slide
 
-### Export Process
+### Export Process (Lyrics Export)
 
+**What happens during export:**
+1. The tool fetches all presentations from your selected playlist
+2. For each presentation, it extracts lyrics from the slides
+3. Lyrics are organized by section (Verse 1, Chorus, Bridge, etc.)
+4. A PowerPoint file is generated with formatted slides for each song
+5. The file is saved to your chosen location
+
+**Steps to export:**
 1. **Select a playlist** from the tree
-2. **Adjust settings** if needed
-3. Click **"Export to PowerPoint"**
-4. Save dialog appears - choose location and filename
-5. Processing begins (progress shown in log below)
-6. File is saved when complete
+2. **Set library filter** (optional) - Only export songs from "Worship" library
+3. **Adjust PPTX settings** if needed (fonts, colors, logo)
+4. Click **"Export to PowerPoint"**
+5. Choose save location and filename
+6. Processing begins (progress shown in log below)
+7. File is saved when complete
+
+**What you get:** A PowerPoint file with:
+- One section per song
+- Title slide for each song (optional)
+- Lyrics organized by verse/chorus/bridge
+- Your custom styling and formatting
 
 **Log View:** Shows real-time export progress and any issues encountered.
 

@@ -12,20 +12,21 @@ Both paths support rich PPTX exports, text/JSON dumps, and run on macOS and Wind
 
 ## ✨ Key Features
 
+- 📤 **Lyrics Export** - Extract lyrics from ProPresenter playlists to PowerPoint, Text, or JSON
 - 🎯 **Interactive Playlist Selection** - Browse and select playlists easily
-- 📤 **Multiple Export Formats** - Text, JSON, or beautifully formatted PowerPoint
-- 🔄 **Service Generator** - Automate Sunday service playlist creation from PDF service orders
-- 🎨 **Smart Formatting** - Customize fonts, colors, and styling for PPTX exports
+- 🎨 **PowerPoint Export** - Beautifully formatted slides with customizable fonts, colors, and styling
 - 🔤 **Font Detection** - 25+ curated presentation-ready fonts with installation status
 - ✅ **Connection Validation** - Automatic ProPresenter connectivity checking
+- 🔄 **Service Generator** (Optional) - Automate Sunday service playlist creation from PDF service orders
 - 🌍 **Cross-Platform** - macOS (ARM64 & Intel) and Windows
 - 📦 **Standalone** - No Node.js installation required
 
 ## Quick Links
 
 - **[Getting Started](./getting-started)** - Install and run in 5 minutes
-- **[User Guide](./user-guide)** - Desktop app and CLI workflows
-- **[Service Generator Guide](./guides/service-generator)** - Automate service playlists from PDFs
+- **[User Guide](./user-guide)** - Export lyrics from playlists to PowerPoint
+- **[PPTX Export Guide](./guides/pptx-export)** - Customize fonts, colors, and styling
+- **[Service Generator Guide](./guides/service-generator)** - Advanced: Automate service playlists from PDFs
 - **[FAQ](./faq)** - Common questions and troubleshooting
 - **[Developer Guide](./developer)** - Setup, building, and contributing
 

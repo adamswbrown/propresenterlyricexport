@@ -101,9 +101,18 @@ $env:PROPRESENTER_PORT='1025'
 
 ## Next Steps
 
-- **Desktop App Users**: See the [User Guide](./user-guide) for playlist management and PPTX exports
+### Start Exporting Lyrics
+
+- **Desktop App Users**: See the [User Guide](./user-guide) for how to export lyrics to PowerPoint
 - **CLI Users**: See the [CLI Guide](./guides/cli-guide) for command reference
+- **Customize your exports**: Check the [PPTX Export Guide](./guides/pptx-export) for styling options
+
+### Advanced Features (Optional)
+
 - **Service Generator**: Check out the [Service Generator Guide](./guides/service-generator) to automate service playlists from PDFs
+
+### Need Help?
+
 - **Having issues?**: Check the [FAQ](./faq) for troubleshooting
 
 ## Troubleshooting Setup

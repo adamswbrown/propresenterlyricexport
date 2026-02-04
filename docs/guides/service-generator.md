@@ -2,6 +2,20 @@
 
 Automate your Sunday service playlist creation from PDF service orders in minutes.
 
+> **Note:** Service Generator is an **optional advanced feature**. The core functionality of ProPresenter Lyrics Export is extracting lyrics from existing playlists. Service Generator extends this by helping you build playlists from PDF service orders.
+
+## How to Enable Service Generator
+
+**Desktop App:**
+1. Open the desktop app
+2. Look for the **"Service Generator"** tab at the top of the window
+3. Click to open the Service Generator interface
+
+**CLI:**
+Service Generator is only available in the desktop app. CLI users should use the standard export commands.
+
+---
+
 ## What is Service Generator?
 
 Service Generator takes a PDF service order (from Planning Center, Proclaim, ChurchPlanner, etc.) and **automatically populates your ProPresenter playlist** with:
