@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Provides setup instructions for ProPresenter Preferences → Libraries
   - Helps prevent library organization issues that cause matching failures
 
+- **Worship Slot Manual Override** - Right-click context menu in Step 4 to reassign songs to different worship slots
+  - Useful when automatic detection places a song in the wrong section
+  - Select from: Praise 1, Praise 2, Praise 3, or Kids
+  - Immediately updates the display with new slot assignment
+
 ### Improved
 - **PDF Format Documentation** - Enhanced with clearer expectations for PDF structure
   - Better explanation of hierarchical document structure Service Generator expects
@@ -23,6 +28,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added examples of content organization within ProPresenter libraries
   - Explains normalization of scripture references for matching
   - Improved guidance for custom PDF creation
+
+- **Service Generator Documentation** - Better organization and clarity
+  - Moved "Adding Bible Verses to ProPresenter" tutorial to Step 5 for contextual relevance
+  - Removed duplicate "Service Build Complete" screenshot
+  - Improved flow from problem identification to solution
 
 ## [2.2.3] - 2026-02-04
 
