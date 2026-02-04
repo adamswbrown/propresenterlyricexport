@@ -98,6 +98,9 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [specialServiceType, setSpecialServiceType] = useState<string | null>(null);  // Track special service type
 
+  // Context menu state for worship slot override
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; matchIndex: number } | null>(null);
+
   // Step validation - check if step is complete
   const isStepComplete = (step: Step): boolean => {
     switch (step) {
@@ -636,6 +639,17 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
           }
         };
 
+        // Helper: Change praise slot for a song
+        const changePraiseSlot = (matchIndex: number, newSlot: PraiseSlot) => {
+          setMatchResults(prev => prev.map((r, i) =>
+            i === matchIndex
+              ? { ...r, praiseSlot: newSlot }
+              : r
+          ));
+          setContextMenu(null);
+          setNotification({ message: `Changed to "${formatPraiseSlot(newSlot)}"`, type: 'success' });
+        };
+
         // Rescan libraries function
         const rescanLibraries = async () => {
           setIsProcessing(true);
@@ -756,7 +770,13 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                       }}
                     >
                       {/* Song header */}
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+                      <div 
+                        style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          setContextMenu({ x: e.clientX, y: e.clientY, matchIndex: index });
+                        }}
+                      >
                         <span style={{ fontSize: '18px' }}>
                           {result.selectedMatch && !result.requiresReview ? '✓' : result.requiresReview ? '⚠' : '✗'}
                         </span>
@@ -764,14 +784,18 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                             <span style={{ fontWeight: 600 }}>{result.songName}</span>
                             {result.praiseSlot && (
-                              <span style={{
-                                padding: '2px 8px',
-                                background: result.praiseSlot === 'kids' ? 'rgba(255, 193, 7, 0.2)' : 'rgba(47, 212, 194, 0.2)',
-                                borderRadius: '4px',
-                                fontSize: '11px',
-                                fontWeight: 600,
-                                color: result.praiseSlot === 'kids' ? '#ffc107' : 'var(--accent)'
-                              }}>
+                              <span 
+                                style={{
+                                  padding: '2px 8px',
+                                  background: result.praiseSlot === 'kids' ? 'rgba(255, 193, 7, 0.2)' : 'rgba(47, 212, 194, 0.2)',
+                                  borderRadius: '4px',
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  color: result.praiseSlot === 'kids' ? '#ffc107' : 'var(--accent)',
+                                  cursor: 'pointer'
+                                }}
+                                title="Right-click to change worship slot"
+                              >
                                 {formatPraiseSlot(result.praiseSlot)}
                               </span>
                             )}
@@ -852,6 +876,58 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                     </div>
                   ))}
                 </div>
+
+                {/* Context menu for changing worship slot */}
+                {contextMenu && (
+                  <>
+                    {/* Overlay to close menu when clicking elsewhere */}
+                    <div
+                      style={{ position: 'fixed', inset: 0, zIndex: 999 }}
+                      onClick={() => setContextMenu(null)}
+                    />
+                    {/* Menu */}
+                    <div
+                      style={{
+                        position: 'fixed',
+                        left: `${contextMenu.x}px`,
+                        top: `${contextMenu.y}px`,
+                        background: 'var(--panel)',
+                        border: '1px solid var(--panel-border)',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                        zIndex: 1000,
+                        minWidth: '200px'
+                      }}
+                    >
+                      <div style={{ padding: '8px 0', fontSize: '12px', fontWeight: 600, color: 'var(--muted)', padding: '8px 12px', borderBottom: '1px solid var(--panel-border)' }}>
+                        Change Worship Slot
+                      </div>
+                      {(['praise1', 'praise2', 'praise3', 'kids'] as const).map((slot) => (
+                        <button
+                          key={slot}
+                          className="ghost"
+                          style={{
+                            display: 'block',
+                            width: '100%',
+                            padding: '10px 12px',
+                            textAlign: 'left',
+                            fontSize: '13px',
+                            color: matchResults[contextMenu.matchIndex]?.praiseSlot === slot ? 'var(--accent)' : 'var(--text)',
+                            background: matchResults[contextMenu.matchIndex]?.praiseSlot === slot ? 'rgba(47, 212, 194, 0.1)' : 'transparent',
+                            border: 'none',
+                            borderRadius: 0,
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => changePraiseSlot(contextMenu.matchIndex, slot)}
+                          type="button"
+                        >
+                          {matchResults[contextMenu.matchIndex]?.praiseSlot === slot && '✓ '}
+                          {formatPraiseSlot(slot)}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
 
                 {/* Actions */}
                 <div style={{ display: 'flex', gap: '12px' }}>

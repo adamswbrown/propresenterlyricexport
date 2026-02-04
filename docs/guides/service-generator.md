@@ -271,6 +271,7 @@ The app automatically identifies worship segments:
 **Manual override:**
 - Right-click any song in Step 4 to reassign its worship slot
 - Useful if automatic detection isn't quite right
+- Select from: Praise 1, Praise 2, Praise 3, or Kids
 
 ### Special Services Detection
 
