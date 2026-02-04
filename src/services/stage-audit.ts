@@ -15,8 +15,11 @@ import {
   VerificationStatus,
   PlaylistAuditReport,
   PlaylistAuditItem,
+  ContentType,
+  CONTENT_TYPE_TO_LAYOUT,
 } from '../types/stage-audit';
-import { PlaylistItem } from '../propresenter-client';
+import { PlaylistItem as ApiPlaylistItem } from '../propresenter-client';
+import { PlaylistItem as BuilderPlaylistItem } from '../types/playlist';
 
 const REGISTRY_VERSION = 1;
 
@@ -57,21 +60,33 @@ export class StageAuditService {
       version: REGISTRY_VERSION,
       items: {},
       libraryDefaults: {
+        // Song libraries
         'Worship': 'lyrics',
         'Songs': 'lyrics',
         'Hymns': 'lyrics',
+        'Praise': 'lyrics',
+        // Scripture
         'Scripture': 'scripture',
         'Bible': 'scripture',
-        'Sermon': 'message',
+        // Sermon/Message
+        'Sermon': 'sermon',
+        'Message': 'sermon',
+        'Teaching': 'sermon',
+        // Media/Video
         'Media': 'video',
         'Videos': 'video',
-        'Announcements': 'blank',
+        'Kids': 'video',
+        // Service content
+        'Service Content': 'service_content',
+        'Service': 'service_content',
+        'Liturgy': 'service_content',
       },
       layoutUuids: {
         lyrics: null,
         scripture: null,
         video: null,
-        message: null,
+        sermon: null,
+        service_content: null,
         blank: null,
         custom: null,
         unknown: null,
@@ -79,6 +94,30 @@ export class StageAuditService {
       updatedAt: new Date().toISOString(),
     };
   }
+
+  /**
+   * Known service content presentation patterns
+   * Maps presentation names to content types
+   */
+  private readonly serviceContentPatterns: Array<{ pattern: RegExp; contentType: ContentType }> = [
+    // Announcements
+    { pattern: /announce/i, contentType: 'announcements' },
+    // Prayer
+    { pattern: /prayer|praying/i, contentType: 'prayer' },
+    // Scripture/Bible
+    { pattern: /\d+[_:]\d+/i, contentType: 'scripture' }, // Bible refs like "Luke 12:35" or "Luke 12_35"
+    { pattern: /genesis|exodus|leviticus|numbers|deuteronomy|joshua|judges|ruth|samuel|kings|chronicles|ezra|nehemiah|esther|job|psalm|proverbs|ecclesiastes|song of|isaiah|jeremiah|lamentations|ezekiel|daniel|hosea|joel|amos|obadiah|jonah|micah|nahum|habakkuk|zephaniah|haggai|zechariah|malachi|matthew|mark|luke|john|acts|romans|corinthians|galatians|ephesians|philippians|colossians|thessalonians|timothy|titus|philemon|hebrews|james|peter|jude|revelation/i, contentType: 'scripture' },
+    // Sermon/Message
+    { pattern: /sermon|message|teaching|talk(?!\s*kids)/i, contentType: 'sermon' },
+    // Service elements
+    { pattern: /birthday|blessing/i, contentType: 'service_element' },
+    { pattern: /call to worship/i, contentType: 'service_element' },
+    { pattern: /the grace/i, contentType: 'service_element' },
+    { pattern: /help and support/i, contentType: 'service_element' },
+    { pattern: /kids talk|family slot|children/i, contentType: 'service_element' },
+    // Videos (kids songs, media)
+    { pattern: /video|movie|clip/i, contentType: 'video' },
+  ];
 
   saveRegistry(): void {
     try {
@@ -115,33 +154,54 @@ export class StageAuditService {
   }
 
   /**
-   * Get the expected layout type for a presentation based on its library.
+   * Detect the content type of a presentation based on its name and library.
    */
-  inferLayoutType(libraryName?: string, presentationName?: string): StageLayoutType {
-    // Check library defaults first
-    if (libraryName) {
-      for (const [libPattern, layoutType] of Object.entries(this.registry.libraryDefaults)) {
-        if (libraryName.toLowerCase().includes(libPattern.toLowerCase())) {
-          return layoutType;
+  detectContentType(presentationName?: string, libraryName?: string): ContentType {
+    // Check presentation name against known patterns
+    if (presentationName) {
+      for (const { pattern, contentType } of this.serviceContentPatterns) {
+        if (pattern.test(presentationName)) {
+          return contentType;
         }
       }
     }
 
-    // Infer from presentation name
-    if (presentationName) {
-      const name = presentationName.toLowerCase();
-      if (name.includes('verse') || name.includes('scripture') || name.match(/\d+:\d+/)) {
+    // Fall back to library-based detection
+    if (libraryName) {
+      const libLower = libraryName.toLowerCase();
+      if (libLower.includes('worship') || libLower.includes('song') || libLower.includes('hymn') || libLower.includes('praise')) {
+        return 'song';
+      }
+      if (libLower.includes('scripture') || libLower.includes('bible')) {
         return 'scripture';
       }
-      if (name.includes('video') || name.includes('media')) {
+      if (libLower.includes('sermon') || libLower.includes('message') || libLower.includes('teaching')) {
+        return 'sermon';
+      }
+      if (libLower.includes('video') || libLower.includes('media') || libLower.includes('kids')) {
         return 'video';
       }
-      if (name.includes('announce')) {
-        return 'blank';
+      if (libLower.includes('service')) {
+        return 'service_element';
       }
     }
 
     return 'unknown';
+  }
+
+  /**
+   * Get the expected layout type for a presentation based on its content type.
+   */
+  inferLayoutType(libraryName?: string, presentationName?: string): StageLayoutType {
+    const contentType = this.detectContentType(presentationName, libraryName);
+    return CONTENT_TYPE_TO_LAYOUT[contentType];
+  }
+
+  /**
+   * Get expected layout from content type
+   */
+  getLayoutForContentType(contentType: ContentType): StageLayoutType {
+    return CONTENT_TYPE_TO_LAYOUT[contentType];
   }
 
   /**
@@ -160,15 +220,18 @@ export class StageAuditService {
     layoutType: StageLayoutType,
     options?: {
       libraryName?: string;
+      contentType?: ContentType;
       verifiedBy?: string;
       notes?: string;
       customLayoutUuid?: string;
     }
   ): void {
+    const contentType = options?.contentType || this.detectContentType(presentationName, options?.libraryName);
     this.registry.items[presentationUuid] = {
       presentationUuid,
       presentationName,
       libraryName: options?.libraryName,
+      contentType,
       expectedLayout: layoutType,
       customLayoutUuid: options?.customLayoutUuid,
       status: 'verified',
@@ -186,11 +249,14 @@ export class StageAuditService {
     presentationUuid: string,
     presentationName: string,
     expectedLayout: StageLayoutType,
+    contentType?: ContentType,
     notes?: string
   ): void {
+    const detectedType = contentType || this.detectContentType(presentationName);
     this.registry.items[presentationUuid] = {
       presentationUuid,
       presentationName,
+      contentType: detectedType,
       expectedLayout,
       status: 'needs_setup',
       notes,
@@ -204,11 +270,14 @@ export class StageAuditService {
   markNotApplicable(
     presentationUuid: string,
     presentationName: string,
+    contentType?: ContentType,
     reason?: string
   ): void {
+    const detectedType = contentType || this.detectContentType(presentationName);
     this.registry.items[presentationUuid] = {
       presentationUuid,
       presentationName,
+      contentType: detectedType,
       expectedLayout: 'blank',
       status: 'not_applicable',
       notes: reason,
@@ -225,39 +294,113 @@ export class StageAuditService {
   }
 
   /**
+   * Unified playlist item for audit purposes
+   * Works with both API playlist items and builder playlist items
+   */
+  private normalizePlaylistItem(item: ApiPlaylistItem | BuilderPlaylistItem): {
+    uuid: string;
+    name: string;
+    presentationUuid: string | null;
+    isHeader: boolean;
+  } {
+    // Check if it's a builder playlist item (has 'id' object with uuid)
+    if ('id' in item && typeof item.id === 'object' && 'uuid' in item.id) {
+      const builderItem = item as BuilderPlaylistItem;
+      return {
+        uuid: builderItem.id.uuid,
+        name: builderItem.id.name,
+        presentationUuid: builderItem.presentation_info?.presentation_uuid || null,
+        isHeader: builderItem.type === 'header',
+      };
+    }
+    // API playlist item
+    const apiItem = item as ApiPlaylistItem;
+    return {
+      uuid: apiItem.uuid,
+      name: apiItem.name,
+      presentationUuid: apiItem.presentationUuid || null,
+      isHeader: apiItem.isHeader,
+    };
+  }
+
+  /**
    * Generate an audit report for a playlist.
+   * Works with both API playlist items and builder playlist items.
    */
   auditPlaylist(
     playlistId: string,
     playlistName: string,
-    items: PlaylistItem[]
+    items: (ApiPlaylistItem | BuilderPlaylistItem)[]
   ): PlaylistAuditReport {
     const auditItems: PlaylistAuditItem[] = [];
 
-    for (const item of items) {
-      if (item.isHeader) continue; // Skip headers
+    // Initialize content type counts
+    const byContentType: Record<ContentType, { total: number; verified: number }> = {
+      song: { total: 0, verified: 0 },
+      scripture: { total: 0, verified: 0 },
+      sermon: { total: 0, verified: 0 },
+      video: { total: 0, verified: 0 },
+      announcements: { total: 0, verified: 0 },
+      prayer: { total: 0, verified: 0 },
+      service_element: { total: 0, verified: 0 },
+      header: { total: 0, verified: 0 },
+      unknown: { total: 0, verified: 0 },
+    };
 
-      const presentationUuid = item.presentationUuid || null;
+    let headerCount = 0;
+
+    for (const rawItem of items) {
+      const item = this.normalizePlaylistItem(rawItem);
+
+      // Track headers but skip detailed audit
+      if (item.isHeader) {
+        headerCount++;
+        byContentType.header.total++;
+        auditItems.push({
+          playlistItemUuid: item.uuid,
+          playlistItemName: item.name,
+          presentationUuid: null,
+          presentationName: item.name,
+          contentType: 'header',
+          isHeader: true,
+          status: 'not_applicable',
+          expectedLayout: 'blank',
+          needsAttention: false,
+          recommendation: 'Section header - no stage display needed',
+        });
+        continue;
+      }
+
+      const presentationUuid = item.presentationUuid;
       const existingRecord = presentationUuid
         ? this.registry.items[presentationUuid]
         : null;
 
       let status: VerificationStatus;
       let expectedLayout: StageLayoutType;
+      let contentType: ContentType;
       let needsAttention: boolean;
       let recommendation: string;
 
       if (existingRecord) {
         status = existingRecord.status;
         expectedLayout = existingRecord.expectedLayout;
+        contentType = existingRecord.contentType;
         needsAttention = status === 'unverified' || status === 'needs_setup';
         recommendation = this.getRecommendation(existingRecord);
       } else {
-        // Unknown item - infer based on name/type
-        expectedLayout = this.inferLayoutType(undefined, item.name);
+        // Unknown item - detect content type and infer layout
+        contentType = this.detectContentType(item.name);
+        expectedLayout = CONTENT_TYPE_TO_LAYOUT[contentType];
         status = 'unverified';
         needsAttention = true;
-        recommendation = `New item: verify stage display is set to "${expectedLayout}" layout`;
+        recommendation = `New ${contentType}: verify stage display is set to "${expectedLayout}" layout`;
+      }
+
+      // Update content type counts
+      byContentType[contentType].total++;
+      if (status === 'verified') {
+        byContentType[contentType].verified++;
       }
 
       auditItems.push({
@@ -265,6 +408,8 @@ export class StageAuditService {
         playlistItemName: item.name,
         presentationUuid,
         presentationName: item.name,
+        contentType,
+        isHeader: false,
         status,
         expectedLayout,
         needsAttention,
@@ -272,13 +417,16 @@ export class StageAuditService {
       });
     }
 
-    // Calculate summary
+    // Calculate summary (excluding headers from main counts)
+    const nonHeaderItems = auditItems.filter(i => !i.isHeader);
     const summary = {
-      total: auditItems.length,
-      verified: auditItems.filter(i => i.status === 'verified').length,
-      unverified: auditItems.filter(i => i.status === 'unverified').length,
-      needsSetup: auditItems.filter(i => i.status === 'needs_setup').length,
-      notApplicable: auditItems.filter(i => i.status === 'not_applicable').length,
+      total: nonHeaderItems.length,
+      verified: nonHeaderItems.filter(i => i.status === 'verified').length,
+      unverified: nonHeaderItems.filter(i => i.status === 'unverified').length,
+      needsSetup: nonHeaderItems.filter(i => i.status === 'needs_setup').length,
+      notApplicable: nonHeaderItems.filter(i => i.status === 'not_applicable').length,
+      headers: headerCount,
+      byContentType,
     };
 
     const actionRequired = auditItems.filter(i => i.needsAttention);
@@ -298,17 +446,49 @@ export class StageAuditService {
   }
 
   private getRecommendation(record: StageSettingsRecord): string {
+    const contentLabel = this.getContentTypeLabel(record.contentType);
+    const layoutLabel = this.getLayoutLabel(record.expectedLayout);
+
     switch (record.status) {
       case 'verified':
-        return `OK - verified as "${record.expectedLayout}" layout`;
+        return `OK - ${contentLabel} verified with ${layoutLabel}`;
       case 'needs_setup':
-        return `ACTION: Set stage display to "${record.expectedLayout}" layout in ProPresenter`;
+        return `ACTION: Set ${contentLabel} to use ${layoutLabel} in ProPresenter`;
       case 'not_applicable':
         return 'No action needed - stage display not used';
       case 'unverified':
       default:
-        return `CHECK: Verify stage display is set to "${record.expectedLayout}" layout`;
+        return `CHECK: Verify ${contentLabel} uses ${layoutLabel}`;
     }
+  }
+
+  private getContentTypeLabel(contentType: ContentType): string {
+    const labels: Record<ContentType, string> = {
+      song: 'Song',
+      scripture: 'Scripture',
+      sermon: 'Sermon',
+      video: 'Video',
+      announcements: 'Announcements',
+      prayer: 'Prayer',
+      service_element: 'Service Element',
+      header: 'Header',
+      unknown: 'Item',
+    };
+    return labels[contentType] || 'Item';
+  }
+
+  private getLayoutLabel(layout: StageLayoutType): string {
+    const labels: Record<StageLayoutType, string> = {
+      lyrics: 'Lyrics Layout',
+      scripture: 'Scripture Layout',
+      sermon: 'Sermon Layout',
+      video: 'Video Layout',
+      service_content: 'Service Content Layout',
+      blank: 'Blank/None',
+      custom: 'Custom Layout',
+      unknown: 'Unknown Layout',
+    };
+    return labels[layout] || 'Unknown Layout';
   }
 
   /**
@@ -329,20 +509,36 @@ export class StageAuditService {
     unverified: number;
     needsSetup: number;
     byLayout: Record<StageLayoutType, number>;
+    byContentType: Record<ContentType, number>;
   } {
     const items = Object.values(this.registry.items);
     const byLayout: Record<StageLayoutType, number> = {
       lyrics: 0,
       scripture: 0,
       video: 0,
-      message: 0,
+      sermon: 0,
+      service_content: 0,
       blank: 0,
       custom: 0,
+      unknown: 0,
+    };
+    const byContentType: Record<ContentType, number> = {
+      song: 0,
+      scripture: 0,
+      sermon: 0,
+      video: 0,
+      announcements: 0,
+      prayer: 0,
+      service_element: 0,
+      header: 0,
       unknown: 0,
     };
 
     for (const item of items) {
       byLayout[item.expectedLayout]++;
+      if (item.contentType) {
+        byContentType[item.contentType]++;
+      }
     }
 
     return {
@@ -351,6 +547,7 @@ export class StageAuditService {
       unverified: items.filter(i => i.status === 'unverified').length,
       needsSetup: items.filter(i => i.status === 'needs_setup').length,
       byLayout,
+      byContentType,
     };
   }
 

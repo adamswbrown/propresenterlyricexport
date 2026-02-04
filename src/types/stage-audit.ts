@@ -3,16 +3,54 @@
  *
  * Tracks which library items have verified stage display settings,
  * and generates audit reports when building playlists.
+ *
+ * Covers ALL playlist item types:
+ * - Songs (worship, hymns)
+ * - Sermon/Message slides
+ * - Scripture/Bible readings
+ * - Service content (announcements, birthday blessings, prayers, etc.)
+ * - Videos (kids songs, media clips)
  */
 
 export type StageLayoutType =
-  | 'lyrics'      // Song lyrics display
-  | 'scripture'   // Bible verse display
-  | 'video'       // Video/media display
-  | 'message'     // Sermon notes display
-  | 'blank'       // No stage content
-  | 'custom'      // Custom layout (specify UUID)
-  | 'unknown';    // Not yet configured
+  | 'lyrics'           // Song lyrics display (worship songs)
+  | 'scripture'        // Bible verse display
+  | 'video'            // Video/media display (blank or minimal)
+  | 'sermon'           // Sermon/message notes display
+  | 'service_content'  // Service elements (announcements, prayers, etc.)
+  | 'blank'            // No stage content needed
+  | 'custom'           // Custom layout (specify UUID)
+  | 'unknown';         // Not yet configured
+
+/**
+ * Content type categorization for playlist items
+ * Used to infer the expected stage layout
+ */
+export type ContentType =
+  | 'song'             // Worship songs, hymns
+  | 'scripture'        // Bible readings
+  | 'sermon'           // Sermon/message slides
+  | 'video'            // Video content (kids songs, media)
+  | 'announcements'    // Announcements
+  | 'prayer'           // Prayer slides
+  | 'service_element'  // Birthday blessings, grace, call to worship, etc.
+  | 'header'           // Section headers (not displayed)
+  | 'unknown';         // Unrecognized content
+
+/**
+ * Mapping from content type to expected stage layout
+ */
+export const CONTENT_TYPE_TO_LAYOUT: Record<ContentType, StageLayoutType> = {
+  song: 'lyrics',
+  scripture: 'scripture',
+  sermon: 'sermon',
+  video: 'video',
+  announcements: 'service_content',
+  prayer: 'service_content',
+  service_element: 'service_content',
+  header: 'blank',
+  unknown: 'unknown',
+};
 
 export type VerificationStatus =
   | 'verified'    // Confirmed correct in ProPresenter
@@ -29,6 +67,9 @@ export interface StageSettingsRecord {
 
   /** Which library this item belongs to */
   libraryName?: string;
+
+  /** Detected content type (song, sermon, video, etc.) */
+  contentType: ContentType;
 
   /** Expected stage layout type */
   expectedLayout: StageLayoutType;
@@ -75,6 +116,10 @@ export interface PlaylistAuditItem {
   presentationUuid: string | null;
   presentationName: string;
 
+  /** Content categorization */
+  contentType: ContentType;
+  isHeader: boolean;
+
   /** Stage settings status */
   status: VerificationStatus;
   expectedLayout: StageLayoutType;
@@ -101,6 +146,8 @@ export interface PlaylistAuditReport {
     unverified: number;
     needsSetup: number;
     notApplicable: number;
+    headers: number; // Headers don't need stage settings
+    byContentType: Record<ContentType, { total: number; verified: number }>;
   };
 
   /** Individual item audits */
