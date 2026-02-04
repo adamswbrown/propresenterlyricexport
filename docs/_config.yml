@@ -7,6 +7,10 @@ github:
   repository_url: https://github.com/adamswbrown/propresenterlyricexport
   is_project_page: true
 
+# Custom CSS
+head-custom: |
+  <link rel="stylesheet" href="/assets/tabs.css">
+
 # Navigation
 nav_links:
   - title: Home
