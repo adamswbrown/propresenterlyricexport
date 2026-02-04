@@ -274,6 +274,43 @@ The app automatically identifies worship segments:
 - Right-click any song in Step 4 to reassign its worship slot
 - Useful if automatic detection isn't quite right
 
+### Special Services Detection
+
+Service Generator automatically detects **special services** and adjusts handling accordingly.
+
+**Special services detected:**
+- **Remembrance Sunday** - (e.g., Nov 9) - Includes memorial hymns and reflective videos
+- **Christmas Services** - (Dec 21-25) - Christmas carols and nativity-related items
+- **Christmas Eve / Nativity** - Special children's/family services
+- **Easter Services** - (April 18-27) - Passion narratives and Easter-themed content
+- **Carol Service** - Music-focused services
+- **Communion Services** - Including new member welcoming services
+- **Good Friday** - Scriptural meditation and reflection
+
+**What happens when a special service is detected:**
+
+1. **Warning banner appears** - "⚠️ Special Service Detected: This is a [service type] service. Service Generator may handle videos and structure differently."
+
+2. **Videos handled correctly** - In special services, videos are not automatically assumed to be kids content
+   - Example: "Remembrance Hymn (Video)" in a Remembrance service is matched as a worship song, not kids content
+   - Only videos explicitly marked with "kids" keyword (e.g., "John 3:16 Song (Kids Video)") go to the kids library
+
+3. **Structure awareness** - Special services may have different structure than regular Sunday worship
+   - Notification shows: "Found X items in PDF (remembrance service)"
+   - Helps you understand why the layout might be different from usual
+
+**Practical example:**
+
+| Regular Sunday | Remembrance Sunday |
+|---|---|
+| PRAISE: Jesus Loves Me | PRAISE: Remembrance Hymn (Video) |
+| → Matched to Kids Library | → Matched to Worship Library (not kids!) |
+| Result: Kids content slide | Result: Hymn video presentation |
+
+If you see unexpected video behavior in special services, remember that the app intelligently distinguishes between:
+- **Kids videos** - Explicitly marked "Kids Video" or "Children's Video"
+- **Ceremonial/hymn videos** - Used in special services, matched as regular content
+
 ---
 
 ## Tips & Tricks
