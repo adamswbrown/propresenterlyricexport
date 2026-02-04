@@ -103,6 +103,53 @@ Each extracted song is matched against your Worship Library:
 
 ![Song Search (CCLI/Song Library)](../assets/ccli_search.png)
 
+#### Can't Find a Song? Use CCLI
+
+If Service Generator can't find a song in your Worship Library, you can search for it using CCLI (Church Copyright Licensing Inc.):
+
+**Step-by-step:**
+
+1. **Copy the song name**
+   - In the Service Generator interface, click the **"Copy Name"** field next to the unmatched song
+   - This copies the song title to your clipboard
+
+2. **Search CCLI Song Select**
+   - Click **"Search CCLI"** button in Service Generator
+   - This opens your default browser to **CCLI Song Select** (ccli.com/songsselect)
+   - Log in with your CCLI username and password
+   - Paste the song name in the search field
+   - Find the correct song in the results
+
+3. **Get the CCLI Song Number**
+   - Once you've found the song, note its **CCLI Song Number** (a unique 7-8 digit code)
+   - This is the ID number you need to copy to search in ProPresenter
+   - Copy this number
+
+![CCLI Song ID Location](../assets/CCLI-ID-copy.png)
+
+4. **Search in ProPresenter**
+   - Open ProPresenter
+   - Click the **Search icon** (magnifying glass)
+   - Enter the CCLI Song Number in the search field
+   - ProPresenter will search its database for songs matching that number
+
+![ProPresenter CCLI Song Search](../assets/PP-CCLI-search.png)
+
+5. **Import into Your Worship Library**
+   - When ProPresenter finds the song, select it from the results
+   - **Import it into your Worship Library** (the same library you configured in Service Generator Step 1 - typically "Worship")
+   - Save the import
+
+6. **Re-run Service Generator**
+   - Return to Service Generator
+   - Click **"Re-scan Library"** or restart from Step 4 (Match Songs)
+   - Service Generator will now find the newly imported song and match it automatically
+
+**Tips:**
+- Make sure to import into the correct library (your "Worship" library, not a different one)
+- If the song still doesn't match, try a slightly different spelling or search again
+- Some songs may have multiple CCLI numbers (different arrangements); try different results if the first doesn't work
+
 ### Step 5: Bible (Verses & Presentations)
 
 Match scripture references to your Service Content library:
@@ -179,54 +226,7 @@ The fuzzy-match engine searches for songs in three ways:
 
 **No match (<70%):**
 - Probably not in your library yet
-- Use the CCLI lookup workflow below to find and import the song
-
-#### Finding Missing Songs via CCLI
-
-If Service Generator can't find a song in your Worship Library, you can search for it using CCLI (Church Copyright Licensing Inc.):
-
-**Step-by-step:**
-
-1. **Copy the song name**
-   - In the Service Generator interface, click the **"Copy Name"** field next to the unmatched song
-   - This copies the song title to your clipboard
-
-2. **Search CCLI Song Select**
-   - Click **"Search CCLI"** button in Service Generator
-   - This opens your default browser to **CCLI Song Select** (ccli.com/songsselect)
-   - Log in with your CCLI username and password
-   - Paste the song name in the search field
-   - Find the correct song in the results
-
-3. **Get the CCLI Song Number**
-   - Once you've found the song, note its **CCLI Song Number** (a unique 7-8 digit code)
-   - This is the ID number you need to copy to search in ProPresenter
-   - Copy this number
-
-![CCLI Song ID Location](../assets/CCLI-ID-copy.png)
-
-4. **Search in ProPresenter**
-   - Open ProPresenter
-   - Click the **Search icon** (magnifying glass)
-   - Enter the CCLI Song Number in the search field
-   - ProPresenter will search its database for songs matching that number
-
-![ProPresenter CCLI Song Search](../assets/PP-CCLI-search.png)
-
-5. **Import into Your Worship Library**
-   - When ProPresenter finds the song, select it from the results
-   - **Import it into your Worship Library** (the same library you configured in Service Generator Step 1 - typically "Worship")
-   - Save the import
-
-6. **Re-run Service Generator**
-   - Return to Service Generator
-   - Click **"Re-scan Library"** or restart from Step 4 (Match Songs)
-   - Service Generator will now find the newly imported song and match it automatically
-
-**Tips:**
-- Make sure to import into the correct library (your "Worship" library, not a different one)
-- If the song still doesn't match, try a slightly different spelling or search again
-- Some songs may have multiple CCLI numbers (different arrangements); try different results if the first doesn't work
+- See [Can't Find a Song? Use CCLI](#cant-find-a-song-use-ccli) in Step 4 above
 
 ### Bible Matching
 
@@ -564,6 +564,77 @@ Before using Service Generator, ensure you have:
 
 ---
 
+## Service Library Structure
+
+Before using Service Generator, you'll want to organize your ProPresenter libraries to match how the app routes different content types. Service Generator intelligently places songs, scripture references, and videos into the appropriate library based on their type.
+
+### Recommended Library Organization
+
+Service Generator works best when you have three libraries set up:
+
+#### 1. **Worship Library** (Primary - for songs)
+- **Purpose**: Contains regular worship songs
+- **What goes here**: All hymns, contemporary worship songs, and praise songs
+- **Examples**: "Amazing Grace", "Jesus Loves Me", "Come Thou Fount", "Glory Be to God"
+- **Naming**: Use consistent song titles matching your service orders
+- **Tips**: Keep this organized alphabetically or by category for easy browsing
+
+#### 2. **Service Content Library** (Secondary - for videos and ceremony elements)
+- **Purpose**: Contains videos, transitions, ceremony elements, and service components
+- **What goes here**: 
+  - Hymn/scripture videos (not kids-specific)
+  - Transitions and visual elements
+  - Ceremony videos (communion, baptism, etc.)
+  - Reflective or closing videos
+  - Any video marked with "(Video)" in the service order
+- **Examples**: "Remembrance Hymn (Video)", "Communion Reflection", "Easter Sunrise (Video)", "Benediction"
+- **Naming**: Use descriptive names that match your service order exactly
+- **Tips**: Prefix with content type for easy identification (e.g., "Video:" or "Ceremony:")
+
+#### 3. **Kids Library** (Tertiary - for children's content)
+- **Purpose**: Contains content specifically for children's segments
+- **What goes here**: 
+  - Kids songs and music videos explicitly marked for children
+  - Children's stories, animated videos, or interactive content
+  - Kids talks and engagement videos
+  - Anything marked with "Kids" or "Children's" in the service order
+- **Examples**: "Kids Video: Sing Wherever I Go", "Jesus Loves Me (Kids)", "Bible Story: Good Samaritan"
+- **Naming**: Always prefix with "Kids:" or "Children's:" to make it clear
+
+### How Service Generator Routes Content
+
+Service Generator automatically:
+1. **Songs** → Matched in your **Worship** library
+2. **Scripture references** (e.g., "John 3:16") → Matched in your **Service Content** library
+3. **Kids items** (marked with "Kids" keyword) → Matched in your **Kids** library
+4. **Videos** (marked with "(Video)" in PDF):
+   - If marked "Kids Video" → **Kids** library
+   - Otherwise → **Service Content** library (for hymn videos, closing videos, etc.)
+
+### Setting Up Your Libraries
+
+In ProPresenter Preferences → Libraries:
+
+1. Create or identify your **Worship** library (e.g., "Worship Songs", "Songs")
+2. Create or identify your **Service Content** library (e.g., "Service Elements", "Videos", "Ceremony")
+3. Create or identify your **Kids** library (e.g., "Kids Content", "Children's")
+
+Then in Service Generator settings, specify which library ID corresponds to each:
+- **Worship Library**: Your primary song library
+- **Service Content Library**: Your secondary library for videos and ceremony elements
+- **Kids Library**: Your children's content library
+
+### Why This Structure Matters
+
+Organizing your libraries this way means:
+- ✅ Service Generator finds content more reliably
+- ✅ Different content types stay logically organized
+- ✅ Your searches and browsing become clearer
+- ✅ Future features can better understand your content
+- ✅ Multi-worship-team environments can share organized libraries
+
+---
+
 ## PDF Format Requirements
 
 Service Generator is designed to work with standard PDF service orders. Here's what it looks for and how to format your PDFs if you're creating them from scratch.
@@ -591,9 +662,16 @@ The app automatically detects:
 
 ### PDF Format Best Practices
 
-If you're creating your own service order PDFs (not using Planning Center/Proclaim), follow these guidelines:
+Service Generator expects PDFs to be structured with clear sections and items. If you're creating your own service order PDFs (not using Planning Center/Proclaim), follow these guidelines:
 
-#### Structure
+#### Expected PDF Structure
+
+The app looks for a hierarchical structure with:
+1. **Date header** - Service date (e.g., "Sunday, February 4, 2026")
+2. **Section headers** - Clear labels for different parts of the service (e.g., "Praise 1", "Prayer", "Kids Talk")
+3. **Items under each section** - Songs, scripture, videos, announcements
+
+#### Example PDF Layout
 ```
 SUNDAY SERVICE ORDER - February 4, 2026
 
@@ -627,48 +705,82 @@ Closing
   Announcements (After Service)
 ```
 
+The parser expects:
+- Section headers on their own line, often with line breaks
+- Items indented or listed under their section
+- Clear separation between different parts
+- One item per line when possible
+
 #### Song Titles
-- List song names clearly, one per line
-- Use exact names that match your ProPresenter library
-- Include artist if helpful: "Come Thou Fount (Hymnary)"
+- List song names clearly, one per line or after a label like "Songs:"
+- Use exact names that match your ProPresenter Worship library
+- Include artist if helpful for matching: "Come Thou Fount (Hymnary)"
+- **Case-insensitive matching**: "Come Thou Fount" matches "COME THOU FOUNT" or "come thou fount"
 
 #### Scripture References
 - Use standard format: `Book Chapter:Verse` or `Book Chapter:Verse-Verse`
-- Examples:
+- The parser normalizes formatting so these all match:
+  - `John 3:16` (standard)
+  - `John 3_16` (underscore variant)
+  - `John-3:16` (hyphen variant)
+- Examples of correctly formatted references:
   - `John 3:16`
   - `Romans 12:1-2`
   - `Psalms 56:1-13`
   - `1 Corinthians 13:4-7`
-  
+- Scripture references are matched against your **Service Content** library
+
+#### Video Items
+- Prefix with "Video:" or include "(Video)" in the title
+- Specify if it's for kids: "Kids Video: Sing Wherever I Go"
+- Non-kids videos: "Remembrance Hymn (Video)" or "Video: Easter Sunrise"
+- The parser detects:
+  - **Kids videos** (containing "kids", "children", "children's") → **Kids** library
+  - **Other videos** (e.g., hymn videos, transitions) → **Service Content** library
+
 #### Kids Items
-- Prefix with "Kids" or "Children":
+- Prefix with "Kids", "Children", or "Kids'" to mark for children's section:
   - "Kids Video: Sing Wherever I Go"
   - "Kids Song: Jesus Loves Me"
   - "Children's Story: The Good Samaritan"
+- These are automatically routed to your **Kids** library
+- Can include songs, videos, stories, or activities
 
 #### Section Headers
 - Use recognizable headers for automatic categorization:
-  - `Praise 1`, `Song 1`, `Opening Song`
-  - `Praise 2`, `Song 2`
-  - `Praise 3`, `Closing Song`
-  - `Kids Talk`, `Kids`, `Children's Time`
-  - `Reading`, `Scripture`, `Bible`
-  - `Prayer`, `Praying Together`
-  - `Announcement`, `Sermon`, `Message`
+  - **Worship/Songs**: `Praise 1`, `Song 1`, `Opening Song`, `Hymn`
+  - **Worship/Songs**: `Praise 2`, `Song 2`, `Mid-Service Song`
+  - **Worship/Songs**: `Praise 3`, `Closing Song`, `Recessional`
+  - **Kids**: `Kids Talk`, `Kids`, `Children's Time`, `Kids' Moment`
+  - **Reading**: `Reading`, `Scripture`, `Bible`, `Lessons and Psalms`
+  - **Prayer**: `Prayer`, `Prayers for Others`, `Intercession`, `Praying Together`
+  - **Sermon**: `Sermon`, `Message`, `Reflection`, `Homily`, `Sermon Notes`
 
 ### What Format Works Best
 
 **Most Compatible:**
 - Simple text layout with clear structure
+- Section headers clearly separated (with line breaks before/after)
 - One item per line
-- Section headers clearly separated
-- Consistent song name spelling
+- Consistent song name spelling (matches your library exactly)
+- Clear spacing between sections
 
 **Less Compatible:**
 - Multi-column layouts
 - Complex formatting with graphics
-- Song titles mixed with other text
-- Inconsistent spelling
+- Song titles mixed with descriptions
+- Inconsistent spelling variations
+- Hidden text layers or overlays
+
+### Why PDF Structure Matters
+
+Service Generator's parsing accuracy depends on:
+1. **Clear sections** - Can identify where songs, kids items, and videos are
+2. **Consistent formatting** - Can distinguish items from labels
+3. **Proper naming** - Can match songs and videos to your libraries
+4. **Reasonable formatting** - Works with standard PDFs but not heavily-designed layouts
+
+If your PDFs come from Planning Center or Proclaim, they're already formatted correctly. For custom PDFs, following the structure above will give best results.
 
 ### File Size and Quality
 
@@ -676,6 +788,7 @@ Closing
 - **Resolution:** Standard PDF quality is fine
 - **Scanned PDFs:** Will work but OCR accuracy may vary
 - **Password-protected:** Must be unlocked first
+- **Images/graphics:** Won't affect parsing (text extraction only)
 
 ### Examples of Good PDF Sources
 

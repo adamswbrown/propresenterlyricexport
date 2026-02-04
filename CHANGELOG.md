@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-02-04
+
+### Added
+- **Service Library Structure Guide** - Comprehensive documentation on organizing ProPresenter libraries for Service Generator
+  - Explains three-library setup: Worship (songs), Service Content (videos/ceremony), Kids (children's content)
+  - Clarifies how Service Generator routes different content types to appropriate libraries
+  - Provides setup instructions for ProPresenter Preferences → Libraries
+  - Helps prevent library organization issues that cause matching failures
+
+### Improved
+- **PDF Format Documentation** - Enhanced with clearer expectations for PDF structure
+  - Better explanation of hierarchical document structure Service Generator expects
+  - Clarified how videos are distinguished (kids vs. non-kids based on keywords)
+  - Added examples of content organization within ProPresenter libraries
+  - Explains normalization of scripture references for matching
+  - Improved guidance for custom PDF creation
+
 ## [2.2.3] - 2026-02-04
 
 ### Fixed
