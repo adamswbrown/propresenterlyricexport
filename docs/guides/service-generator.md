@@ -348,10 +348,32 @@ Service Generator recognizes that videos can appear throughout a service, not ju
 - Videos mid-service → Praise 2 or after sermon section
 - Videos near end → Praise 3 or closing section
 
+**Library routing:**
+- **Non-kids videos** (Remembrance hymn videos, closing videos, transition videos) → Searched in **Service Content library**
+  - These are service elements, not songs
+  - Better organized with other service presentations
+- **Kids videos** (explicitly marked with "kids") → Searched in **Kids library**
+- **Regular songs** → Searched in **Worship library**
+
+**Examples:**
+
+1. **Christmas Service** - "Glory in the Manger" at 83% (finishing video)
+   - Searched in Service Content library
+   - Placed in Praise 3 slot to wrap up service
+
+2. **Remembrance Sunday** - "Remembrance Hymn" at 71% (closing reflection)
+   - Searched in Service Content library (not kids!)
+   - Placed in Praise 3 slot as closing meditation
+
+3. **Regular Sunday** - "If God is for me" at 50% (transition video)
+   - Searched in Service Content library
+   - Placed in Praise 2 slot (bridges sermon and closing worship)
+
 **Tips:**
+- Make sure to populate your **Service Content library** with video presentations
 - Videos as "finishing pieces" work well at the end of services (70%+ position)
 - Transition videos in the middle (40-60%) bridge sermon and closing worship
-- The app handles placement intelligently based on actual position in PDF
+- The app handles placement and library routing intelligently
 
 ---
 
@@ -495,27 +517,39 @@ Service Generator relies on three types of libraries in ProPresenter. Understand
 
 ### Service Content Library
 
-**What it is:** A library containing Bible verses, announcements, and service elements
+**What it is:** A library containing Bible verses, videos, announcements, and service elements
 
 **What it contains:**
 - Bible verse presentations (named like "John 3:16 (NIV)", "Psalms 56_1-13 (NIV)", "Luke 2_21-40 (NIV)-1")
+- **Video presentations** - Remembrance videos, closing/finishing videos, transition videos, etc.
 - Announcements and service content
 - Prayer slides, special presentations
 - Typically named "Service Content," "Scripture," "Announcements," etc.
 
 **What Service Generator does:**
-- Extracts scripture references from the PDF (e.g., "Luke 2:21-40")
-- Matches them against presentations in this library
-- Uses smart matching to handle different formatting (colons vs underscores, version suffixes)
-- When matched, adds them to your Reading section
+- **For scripture:** Extracts scripture references from the PDF (e.g., "Luke 2:21-40")
+  - Matches them against presentations in this library
+  - Uses smart matching to handle different formatting
+  - When matched, adds them to your Reading section
+- **For videos:** Extracts non-kids videos from the PDF
+  - Videos without explicit "kids" keyword are matched here
+  - Examples: Remembrance Hymn videos, closing/finishing videos, transition videos
+  - When matched, adds them to the appropriate praise slot
 
-**Important:** Bible verses MUST be named in a consistent format:
-- `Book Chapter_Verse (VERSION)` format
+**Important:** 
+- **Bible verses** MUST be named in a consistent format:
+  - `Book Chapter_Verse (VERSION)` format
   - Examples: `John 3_16 (NIV)`, `Romans 12_1-2 (ESV)`, `Psalms 56_1-13 (NIV)`
-- Or with colons: `John 3:16 (NIV)`
-- Version suffixes are handled automatically
+  - Or with colons: `John 3:16 (NIV)`
+  - Version suffixes are handled automatically
 
-**Example:** PDF says "Luke 2:21-40" → App matches against "Luke 2_21-40 (NIV)-1" → Adds to Reading section
+- **Videos** should be named descriptively:
+  - `Remembrance Hymn`, `Glory in the Manger`, `Jesus Loves Me (Video)`, etc.
+  - These will be matched by fuzzy search to your library
+
+**Examples:**
+- PDF says "Luke 2:21-40" → App matches against "Luke 2_21-40 (NIV)-1" → Adds to Reading section
+- PDF says "Remembrance Hymn (Video)" → App searches Service Content → Adds to Praise 3 section
 
 ### Library Setup Checklist
 
