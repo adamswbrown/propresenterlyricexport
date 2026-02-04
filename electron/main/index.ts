@@ -697,8 +697,9 @@ ipcMain.handle('songs:match', async (_event, songNames: string[], config: Connec
     const { ProPresenterClient } = await import('../../src/propresenter-client');
     const { SongMatcher } = await import('../../src/services/song-matcher');
 
+    // ProPresenter API is REST/HTTP - no persistent connection needed
+    // Each API call is independent, client just stores host/port config
     const client = new ProPresenterClient(config);
-    await client.connect(); // Must connect before making API calls
     const matcher = new SongMatcher(0.7); // 70% confidence threshold
 
     // Fetch presentations from all specified libraries (fresh fetch each time)
