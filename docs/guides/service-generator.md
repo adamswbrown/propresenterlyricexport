@@ -200,7 +200,10 @@ If Service Generator can't find a song in your Worship Library, you can search f
 
 3. **Get the CCLI Song Number**
    - Once you've found the song, note its **CCLI Song Number** (a unique 7-8 digit code)
+   - This is the ID number you need to copy to search in ProPresenter
    - Copy this number
+
+![CCLI Song ID Location](../assets/CCLI-ID-copy.png)
 
 4. **Search in ProPresenter**
    - Open ProPresenter
