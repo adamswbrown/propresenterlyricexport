@@ -1039,7 +1039,8 @@ ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig
       praise1: [],
       praise2: [],
       praise3: [],
-      kids: []
+      kids: [],
+      reading: []
     };
     for (const item of items) {
       const slot = item.praiseSlot || 'praise1';
@@ -1062,7 +1063,9 @@ ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig
       'kids talk': 'kids',
       'kids': 'kids',
       'kids song': 'kids',
-      'kids video': 'kids'
+      'kids video': 'kids',
+      'reading': 'reading',
+      'bible': 'reading'
     };
 
     // Step 4: Build new playlist by replacing items in each section

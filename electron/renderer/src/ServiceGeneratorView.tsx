@@ -1331,12 +1331,22 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
 
                       try {
                         // Build items array for API, including praiseSlot for proper placement
-                        const items = selectedSongs.map(song => ({
-                          type: 'presentation',
-                          uuid: song.selectedMatch!.uuid,
-                          name: song.selectedMatch!.name,
-                          praiseSlot: song.praiseSlot // Required for surgical placement in template sections
-                        }));
+                        const items = [
+                          // Add songs with praise slots
+                          ...selectedSongs.map(song => ({
+                            type: 'presentation',
+                            uuid: song.selectedMatch!.uuid,
+                            name: song.selectedMatch!.name,
+                            praiseSlot: song.praiseSlot // Required for surgical placement in template sections
+                          })),
+                          // Add Bible verses to "Reading" section
+                          ...matchedBibleVerses.map(verse => ({
+                            type: 'presentation',
+                            uuid: verse.selectedMatch!.uuid,
+                            name: verse.selectedMatch!.name,
+                            praiseSlot: 'reading' // Bible verses go in Reading section
+                          }))
+                        ];
 
                         const result = await window.api.buildServicePlaylist(
                           props.connectionConfig,
