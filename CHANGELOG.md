@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-02-04
+
+### Added
+- **Bible Verse Matching** - Service Generator now matches Bible references against your Service Content library
+  - Searches for existing verse presentations by reference (e.g., "Romans 12:1-2")
+  - Shows confidence scores and allows selecting from multiple matches
+  - Falls back to manual workflow (copy reference, Bible Gateway link) when no library match found
+  - "Focus in ProPresenter" button to jump to the Reading section in the playlist
+
+### Changed
+- **Renamed "Verses" step to "Bible"** - Clearer naming for the Bible verse handling step
+- **Fixed navigation flow** - Match Songs now correctly proceeds to Bible step before Build
+  - Previous: Upload → Parse → Match Songs → Build (skipped Verses)
+  - Now: Upload → Parse → Match Songs → Bible → Build
+
+### Improved
+- **Step Validation Gating** - Cannot proceed to next step until current step is complete
+  - Setup: Must select playlist, worship library, and template
+  - Match Songs: Must select a match for all songs
+  - Bible: Must select matches for verses that have library options (verses without matches can proceed)
+  - Build: Must have selected playlist to build
+- Cleaner Build step UI - removed redundant Bible reference section (now in dedicated Bible step)
+
 ## [2.1.1] - 2026-02-03
 
 ### Added
