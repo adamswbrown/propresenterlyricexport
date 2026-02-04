@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.3] - 2026-02-04
+
+### Fixed
+- **Service Generator Bible Verse Matching** - Bible verse references now match correctly against ProPresenter presentations with different formatting
+  - Fixed matching between PDF references (e.g., "Luke 2:21-40") and presentation names (e.g., "Luke 2_21-40 (NIV)-1")
+  - Now normalizes punctuation (colons, underscores, hyphens) during matching
+  - Verses automatically matched with 85%+ confidence are now auto-selected
+
+- **Service Generator Playlist Preservation** - Playlist sections with no new items are now preserved
+  - Fixed issue where Bible verses without matches were causing entire sections to be cleared
+  - Only replaces items when actual replacements are provided
+
+### Improved
+- **Build Playlist UX** - Button text now shows accurate count of items being added
+  - Displays "Add N Songs + M Verses" instead of just "Add N Songs"
+  - Success message shows "Added X items" for clarity
+  - Properly pluralizes song/verse labels
+
 ## [2.2.2] - 2026-02-04
 
 ### Fixed
