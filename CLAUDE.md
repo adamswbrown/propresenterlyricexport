@@ -87,6 +87,96 @@ npm run release:bundle
 - Publishes: GitHub Releases with all artifacts
 - See: `.github/workflows/release.yml`
 
+## Release Process (Major.Minor.Hotfix)
+
+**⚠️ CRITICAL: Always complete ALL steps in order to avoid incomplete releases**
+
+### Versioning Scheme
+- **MAJOR**: Breaking changes (e.g., `2.0.0`)
+- **MINOR**: New features, significant improvements (e.g., `2.2.0`)
+- **HOTFIX**: Bug fixes, small improvements (e.g., `2.2.1`)
+
+### Release Checklist (DO NOT SKIP STEPS)
+
+**Step 1: Ensure all code changes are committed**
+```bash
+# Check git status - must be clean
+git status
+
+# If there are uncommitted changes:
+git add <files>
+git commit -m "Description of changes"
+```
+
+**Step 2: Update version numbers**
+```bash
+# Update BOTH files:
+# 1. package.json: "version": "X.Y.Z"
+# 2. CHANGELOG.md: Add new [X.Y.Z] - YYYY-MM-DD section with changes
+```
+
+**Step 3: Commit version changes**
+```bash
+git add package.json CHANGELOG.md
+git commit -m "v X.Y.Z: Release notes summary
+
+- Key change 1
+- Key change 2"
+```
+
+**Step 4: Create and push tag**
+```bash
+# Tag current commit
+git tag vX.Y.Z
+
+# Push main branch first
+git push origin main
+
+# Push the tag (this triggers GitHub Actions)
+git push origin vX.Y.Z
+```
+
+### Common Mistakes to Avoid
+
+❌ **DO NOT** tag without committing all code changes first
+```bash
+# WRONG - forgot to commit code changes
+git tag v2.2.1
+git push origin v2.2.1
+```
+
+✅ **CORRECT** - commit everything, then tag
+```bash
+# RIGHT - all changes committed first
+git add src/App.tsx  # Your code changes
+git commit -m "Implement feature"
+git add CHANGELOG.md package.json
+git commit -m "v2.2.1: release notes"
+git tag v2.2.1
+git push origin main
+git push origin v2.2.1
+```
+
+### Fixing a Bad Release
+
+If you accidentally tagged without committing code changes:
+```bash
+# 1. Delete local tag
+git tag -d vX.Y.Z
+
+# 2. Delete remote tag
+git push origin :vX.Y.Z
+
+# 3. Commit the missing changes
+git add <files>
+git commit -m "Include missing code from release"
+
+# 4. Re-create and push the tag
+git tag vX.Y.Z
+git push origin main
+git push origin vX.Y.Z
+```
+
 ## Known Issues & Solutions
 
 ### ⚠️ pptxgenjs Bundling Issue
