@@ -301,6 +301,202 @@ The app automatically identifies worship segments:
 
 ---
 
+## Understanding Service Libraries
+
+Service Generator relies on three types of libraries in ProPresenter. Understanding what each does will help you set it up correctly.
+
+### Worship Library
+
+**What it is:** Your main library containing all worship songs and hymns
+
+**What it contains:** 
+- Song presentations (e.g., "Amazing Grace", "Jesus Loves Me", "Come Thou Fount")
+- Slide decks with lyrics for each song
+- Typically named "Worship," "Songs," "Music Library," or similar
+
+**What Service Generator does:**
+- Reads the PDF to find song titles (e.g., "Come Thou Fount")
+- Searches this library for matching presentations
+- When matched, adds them to your playlist in the correct worship slot (Praise 1, Praise 2, Praise 3)
+
+**Example:** PDF says "Come Thou Fount" → App finds "Come Thou Fount" presentation → Adds to Praise 1 section
+
+### Kids Library
+
+**What it is:** A separate library for children's songs and activities
+
+**What it contains:**
+- Kids-oriented presentations
+- Children's songs, games, activities
+- Typically named "Kids," "Children," "Kids Songs," etc.
+
+**What Service Generator does:**
+- Detects kids items in the PDF (looks for "kids video," "kids song," "children's story," etc.)
+- Searches this library instead of the Worship library
+- Adds them to the Kids Talk section with their own categorization
+
+**Example:** PDF says "Kids Video: Sing Wherever I Go" → App finds in Kids library → Adds to Kids Talk section
+
+### Service Content Library
+
+**What it is:** A library containing Bible verses, announcements, and service elements
+
+**What it contains:**
+- Bible verse presentations (named like "John 3:16 (NIV)", "Psalms 56_1-13 (NIV)", "Luke 2_21-40 (NIV)-1")
+- Announcements and service content
+- Prayer slides, special presentations
+- Typically named "Service Content," "Scripture," "Announcements," etc.
+
+**What Service Generator does:**
+- Extracts scripture references from the PDF (e.g., "Luke 2:21-40")
+- Matches them against presentations in this library
+- Uses smart matching to handle different formatting (colons vs underscores, version suffixes)
+- When matched, adds them to your Reading section
+
+**Important:** Bible verses MUST be named in a consistent format:
+- `Book Chapter_Verse (VERSION)` format
+  - Examples: `John 3_16 (NIV)`, `Romans 12_1-2 (ESV)`, `Psalms 56_1-13 (NIV)`
+- Or with colons: `John 3:16 (NIV)`
+- Version suffixes are handled automatically
+
+**Example:** PDF says "Luke 2:21-40" → App matches against "Luke 2_21-40 (NIV)-1" → Adds to Reading section
+
+### Library Setup Checklist
+
+Before using Service Generator, ensure you have:
+
+- ✅ **Worship Library** with your songs/hymns
+- ✅ **Kids Library** with children's content (if you have kids items)
+- ✅ **Service Content Library** with:
+  - Bible verse presentations named consistently (Book Chapter_Verse format)
+  - Service announcements and special content
+- ✅ **Target Playlist** (empty or with your template structure)
+
+---
+
+## PDF Format Requirements
+
+Service Generator is designed to work with standard PDF service orders. Here's what it looks for and how to format your PDFs if you're creating them from scratch.
+
+### What Service Generator Extracts
+
+The app automatically detects:
+
+1. **Song titles**
+   - Looks for lines with song names (typically after "Songs:", "Praise 1:", etc.)
+   - Matches them against your Worship or Kids library
+   
+2. **Scripture references**
+   - Detects patterns like: "John 3:16", "Romans 12:1-2", "Psalms 56:1-13"
+   - Matches them against your Service Content library
+   
+3. **Worship sections**
+   - Recognizes common headers: "Praise 1", "Praise 2", "Praise 3", "Kids Talk", "Kids Song", "Kids Video"
+   - Automatically categorizes songs into the right section
+   
+4. **Special markers**
+   - Detects "Kids" items for the Kids Library
+   - Identifies announcements and service content
+   - Recognizes prayers and special segments
+
+### PDF Format Best Practices
+
+If you're creating your own service order PDFs (not using Planning Center/Proclaim), follow these guidelines:
+
+#### Structure
+```
+SUNDAY SERVICE ORDER - February 4, 2026
+
+Opening - Pre Roll
+  Announcements (Before and After Service)
+  Call to Worship
+
+Praise 1
+  Come Thou Fount
+
+Prayer
+  Prayer Together
+
+Kids Talk
+  Kids Video: Sing Wherever I Go
+
+Praise 2
+  Jesus Paid It All
+
+Reading
+  John 3:16-17
+
+Sermon
+  Message by Pastor [Name]
+
+Praise 3
+  Amazing Grace
+
+Closing
+  Altar Call
+  Announcements (After Service)
+```
+
+#### Song Titles
+- List song names clearly, one per line
+- Use exact names that match your ProPresenter library
+- Include artist if helpful: "Come Thou Fount (Hymnary)"
+
+#### Scripture References
+- Use standard format: `Book Chapter:Verse` or `Book Chapter:Verse-Verse`
+- Examples:
+  - `John 3:16`
+  - `Romans 12:1-2`
+  - `Psalms 56:1-13`
+  - `1 Corinthians 13:4-7`
+  
+#### Kids Items
+- Prefix with "Kids" or "Children":
+  - "Kids Video: Sing Wherever I Go"
+  - "Kids Song: Jesus Loves Me"
+  - "Children's Story: The Good Samaritan"
+
+#### Section Headers
+- Use recognizable headers for automatic categorization:
+  - `Praise 1`, `Song 1`, `Opening Song`
+  - `Praise 2`, `Song 2`
+  - `Praise 3`, `Closing Song`
+  - `Kids Talk`, `Kids`, `Children's Time`
+  - `Reading`, `Scripture`, `Bible`
+  - `Prayer`, `Praying Together`
+  - `Announcement`, `Sermon`, `Message`
+
+### What Format Works Best
+
+**Most Compatible:**
+- Simple text layout with clear structure
+- One item per line
+- Section headers clearly separated
+- Consistent song name spelling
+
+**Less Compatible:**
+- Multi-column layouts
+- Complex formatting with graphics
+- Song titles mixed with other text
+- Inconsistent spelling
+
+### File Size and Quality
+
+- **File size:** Keep under 50MB (typically 1-5MB for PDFs)
+- **Resolution:** Standard PDF quality is fine
+- **Scanned PDFs:** Will work but OCR accuracy may vary
+- **Password-protected:** Must be unlocked first
+
+### Examples of Good PDF Sources
+
+These services export PDFs that Service Generator handles well:
+- **Planning Center Online** - Designed specifically for church workflows
+- **Proclaim** - Produces clean, structured exports
+- **ChurchPlanner** - Clear, simple PDF format
+- **Custom PDFs** - If formatted according to guidelines above
+
+---
+
 ## Service Order Sources
 
 Service Generator works with PDFs from these services:
