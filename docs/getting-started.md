@@ -29,8 +29,6 @@ Get ProPresenter Lyrics Export up and running in just a few minutes.
 
 ## Installation
 
-Choose your preferred method below.
-
 ---
 
 ### 🖥️ Desktop App (Recommended)
@@ -43,11 +41,7 @@ The easiest way to get started with a full graphical interface.
   - **macOS**: `ProPresenter-Lyrics-vX.Y.Z-mac.zip`
   - **Windows**: `ProPresenter-Lyrics-vX.Y.Z-win.exe`
 
-**Install & Launch:**
-
-<details>
-<summary><strong>📱 macOS Installation</strong></summary>
-
+**macOS Installation:**
 ```bash
 # 1. Unzip the downloaded file
 unzip ProPresenter-Lyrics-vX.Y.Z-mac.zip
@@ -61,15 +55,11 @@ mv ProPresenter\ Lyrics.app /Applications/
 # 4. Launch the app
 open /Applications/ProPresenter\ Lyrics.app
 ```
-</details>
 
-<details>
-<summary><strong>🪟 Windows Installation</strong></summary>
-
+**Windows Installation:**
 1. Run the installer (`.exe`)
 2. Follow the installation wizard
 3. Launch "ProPresenter Lyrics" from your Start menu
-</details>
 
 **First Run:**
 1. Open the app
@@ -90,9 +80,7 @@ Lightweight standalone binaries for power users and automation.
   - **macOS (Apple Silicon)**: `propresenter-lyrics-macos-arm64`
   - **Windows**: `propresenter-lyrics-win-x64.exe`
 
-**Setup:**
-
-**macOS:**
+**macOS Setup:**
 ```bash
 # Make executable
 chmod +x propresenter-lyrics-macos-x64
@@ -101,7 +89,7 @@ chmod +x propresenter-lyrics-macos-x64
 ./propresenter-lyrics-macos-x64 status
 ```
 
-**Windows:**
+**Windows Setup:**
 ```bash
 # Test connection
 propresenter-lyrics-win-x64.exe status
