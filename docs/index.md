@@ -10,6 +10,23 @@ A modern desktop + CLI toolkit for worship leaders and production teams who need
 
 Both paths support rich PPTX exports, text/JSON dumps, and run on macOS and Windows.
 
+---
+
+## 🎬 See it in Action
+
+Watch how easy it is to export lyrics from ProPresenter to PowerPoint:
+
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 800px; margin: 1em 0 2em 0;">
+  <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 8px;"
+    src="https://www.youtube.com/embed/6fKM3rUmUQI"
+    title="ProPresenter Lyrics Export Walkthrough"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    allowfullscreen></iframe>
+</div>
+
+---
+
 ## Navigation
 
 - **User Docs**: [Getting Started](./getting-started) | [User Guide](./user-guide) | [FAQ](./faq)
