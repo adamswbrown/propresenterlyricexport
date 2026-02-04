@@ -2,19 +2,30 @@
 
 Get ProPresenter Lyrics Export up and running in just a few minutes.
 
-## Prerequisites
+---
 
-1. **ProPresenter 7** must be running
-2. **Network API must be enabled** in ProPresenter
-3. You'll need the host IP and port (usually `127.0.0.1:1025`)
+## ⚠️ CRITICAL: Configure ProPresenter First
+
+**Before installing or using this tool, you MUST configure ProPresenter correctly. Nothing will work without this step.**
 
 ### Enable Network API in ProPresenter
 
-1. Open ProPresenter 7
-2. Go to **Preferences** → **Network**
-3. Check **"Enable Network API"**
-4. Note the **port number** (default: 1025)
-5. Click **Save** and restart ProPresenter
+1. Open **ProPresenter 7**
+2. Go to **Preferences** (or **ProPresenter** → **Preferences** on macOS)
+3. Click the **Network** tab
+4. Check the box: **"Enable Network API"**
+5. Note the **Port** number (default: `1025`)
+6. If connecting from another computer, note the **IP address** displayed
+7. Click **OK** or **Save**
+8. **Restart ProPresenter** for changes to take effect
+
+**Why this matters:** ProPresenter's Network API is how this tool communicates with ProPresenter. Without it enabled, the tool cannot connect, read playlists, or export lyrics.
+
+**Connection details you'll need:**
+- **Host**: `127.0.0.1` (same computer) or the IP address shown in ProPresenter (remote computer)
+- **Port**: `1025` (default) or whatever port is shown in ProPresenter's Network settings
+
+---
 
 ## Installation
 

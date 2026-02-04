@@ -32,7 +32,7 @@ Both paths support rich PPTX exports, text/JSON dumps, and run on macOS and Wind
 
 ## System Requirements
 
-- **ProPresenter 7** with Network API enabled
+- **ProPresenter 7** with **Network API enabled** ⚠️ **(Required - see [Getting Started](./getting-started) for setup)**
 - **macOS** 10.14+ or **Windows** 10+
 - Desktop app is standalone; CLI requires no dependencies
 

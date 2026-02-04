@@ -2,6 +2,26 @@
 
 Common questions and solutions for ProPresenter Lyrics Export.
 
+---
+
+## ⚠️ Start Here: Did You Configure ProPresenter?
+
+**Q: The tool won't connect. What should I check first?**
+
+**A:** 99% of connection issues are because ProPresenter's Network API isn't enabled. Before troubleshooting anything else:
+
+1. Open ProPresenter 7
+2. Go to **Preferences → Network**
+3. Verify **"Enable Network API"** is checked
+4. Verify the **Port** matches what you entered in the tool (default: 1025)
+5. **Restart ProPresenter** after making changes
+
+If the Network API wasn't enabled, enable it and restart ProPresenter. Then try connecting again.
+
+See the [Getting Started guide](./getting-started#critical-configure-propresenter-first) for detailed setup instructions.
+
+---
+
 ## Connection Issues
 
 ### "Connection refused" - What does this mean?

@@ -19,6 +19,17 @@ ProPresenter Lyrics Export extracts song lyrics from your ProPresenter presentat
 
 ## Desktop App Guide
 
+### Before You Start
+
+**⚠️ ProPresenter MUST be configured first!**
+
+If you haven't already, you need to enable ProPresenter's Network API. See the [Getting Started guide](./getting-started#critical-configure-propresenter-first) for detailed instructions.
+
+**Quick checklist:**
+- [ ] ProPresenter 7 is running
+- [ ] Network API is enabled (Preferences → Network)
+- [ ] You know the host IP and port (usually `127.0.0.1:1025`)
+
 ### First Launch
 
 1. **Connect to ProPresenter**
