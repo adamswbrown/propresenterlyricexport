@@ -10,6 +10,14 @@ A modern desktop + CLI toolkit for worship leaders and production teams who need
 
 Both paths support rich PPTX exports, text/JSON dumps, and run on macOS and Windows.
 
+## Navigation
+
+- **User Docs**: [Getting Started](./getting-started) | [User Guide](./user-guide) | [FAQ](./faq)
+- **Guides**: [PPTX Export](./guides/pptx-export) | [CLI Commands](./guides/cli-guide) | [Service Generator](./guides/service-generator)
+- **Developer**: [Setup](./developer/setup) | [Architecture](./developer/architecture) | [Building](./developer/building)
+
+---
+
 ## ✨ Key Features
 
 - 📤 **Lyrics Export** - Extract lyrics from ProPresenter playlists to PowerPoint, Text, or JSON
@@ -53,3 +61,13 @@ Download standalone binaries for macOS or Windows from [Releases](https://github
 ---
 
 **Version**: Check the [Releases page](https://github.com/adamswbrown/propresenterlyricexport/releases) for the latest version and updates.
+
+---
+
+## Documentation Map
+
+| **New Users** | **Experienced Users** | **Developers** |
+|---|---|---|
+| [Getting Started](./getting-started) | [CLI Reference](./guides/cli-guide) | [Setup Guide](./developer/setup) |
+| [User Guide](./user-guide) | [PPTX Customization](./guides/pptx-export) | [Architecture](./developer/architecture) |
+| [FAQ](./faq) | [Service Generator](./guides/service-generator) | [Building & Release](./developer/building) |
