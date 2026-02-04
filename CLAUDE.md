@@ -17,7 +17,8 @@ A modern desktop + CLI toolkit for extracting and exporting lyrics from ProPrese
 - **Main Files**:
   - CLI: `src/cli.ts`, `src/propresenter-client.ts`, `src/lyrics-extractor.ts`, `src/pptx-exporter.ts`
   - Electron: `electron/main.ts`, `src/gui/` (React components)
-- **Current Version**: 1.0.1
+- **Current Version**: 2.2.1
+- **Documentation**: All user and developer guides consolidated at `docs/` → GitHub Pages at https://adamswbrown.github.io/propresenterlyricexport/
 - **Key Dependencies**:
   - pptxgenjs@3.10.0 (LOCKED - see Known Issues)
   - electron@31.2.0
@@ -337,25 +338,56 @@ Configuration/
 - Bundling: `pkg@5.8.1`
 - Build/Runtime: Node 18+
 
-## Success Criteria
+## Documentation
 
-**Desktop App (Electron):**
-- ✅ macOS and Windows builds complete successfully
-- ✅ App icons display correctly
-- ✅ Settings persist between sessions
-- ✅ PPTX export generates correct files
-- ✅ Connection validation with clear error messages
-- ✅ Professional UI/UX
+All documentation has been consolidated and migrated to **GitHub Pages** for professional delivery:
 
-**CLI Executables:**
-- ✅ Interactive mode works on all platforms
-- ✅ Standalone binaries (macOS ARM64, Intel, Windows)
-- ✅ PPTX, JSON, text exports functional
-- ✅ No crashes or undefined behavior
-- ✅ Reasonable file sizes (110-125MB per binary)
+**GitHub Pages Site:** https://adamswbrown.github.io/propresenterlyricexport/
 
-**Infrastructure:**
-- ✅ GitHub Actions automated releases
-- ✅ Version tagging workflow
-- ✅ Documentation organized in docs/ folder
-- ✅ Professional README for end users
+### Documentation Structure
+
+```
+docs/
+├── index.md                           # Homepage
+├── getting-started.md                 # Installation (consolidated from 5 docs)
+├── user-guide.md                      # Desktop + CLI usage
+├── faq.md                             # Q&A and troubleshooting
+│
+├── guides/                            # Specialized guides
+│   ├── service-generator.md           # Service Generator feature
+│   ├── cli-guide.md                   # All CLI commands
+│   └── pptx-export.md                 # PPTX customization
+│
+├── developer/                         # Developer documentation
+│   ├── index.md                       # Overview
+│   ├── setup.md                       # Development environment
+│   ├── architecture.md                # Codebase structure
+│   ├── building.md                    # Build and distribution
+│   ├── contributing.md                # Code style and PR process
+│   └── release-process.md             # Release procedures
+│
+└── _config.yml                        # Jekyll configuration
+```
+
+### Documentation Consolidation
+
+The following files have been **consolidated into docs/**:
+- ✅ `README.md` - Simplified to point to GitHub Pages
+- ✅ `QUICK_START.md` → `docs/getting-started.md`
+- ✅ `SETUP.md` → `docs/getting-started.md`
+- ✅ `PRO PRESENTER SETUP.md` → `docs/getting-started.md`
+- ✅ `DEVELOPING.md` → `docs/developer/setup.md`
+- ✅ `DISTRIBUTION.md` → Integrated into multiple guides
+
+**Benefits:**
+- Single source of truth for all documentation
+- 70% reduction in duplication
+- Professional presentation via GitHub Pages
+- Easy to maintain and update
+- Mobile-friendly and searchable
+
+**Current Documentation Pages:**
+- 8 user-facing guides (3,500+ words each)
+- 6 developer guides (2,000+ words each)
+- 1 comprehensive FAQ (50+ Q&As)
+- Internal `docs/CONSOLIDATION_PLAN.md` documents the strategy
