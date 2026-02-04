@@ -747,30 +747,36 @@ ipcMain.handle('pdf:parse', async (_event, filePath: string) => {
   }
 });
 
-ipcMain.handle('songs:match', async (_event, songNames: string[], config: ConnectionConfig, libraryIds: string[]) => {
+// Song item type for matching - includes whether it's a kids video
+type SongItemToMatch = {
+  text: string;
+  isKidsVideo?: boolean;
+  praiseSlot?: string;
+};
+
+ipcMain.handle('songs:match', async (_event, songItems: SongItemToMatch[], config: ConnectionConfig, libraryIds: string[], kidsLibraryId?: string) => {
   try {
     const { ProPresenterClient } = await import('../../src/propresenter-client');
     const { SongMatcher } = await import('../../src/services/song-matcher');
 
     // ProPresenter API is REST/HTTP - no persistent connection needed
-    // Each API call is independent, client just stores host/port config
     const client = new ProPresenterClient(config);
     const matcher = new SongMatcher(0.7); // 70% confidence threshold
 
-    // Fetch presentations from all specified libraries (fresh fetch each time)
-    const allPresentations: Array<{ uuid: string; name: string; library: string; libraryId: string }> = [];
+    // Get library names for display
+    const libraries = await client.getLibraries();
 
+    // Fetch presentations from worship libraries (non-kids)
+    const worshipPresentations: Array<{ uuid: string; name: string; library: string; libraryId: string }> = [];
     for (const libraryId of libraryIds) {
-      if (!libraryId) continue;
+      if (!libraryId || libraryId === kidsLibraryId) continue; // Skip kids library here
       try {
         const presentations = await client.getLibraryPresentations(libraryId);
-        // Get library name for display
-        const libraries = await client.getLibraries();
         const library = libraries.find(l => l.uuid === libraryId);
         const libraryName = library?.name || 'Unknown';
 
         for (const pres of presentations) {
-          allPresentations.push({
+          worshipPresentations.push({
             uuid: pres.uuid,
             name: pres.name,
             library: libraryName,
@@ -782,38 +788,85 @@ ipcMain.handle('songs:match', async (_event, songNames: string[], config: Connec
       }
     }
 
-    // Create service sections from song names for matcher
-    const songSections = songNames.map((name, index) => ({
-      type: 'song' as const,
-      title: name,
-      position: index
-    }));
+    // Fetch presentations from kids library separately
+    const kidsPresentations: Array<{ uuid: string; name: string; library: string; libraryId: string }> = [];
+    if (kidsLibraryId) {
+      try {
+        const presentations = await client.getLibraryPresentations(kidsLibraryId);
+        const library = libraries.find(l => l.uuid === kidsLibraryId);
+        const libraryName = library?.name || 'Kids';
 
-    // Match songs
-    const matches = await matcher.matchSongs(songSections, allPresentations);
+        for (const pres of presentations) {
+          kidsPresentations.push({
+            uuid: pres.uuid,
+            name: pres.name,
+            library: libraryName,
+            libraryId: kidsLibraryId
+          });
+        }
+      } catch (err) {
+        console.error(`Failed to fetch kids library ${kidsLibraryId}:`, err);
+      }
+    }
 
-    // Convert to UI format
-    const results = matches.map(match => ({
-      songName: match.pdfTitle,
-      praiseSlot: undefined, // Will be set by caller
-      matches: match.matches.map(m => ({
-        uuid: m.presentation.uuid,
-        name: m.presentation.name,
-        library: m.presentation.library,
-        confidence: Math.round(m.confidence * 100)
-      })),
-      bestMatch: match.bestMatch ? {
-        uuid: match.bestMatch.presentation.uuid,
-        name: match.bestMatch.presentation.name,
-        library: match.bestMatch.presentation.library,
-        confidence: Math.round(match.bestMatch.confidence * 100)
-      } : undefined,
-      requiresReview: match.requiresReview,
-      selectedMatch: match.bestMatch && !match.requiresReview ? {
-        uuid: match.bestMatch.presentation.uuid,
-        name: match.bestMatch.presentation.name
-      } : undefined
-    }));
+    console.log(`[songs:match] Loaded ${worshipPresentations.length} worship songs, ${kidsPresentations.length} kids songs`);
+
+    // Debug: Log received songItems
+    console.log(`[songs:match] Received ${songItems.length} song items:`);
+    for (const item of songItems) {
+      console.log(`  - text="${item.text}" (type=${typeof item.text}) isKids=${item.isKidsVideo} slot=${item.praiseSlot}`);
+    }
+
+    // Match each song against the appropriate library
+    const results = [];
+    for (let i = 0; i < songItems.length; i++) {
+      const item = songItems[i];
+      const isKids = item.isKidsVideo || item.praiseSlot === 'kids';
+
+      // Ensure text is a string
+      const songText = typeof item.text === 'string' ? item.text : String(item.text || '');
+      if (!songText) {
+        console.warn(`[songs:match] Skipping item ${i} - no text`);
+        continue;
+      }
+
+      // Choose which library to match against
+      const presentationsToMatch = isKids ? kidsPresentations : worshipPresentations;
+      console.log(`[songs:match] Matching "${songText}" (kids=${isKids}) against ${presentationsToMatch.length} presentations`);
+
+      // Create service section for matcher
+      const songSection = {
+        type: 'song' as const,
+        title: songText,
+        position: i
+      };
+
+      // Match this single song
+      const matches = await matcher.matchSongs([songSection], presentationsToMatch);
+      const match = matches[0];
+
+      results.push({
+        songName: match.pdfTitle,
+        praiseSlot: item.praiseSlot,
+        matches: match.matches.map(m => ({
+          uuid: m.presentation.uuid,
+          name: m.presentation.name,
+          library: m.presentation.library,
+          confidence: Math.round(m.confidence * 100)
+        })),
+        bestMatch: match.bestMatch ? {
+          uuid: match.bestMatch.presentation.uuid,
+          name: match.bestMatch.presentation.name,
+          library: match.bestMatch.presentation.library,
+          confidence: Math.round(match.bestMatch.confidence * 100)
+        } : undefined,
+        requiresReview: match.requiresReview,
+        selectedMatch: match.bestMatch && !match.requiresReview ? {
+          uuid: match.bestMatch.presentation.uuid,
+          name: match.bestMatch.presentation.name
+        } : undefined
+      });
+    }
 
     return { success: true, results };
   } catch (error: any) {
@@ -889,6 +942,13 @@ ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig
     let currentSlot: string | null = null;
     let skipUntilNextHeader = false;
 
+    // Debug: Log all items to understand structure
+    console.log('[playlist:build-service] Current items in playlist:');
+    for (const item of currentItems) {
+      const name = item.id?.name || item.name || 'UNNAMED';
+      console.log(`  - type="${item.type}" name="${name}"`);
+    }
+
     for (let i = 0; i < currentItems.length; i++) {
       const item = currentItems[i];
       const isHeader = item.type === 'header';
@@ -897,8 +957,12 @@ ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig
       if (isHeader) {
         // Check if this header marks a praise section
         const matchedSlot = headerToSlot[itemName];
+        console.log(`[playlist:build-service] Header "${itemName}" -> slot: ${matchedSlot || 'NONE'}`);
 
         if (matchedSlot) {
+          const slotItemCount = (itemsBySlot[matchedSlot] || []).length;
+          console.log(`[playlist:build-service]   Will insert ${slotItemCount} items for slot "${matchedSlot}"`);
+
           // This is a praise section header - keep the header
           newItems.push(item);
 

@@ -94,8 +94,12 @@ const api = {
   // Service Generator
   choosePDF: () => ipcRenderer.invoke('pdf:choose'),
   parsePDF: (filePath: string) => ipcRenderer.invoke('pdf:parse', filePath),
-  matchSongs: (songs: string[], config: ConnectionConfig, libraryIds: string[]) =>
-    ipcRenderer.invoke('songs:match', songs, config, libraryIds),
+  matchSongs: (
+    songItems: Array<{ text: string; isKidsVideo?: boolean; praiseSlot?: string }>,
+    config: ConnectionConfig,
+    libraryIds: string[],
+    kidsLibraryId?: string
+  ) => ipcRenderer.invoke('songs:match', songItems, config, libraryIds, kidsLibraryId),
   fetchVerses: (references: string[]) => ipcRenderer.invoke('verses:fetch', references),
   buildServicePlaylist: (config: ConnectionConfig, playlistId: string, items: any[]) =>
     ipcRenderer.invoke('playlist:build-service', config, playlistId, items),

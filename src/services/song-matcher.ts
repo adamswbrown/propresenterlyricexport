@@ -194,6 +194,11 @@ export class SongMatcher {
    * Normalize song title for comparison
    */
   private normalizeSongTitle(title: string): string {
+    // Defensive check - handle non-string values
+    if (typeof title !== 'string') {
+      console.error('[SongMatcher] normalizeSongTitle received non-string:', typeof title, title);
+      return String(title || '').toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
+    }
     return title
       .toLowerCase()
       .replace(/[^\w\s]/g, '')  // Remove punctuation

@@ -120,7 +120,12 @@ interface ElectronAPI {
   // Service Generator
   choosePDF: () => Promise<{ canceled: boolean; filePath?: string }>;
   parsePDF: (filePath: string) => Promise<ParsedService>;
-  matchSongs: (songs: ServiceSection[], config: ConnectionConfig, libraryIds: string[]) => Promise<SongMatch[]>;
+  matchSongs: (
+    songItems: Array<{ text: string; isKidsVideo?: boolean; praiseSlot?: string }>,
+    config: ConnectionConfig,
+    libraryIds: string[],
+    kidsLibraryId?: string
+  ) => Promise<{ success: boolean; results?: SongMatch[]; error?: string }>;
   fetchVerses: (references: string[]) => Promise<any[]>;
   buildServicePlaylist: (config: ConnectionConfig, playlistId: string, items: any[]) => Promise<{ success: boolean; error?: string }>;
 }

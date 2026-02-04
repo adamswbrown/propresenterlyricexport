@@ -475,20 +475,27 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                       try {
                         const songsToMatch = parsedItems
                           .filter(item => item.type === 'song' || item.type === 'kids_video');
-                        const songNames = songsToMatch.map(item => item.text);
 
-                        if (songNames.length > 0) {
-                          setNotification({ message: `Matching ${songNames.length} items...`, type: 'info' });
+                        // Build item objects with type info for proper library matching
+                        const songItems = songsToMatch.map(item => ({
+                          text: item.text,
+                          isKidsVideo: item.type === 'kids_video' || item.isKidsVideo,
+                          praiseSlot: item.praiseSlot
+                        }));
 
+                        if (songItems.length > 0) {
+                          setNotification({ message: `Matching ${songItems.length} items...`, type: 'info' });
+
+                          // Pass worship library IDs (kids library passed separately)
                           const libraryIds = [
-                            props.settings.worshipLibraryId,
-                            props.settings.kidsLibraryId
+                            props.settings.worshipLibraryId
                           ].filter(Boolean);
 
                           const result = await window.api.matchSongs(
-                            songNames,
+                            songItems,
                             props.connectionConfig,
-                            libraryIds
+                            libraryIds,
+                            props.settings.kidsLibraryId || undefined
                           );
 
                           if (result.success) {
@@ -565,18 +572,25 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
           try {
             const songsToMatch = parsedItems
               .filter(item => item.type === 'song' || item.type === 'kids_video');
-            const songNames = songsToMatch.map(item => item.text);
 
-            if (songNames.length > 0) {
+            // Build item objects with type info for proper library matching
+            const songItems = songsToMatch.map(item => ({
+              text: item.text,
+              isKidsVideo: item.type === 'kids_video' || item.isKidsVideo,
+              praiseSlot: item.praiseSlot
+            }));
+
+            if (songItems.length > 0) {
+              // Pass worship library IDs (kids library passed separately)
               const libraryIds = [
-                props.settings.worshipLibraryId,
-                props.settings.kidsLibraryId
+                props.settings.worshipLibraryId
               ].filter(Boolean);
 
               const result = await window.api.matchSongs(
-                songNames,
+                songItems,
                 props.connectionConfig,
-                libraryIds
+                libraryIds,
+                props.settings.kidsLibraryId || undefined
               );
 
               if (result.success) {
