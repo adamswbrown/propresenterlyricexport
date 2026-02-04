@@ -1,3 +1,4 @@
+/// <reference path="./env.d.ts" />
 import React, { useEffect, useMemo, useState } from 'react';
 import { ServiceGeneratorView } from './ServiceGeneratorView';
 

@@ -1,3 +1,4 @@
+/// <reference path="./env.d.ts" />
 import { useState, useEffect } from 'react';
 
 type ServiceGeneratorViewProps = {
