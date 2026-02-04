@@ -638,7 +638,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                       <span style={{ color: '#f44336' }}>✗ <strong>{noMatchCount}</strong> not found</span>
                     )}
                   </div>
-                  {noMatchCount > 0 && (
+                  {(noMatchCount > 0 || needsReviewCount > 0) && (
                     <button
                       className="ghost small"
                       onClick={rescanLibraries}
@@ -727,10 +727,13 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                             </option>
                           ))}
                         </select>
-                        {result.matches.length === 0 && (
-                          <div style={{ marginTop: '12px' }}>
-                            <div style={{ fontSize: '13px', color: '#f44336', marginBottom: '12px' }}>
-                              No matches found in libraries.
+                        {/* CCLI lookup for songs with no matches OR low confidence (needs review) */}
+                        {(result.matches.length === 0 || result.requiresReview) && (
+                          <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
+                            <div style={{ fontSize: '13px', color: result.matches.length === 0 ? '#f44336' : '#ffc107', marginBottom: '10px' }}>
+                              {result.matches.length === 0
+                                ? 'No matches found in libraries.'
+                                : 'Can\'t find the right match? Add it from CCLI:'}
                             </div>
                             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                               <button
