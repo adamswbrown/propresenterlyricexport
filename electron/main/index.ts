@@ -741,17 +741,22 @@ ipcMain.handle('pdf:parse', async (_event, filePath: string) => {
       isKidsVideo: section.isKidsVideo === true,  // Only if explicitly marked as kids
       praiseSlot: section.praiseSlot // praise1, praise2, praise3, or kids
     }));
-    return { success: true, items };
+    
+    // Include special service type for warnings and service-specific handling
+    const specialServiceType = result.specialServiceType;
+    
+    return { success: true, items, specialServiceType };
   } catch (error: any) {
     return { success: false, error: error.message || 'Failed to parse PDF' };
   }
 });
 
-// Song item type for matching - includes whether it's a kids video
+// Song item type for matching - includes whether it's a kids video and special service awareness
 type SongItemToMatch = {
   text: string;
   isKidsVideo?: boolean;
   praiseSlot?: string;
+  specialServiceType?: string | null;  // Type of service (remembrance, christmas, etc.)
 };
 
 ipcMain.handle('songs:match', async (_event, songItems: SongItemToMatch[], config: ConnectionConfig, libraryIds: string[], kidsLibraryId?: string) => {
@@ -814,14 +819,19 @@ ipcMain.handle('songs:match', async (_event, songItems: SongItemToMatch[], confi
     // Debug: Log received songItems
     console.log(`[songs:match] Received ${songItems.length} song items:`);
     for (const item of songItems) {
-      console.log(`  - text="${item.text}" (type=${typeof item.text}) isKids=${item.isKidsVideo} slot=${item.praiseSlot}`);
+      console.log(`  - text="${item.text}" (type=${typeof item.text}) isKids=${item.isKidsVideo} slot=${item.praiseSlot} service=${item.specialServiceType}`);
     }
 
     // Match each song against the appropriate library
     const results = [];
     for (let i = 0; i < songItems.length; i++) {
       const item = songItems[i];
+      // For special services like Remembrance, Christmas, Easter, Carol - videos are NOT kids content
+      // Only videos explicitly marked as "kids" (e.g., "John 3:16 Song (Kids Video)") should go to kids library
       const isKids = item.isKidsVideo || item.praiseSlot === 'kids';
+      const isSpecialServiceVideo = item.praiseSlot === 'kids' && 
+                                     !item.isKidsVideo &&
+                                     ['remembrance', 'christmas', 'easter', 'carol', 'good-friday', 'nativity'].includes(item.specialServiceType || '');
 
       // Ensure text is a string
       const songText = typeof item.text === 'string' ? item.text : String(item.text || '');
@@ -831,8 +841,10 @@ ipcMain.handle('songs:match', async (_event, songItems: SongItemToMatch[], confi
       }
 
       // Choose which library to match against
-      const presentationsToMatch = isKids ? kidsPresentations : worshipPresentations;
-      console.log(`[songs:match] Matching "${songText}" (kids=${isKids}) against ${presentationsToMatch.length} presentations`);
+      // Special service videos (non-kids) should be searched in worship library
+      const presentationsToMatch = (isKids && !isSpecialServiceVideo) ? kidsPresentations : worshipPresentations;
+      const matchContext = isSpecialServiceVideo ? `special service video (${item.specialServiceType})` : isKids ? 'kids' : 'worship';
+      console.log(`[songs:match] Matching "${songText}" (${matchContext}) against ${presentationsToMatch.length} presentations`);
 
       // Create service section for matcher
       const songSection = {

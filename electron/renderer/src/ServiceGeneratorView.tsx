@@ -42,6 +42,7 @@ type ParsedItem = {
   reference?: string;
   isKidsVideo?: boolean;
   praiseSlot?: PraiseSlot;
+  specialServiceType?: string | null;  // Type of special service (remembrance, christmas, etc.)
 };
 
 // Helper to format praise slot for display
@@ -95,6 +96,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
   const [bibleMatches, setBibleMatches] = useState<BibleMatch[]>([]);
   const [verseResults, setVerseResults] = useState<VerseResult[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [specialServiceType, setSpecialServiceType] = useState<string | null>(null);  // Track special service type
 
   // Step validation - check if step is complete
   const isStepComplete = (step: Step): boolean => {
@@ -378,8 +380,14 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                             const parseResult = await window.api.parsePDF(result.filePath);
                             if (parseResult.success) {
                               setParsedItems(parseResult.items);
+                              setSpecialServiceType(parseResult.specialServiceType || null);
+                              
+                              let notificationMessage = `Found ${parseResult.items.length} items in PDF`;
+                              if (parseResult.specialServiceType) {
+                                notificationMessage += ` (${parseResult.specialServiceType} service)`;
+                              }
                               setNotification({
-                                message: `Found ${parseResult.items.length} items in PDF`,
+                                message: notificationMessage,
                                 type: 'success'
                               });
                               setCurrentStep('parse');
@@ -421,6 +429,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                           setParsedItems([]);
                           setMatchResults([]);
                           setVerseResults([]);
+                          setSpecialServiceType(null);
                         }}
                         type="button"
                       >
@@ -459,10 +468,18 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
               </div>
             ) : (
               <div>
+                {specialServiceType && (
+                  <div style={{ marginBottom: '16px', padding: '12px 16px', background: 'rgba(251, 191, 36, 0.1)', borderRadius: '10px', border: '1px solid rgba(251, 191, 36, 0.3)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(251, 191, 36, 0.8)' }}>
+                      <span style={{ fontSize: '16px' }}>⚠️</span>
+                      <span><strong>Special Service Detected:</strong> This is a {specialServiceType} service. Service Generator may handle videos and structure differently.</span>
+                    </div>
+                  </div>
+                )}
                 <div style={{ marginBottom: '16px', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', fontSize: '14px' }}>
                   <strong>{parsedItems.length} items found:</strong>{' '}
                   {parsedItems.filter(i => i.type === 'song').length} songs,{' '}
-                  {parsedItems.filter(i => i.type === 'kids_video').length} kids videos,{' '}
+                  {parsedItems.filter(i => i.type === 'kids_video').length} videos,{' '}
                   {parsedItems.filter(i => i.type === 'verse').length} verses
                 </div>
 
@@ -533,7 +550,8 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                         const songItems = songsToMatch.map(item => ({
                           text: item.text,
                           isKidsVideo: item.type === 'kids_video' || item.isKidsVideo,
-                          praiseSlot: item.praiseSlot
+                          praiseSlot: item.praiseSlot,
+                          specialServiceType: specialServiceType  // Include service type for context-aware matching
                         }));
 
                         if (songItems.length > 0) {

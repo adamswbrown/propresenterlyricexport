@@ -4,422 +4,266 @@
 
 ---
 
-Master the art of creating beautiful, presentation-ready PowerPoint files.
+Export your ProPresenter playlist lyrics to beautifully formatted PowerPoint files in seconds.
 
-## PPTX Export Basics
+---
 
-### What Gets Exported
+## Quick Export (3 Steps)
 
-Each export creates a PowerPoint with:
+Exporting lyrics is simple:
 
-1. **Title slides** (optional) - One per song
-   - Song title in large text
-   - Album/Artist information
-   - Optional logo image
+### Desktop App
 
-2. **Lyric slides** - One per verse/section
-   - Formatted lyrics
-   - Clean, readable design
-   - Consistent styling throughout
+1. **Connect** to ProPresenter
+2. **Select** your playlist
+3. **Click "Export to PPTX"**
 
-3. **Metadata** - Embedded in the file
-   - Song information
-   - Export date/time
-   - Playlist name
+That's it! Your PowerPoint file is ready.
 
-### Slide Layout
+![Export Button](../assets/export_button.png)
 
-**Default layout:**
-```
-[Black background]
+### CLI
 
-                    AMAZING GRACE
-                    [Artist name if available]
+```bash
+# Interactive mode - guides you through selection
+propresenter-lyrics pptx
 
-[Large, centered lyrics in white text]
-
-    Amazing grace, how sweet the sound,
-    That saved a wretch like me!
-    I once was lost, but now am found,
-    Was blind, but now I see.
+# Direct export - specify playlist UUID and output name
+propresenter-lyrics pptx abc123 sunday-service
 ```
 
 ---
 
-## Customization Options
+## What You Get
 
-### Colors
+Every export creates a professional PowerPoint with:
 
-#### Text Color
+- **Title slides** for each song (song name, artist info)
+- **Lyric slides** with clean, readable formatting
+- **Consistent styling** throughout the presentation
+- **Ready to present** - just open and go
+
+Your exported file works in:
+- Microsoft PowerPoint
+- Google Slides
+- LibreOffice Impress
+- Keynote (with conversion)
+
+---
+
+## Customizing Your Exports
+
+Want to match your church's branding? Customize fonts, colors, and more.
+
+### Desktop App Settings
+
+Click ⚙ **Settings** to access all customization options:
+
+![Settings Panel](../assets/lyric_formatting.png)
+
+### Quick Customization Options
+
+| Setting | Default | What it does |
+|---------|---------|--------------|
+| **Font** | System default | Choose from 25+ presentation fonts |
+| **Text color** | White | Any color via color picker |
+| **Font size** | 44pt | Lyric text size (40-48pt recommended) |
+| **Title size** | 54pt | Song title size |
+| **Bold** | On | Makes text bolder |
+| **Italic** | On | Adds italic styling |
+| **Logo** | None | Add your church logo |
+
+---
+
+## Fonts
+
+### Choosing a Font
+
+The desktop app shows 25+ curated presentation-ready fonts:
+
+- **Green ✓** = Installed on your computer
+- **Gray ○** = Available to download (click to open Google Fonts)
+
+**Recommended fonts:**
+
+| Type | Best For | Examples |
+|------|----------|----------|
+| **Sans-serif** | Modern, clean | Arial, Open Sans, Roboto, Montserrat |
+| **Serif** | Traditional, elegant | Georgia, Times New Roman, Merriweather |
+| **Display** | Bold impact | Impact, Oswald, Bebas Neue |
+
+### Installing Missing Fonts
+
+1. Click the gray ○ next to the font name
+2. Google Fonts opens in your browser
+3. Download and install the font
+4. Click **Refresh** in Settings
+
+---
+
+## Colors
+
+### Text Color
+
 - **Default:** White (#FFFFFF)
-- **Use:** Light colors on dark background
-- **Examples:**
-  - White (`#FFFFFF`) - Highest contrast
-  - Light gray (`#CCCCCC`) - Softer appearance
-  - Light blue (`#87CEEB`) - Branded color
+- **Tip:** Light colors on dark backgrounds work best
+- Click the color picker in Settings to choose any color
 
-#### Background
+### Background
+
 - **Default:** Black (#000000)
-- **Recommendation:** Keep dark for readability
-- **Options:** Dark colors work best (dark blue, dark gray, etc.)
+- **Tip:** Dark backgrounds reduce eye strain and improve readability
 
-**Desktop App:**
-Click the color picker next to "Text color" in Settings
+---
 
-**CLI:**
-```bash
-export PP_TEXT_COLOR=FFFFFF  # Hex without # symbol
-propresenter-lyrics pptx abc123 output
-```
+## Logo
 
-### Fonts
+Add your church or organization logo to title slides:
 
-#### Available Fonts (25+ curated options)
-
-**Sans-serif** (recommended for screens):
-- Red Hat Display
-- Arial
-- Helvetica
-- Verdana
-- Open Sans
-- Roboto
-- Lato
-- Montserrat
-- Poppins
-- Inter
-
-**Serif** (classic look):
-- Georgia
-- Times New Roman
-- Palatino
-- Cambria
-- Merriweather
-- Playfair Display
-- Lora
-
-**Display** (bold statements):
-- Impact
-- Oswald
-- Bebas Neue
-
-#### Font Selection
-
-**Desktop App:**
-1. Click ⚙ Settings
-2. Look at "Font family" dropdown
-3. Green ✓ = installed
-4. Gray ○ = available to download
-5. Click to select
-
-**CLI:**
-```bash
-export PP_FONT_FACE="Arial"
-propresenter-lyrics pptx abc123 output
-```
-
-#### Installing Missing Fonts
-
-**Desktop App:**
-1. Click gray ○ next to font name
-2. Opens Google Fonts in browser
-3. Click "Download"
-4. Install on your system
-5. Click "Refresh" in Settings
-
-**macOS:**
-```bash
-# Download font and copy to fonts folder
-cp ~/Downloads/font.ttf ~/Library/Fonts/
-```
-
-**Windows:**
-```bash
-# Download font and right-click → Install
-# Or copy to C:\Windows\Fonts\
-```
-
-### Text Size
-
-#### Lyric Size (Body Text)
-
-- **Default:** 44pt
-- **Recommended:** 40-48pt
-- **Readable from:** 30+ feet
-- **Smaller:** Make text harder to read from distance
-- **Larger:** Fewer lines per slide
-
-**Desktop App:**
-- "Font size" slider in Settings
-
-**CLI:**
-```bash
-export PP_FONT_SIZE=44
-```
-
-#### Title Size (Song Names)
-
-- **Default:** 54pt
-- **Recommended:** 48-60pt
-- **Purpose:** Make song titles stand out
-- **Should be:** Larger than body text
-
-**Desktop App:**
-- "Title size" slider in Settings
-
-**CLI:**
-```bash
-export PP_TITLE_SIZE=54
-```
-
-### Text Formatting
-
-#### Bold Text
-
-Makes all text bold for emphasis.
-
-- **Default:** Enabled (true)
-- **Effect:** Increases readability, stronger appearance
-- **Disable for:** Lightweight, delicate look
-
-**Desktop App:**
-- "Bold" checkbox in Settings
-
-![Text Formatting Options](../assets/lyric_formatting.png)
-
-**CLI:**
-```bash
-export PP_BOLD=true
-```
-
-#### Italic Text
-
-Makes all text italic for elegance.
-
-- **Default:** Enabled (true)
-- **Effect:** Adds visual interest, flowing appearance
-- **Disable for:** Cleaner, more formal look
-
-**Desktop App:**
-- "Italic" checkbox in Settings
-
-**CLI:**
-```bash
-export PP_ITALIC=true
-```
-
-### Logo Image
-
-Add your church/organization logo to slides.
-
-#### Adding a Logo
-
-**Desktop App:**
-1. Click ⚙ Settings
-2. Click the "Logo path" field
-3. Browse to your image file
-4. Logo appears on title slides
-
-**Supported formats:**
-- PNG (recommended)
-- JPEG
-- GIF
+1. Click **Settings** ⚙
+2. Browse to your logo image (PNG recommended)
+3. Logo appears on title slides automatically
 
 **Best practices:**
-- Use transparent PNG (shows on any background)
-- Keep dimensions square or landscape
-- Resolution: 300x300px minimum, 1000x1000px maximum
-- File size: Less than 5MB
-- Aspect ratio: 1:1 (square) or 16:9 (landscape)
-
-#### Logo Positioning
-
-- **Position:** Bottom right corner of slides
-- **Size:** Automatically scaled to fit
-- **Opacity:** Subtle (doesn't overpower content)
-
-#### Example Logo Sizes
-
-```
-| Small logo    | Medium logo  | Large logo    |
-| 200x200px     | 400x400px    | 600x600px     |
-| [light]       | [medium]     | [prominent]   |
-```
+- Use transparent PNG files
+- Resolution: 300-1000px
+- Square or landscape orientation
 
 ---
 
-## PPTX Styling Presets
+## Style Presets
 
-Create consistent looks with these style combinations:
+Quick combinations for common looks:
 
 ### Modern Minimal
-
 ```
-Font:        Open Sans
-Text Color:  White (#FFFFFF)
-Font Size:   44pt
-Title Size:  54pt
-Bold:        Disabled
-Italic:      Disabled
-Background:  Black
-Logo:        None
+Font: Open Sans | Size: 44pt | Bold: Off | Italic: Off
 ```
-
-**Best for:** Contemporary churches, modern worship
+Best for: Contemporary worship, clean aesthetic
 
 ### Elegant Classic
-
 ```
-Font:        Georgia
-Text Color:  Light gray (#DDDDDD)
-Font Size:   48pt
-Title Size:  60pt
-Bold:        Enabled
-Italic:      Enabled
-Background:  Dark blue (#1a1a2e)
-Logo:        Organization logo
+Font: Georgia | Size: 48pt | Bold: On | Italic: On
 ```
+Best for: Traditional services, formal events
 
-**Best for:** Traditional services, formal events
-
-### Bold Display
-
+### Bold Impact
 ```
-Font:        Impact
-Text Color:  Bright white (#FFFFFF)
-Font Size:   52pt
-Title Size:  66pt
-Bold:        Enabled
-Italic:      Disabled
-Background:  Black (#000000)
-Logo:        None
+Font: Impact | Size: 52pt | Bold: On | Italic: Off
 ```
+Best for: Youth services, high-energy worship
 
-**Best for:** Youth services, high-energy events
+---
 
-### Branded Custom
+## CLI Customization
 
+Set options via environment variables:
+
+```bash
+# Font and size
+export PP_FONT_FACE="Arial"
+export PP_FONT_SIZE=44
+export PP_TITLE_SIZE=54
+
+# Colors (hex without #)
+export PP_TEXT_COLOR=FFFFFF
+
+# Formatting
+export PP_BOLD=true
+export PP_ITALIC=true
+
+# Then export
+propresenter-lyrics pptx abc123 output
 ```
-Font:        Your brand font (e.g., Montserrat)
-Text Color:  Your brand color
-Font Size:   Sized for your venue
-Title Size:  30% larger than lyrics
-Bold/Italic: Matches brand guidelines
-Background:  Dark version of brand color
-Logo:        Your organization logo
-```
-
-**Best for:** Consistent branding across services
 
 ---
 
 ## Best Practices
 
-### Readability
+### For Readability
+- Use **high contrast** (light text on dark background)
+- Keep fonts **40pt minimum** for audience visibility
+- Avoid decorative or script fonts
 
-1. **High contrast** - Use light text on dark background
-2. **Large fonts** - 40pt minimum for audience visibility
-3. **Simple fonts** - Avoid decorative/script fonts
-4. **Adequate spacing** - Leave white space between lines
+### For Consistency
+- Use the same font throughout your service
+- Keep logo subtle - don't overpower the lyrics
+- Test on your actual projector before Sunday
 
-### Design
+---
 
-1. **Consistent styling** - Don't change fonts mid-presentation
-2. **Logo placement** - Keep subtle, don't distract from lyrics
-3. **Color psychology** - Dark backgrounds reduce eye strain
-4. **Font pairing** - Use one sans-serif (modern) or serif (classic)
+## Technical Details
 
-### Performance
+### What Gets Exported
 
-1. **File size** - Should be 1-10MB
-2. **Slide count** - Typically 50-200 slides per service
-3. **Opening time** - Should load in <5 seconds
+Each slide contains:
 
-### Testing
+1. **Title slides** (one per song)
+   - Song title in large text
+   - Album/Artist information
+   - Optional logo image
 
-1. **Preview on projector** - Check readability from distance
-2. **Test all fonts** - Ensure they look good in your venue
-3. **View on screens** - Different displays render slightly differently
-4. **Print preview** - If printing lyrics
+2. **Lyric slides** (one per verse/section)
+   - Formatted lyrics text
+   - Consistent styling
+
+3. **Metadata** (embedded)
+   - Song information
+   - Export date/time
+   - Playlist name
+
+### Default Slide Layout
+
+```
+[Dark background]
+
+                    SONG TITLE
+                    Artist Name
+
+    Verse lyrics appear here,
+    centered and easy to read,
+    with comfortable line spacing.
+```
+
+### File Specifications
+
+- **Format:** .pptx (Office Open XML)
+- **Typical size:** 1-10MB
+- **Slide count:** Varies by playlist (typically 50-200)
 
 ---
 
 ## Troubleshooting
 
-### Font Not Appearing
+### Font Looks Different
 
-**Problem:** Font looks different than expected
+**Problem:** Font appears different than expected
 
-**Solutions:**
-1. Check font is installed on the computer opening the file
-2. Use system fonts (Arial, Helvetica) for compatibility
-3. Some fonts aren't licensed for PPTX embedding
+**Fix:** The font must be installed on the computer opening the file. Use system fonts (Arial, Helvetica) for maximum compatibility.
 
-### Colors Look Wrong
+### Colors Look Wrong on Projector
 
-**Problem:** Colors appear different on projector
+**Problem:** Colors appear different on projector vs. screen
 
-**Solutions:**
-1. Projectors display differently than screens
-2. Test on your actual projector before Sunday
-3. Use high-contrast combinations (white on black)
-4. Adjust brightness/contrast on projector
+**Fix:** Projectors display differently. Test on your actual projector and use high-contrast combinations (white on black).
 
-### Logo Doesn't Appear
+### Logo Missing
 
-**Problem:** Logo image missing from exported file
+**Problem:** Logo doesn't appear in exported file
 
-**Solutions:**
-1. Verify file path is correct
-2. Check image format (PNG/JPEG)
-3. Ensure image file isn't corrupted
-4. Try a different image file
+**Fix:** Verify the file path is correct and the image is PNG or JPEG format.
 
-### File Size Too Large
+### File Too Large
 
-**Problem:** .pptx file is 50MB+ (should be <20MB)
+**Problem:** Exported file is 50MB+ (should be <20MB)
 
-**Solutions:**
-1. Check logo image isn't huge (compress if needed)
-2. Some fonts increase file size (use system fonts)
-3. Reduce number of slides if possible
-4. Remove unused slides
-
-### Can't Open File
-
-**Problem:** PowerPoint says file is corrupted
-
-**Solutions:**
-1. Re-export the playlist
-2. Try opening with LibreOffice Impress (free)
-3. Check available disk space
-4. Try on different computer
+**Fix:** Compress your logo image or use system fonts instead of custom fonts.
 
 ---
 
-## Advanced Tips
+## Advanced: Batch Export
 
-### Custom Color Schemes
-
-Create colors that match your brand:
-
-```bash
-# Your brand color scheme
-export PP_TEXT_COLOR=E8D7F1        # Lavender text
-export PP_BACKGROUND_COLOR=2D2D44  # Deep purple background
-# Note: Background color via environment variable (not in UI yet)
-```
-
-### Font Licensing
-
-Most curated fonts are:
-- **Free for personal use** (Google Fonts)
-- **Freely embeddable** in PowerPoint
-- **Licensed for presentation** use
-- **No additional license needed**
-
-For commercial use, check individual font licenses.
-
-### Batch Export with Custom Styles
+Export multiple playlists with consistent styling:
 
 ```bash
 #!/bin/bash
@@ -428,7 +272,7 @@ export PP_TEXT_COLOR="FFFFFF"
 export PP_FONT_SIZE=44
 
 for uuid in playlist1 playlist2 playlist3; do
-  propresenter-lyrics pptx "$uuid" "sunday-$uuid"
+  propresenter-lyrics pptx "$uuid" "export-$uuid"
 done
 ```
 

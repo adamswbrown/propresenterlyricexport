@@ -7,6 +7,8 @@ export type ServiceSectionType = 'header' | 'song' | 'bible' | 'placeholder' | '
 
 export type PraiseSlot = 'praise1' | 'praise2' | 'praise3' | 'kids';
 
+export type SpecialServiceType = 'remembrance' | 'christmas' | 'easter' | 'carol' | 'communion' | 'good-friday' | 'nativity' | null;
+
 export interface ServiceSection {
   type: ServiceSectionType;
   title: string;
@@ -23,6 +25,7 @@ export interface ParsedService {
   rawDate?: string;     // Full date header from PDF
   sections: ServiceSection[];
   rawText: string;      // Full PDF text for debugging
+  specialServiceType?: SpecialServiceType;  // Type of special service (remembrance, christmas, etc.)
 }
 
 export interface ServiceConfig {

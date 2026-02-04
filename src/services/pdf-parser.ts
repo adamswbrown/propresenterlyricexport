@@ -4,7 +4,7 @@
  */
 
 import * as fs from 'fs';
-import { ParsedService, ServiceSection, ServiceSectionType, PraiseSlot } from '../types/service-order';
+import { ParsedService, ServiceSection, ServiceSectionType, PraiseSlot, SpecialServiceType } from '../types/service-order';
 
 // pdf-parse is a CommonJS module, use require with destructuring
 const { PDFParse } = require('pdf-parse');
@@ -33,6 +33,9 @@ export class PDFParser {
     // Extract date from first line
     const date = this.extractDate(deduplicatedLines[0]);
 
+    // Detect special service type from header
+    const specialServiceType = this.detectSpecialServiceType(deduplicatedLines);
+
     // Parse sections
     const sections = this.extractSections(deduplicatedLines);
 
@@ -40,7 +43,8 @@ export class PDFParser {
       date,
       rawDate: lines[0],
       sections,
-      rawText
+      rawText,
+      specialServiceType
     };
   }
 
@@ -94,6 +98,65 @@ export class PDFParser {
 
     // Fallback: just return the header
     return headerLine;
+  }
+
+  /**
+   * Detect special service type from PDF header/title
+   * Examines first few lines for keywords indicating service type
+   * 
+   * Service types detected:
+   * - Remembrance: "Remembrance", "Remembrance Sunday"
+   * - Christmas: "Christmas", "Christingle"
+   * - Easter: "Easter", "Good Friday", "Palm Sunday"
+   * - Carol Service: "Carol"
+   * - Communion: "Communion", "Holy Communion", "New Members", "welcoming"
+   * - Good Friday: "Good Friday" (special structure)
+   * - Nativity: "Nativity", "Christmas Eve"
+   */
+  private detectSpecialServiceType(lines: string[]): SpecialServiceType {
+    // Check first 10 lines for service type keywords
+    const headerText = lines.slice(0, 10).join(' ').toLowerCase();
+
+    // Good Friday - has special structure
+    if (headerText.includes('good friday')) {
+      return 'good-friday';
+    }
+
+    // Remembrance Sunday - November 9 or "Remembrance"
+    if (headerText.includes('remembrance')) {
+      return 'remembrance';
+    }
+
+    // Christmas services - multiple keywords
+    if (headerText.includes('christmas') || headerText.includes('christingle')) {
+      return 'christmas';
+    }
+
+    // Nativity - Christmas Eve special services
+    if (headerText.includes('nativity') || headerText.includes('christmas eve')) {
+      return 'nativity';
+    }
+
+    // Carol Service
+    if (headerText.includes('carol')) {
+      return 'carol';
+    }
+
+    // Easter services
+    if (headerText.includes('easter') || headerText.includes('palm sunday')) {
+      return 'easter';
+    }
+
+    // Communion services (regular and with new members)
+    if (headerText.includes('communion') || 
+        headerText.includes('holy communion') ||
+        headerText.includes('new members') ||
+        headerText.includes('welcoming')) {
+      return 'communion';
+    }
+
+    // Not a detected special service
+    return null;
   }
 
   /**
