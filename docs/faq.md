@@ -1,8 +1,19 @@
 # FAQ & Troubleshooting
 
-Common questions and solutions for ProPresenter Lyrics Export.
+[← Back to Home](./index.md) | [Getting Started](./getting-started)
 
 ---
+
+Common questions and solutions for ProPresenter Lyrics Export.
+
+## Quick Navigation
+
+- [ProPresenter Configuration](#start-here-did-you-configure-propresenter)
+- [Connection Issues](#connection-issues)
+- [Installation & Setup](#installation--setup)
+- [Export & Features](#export--features)
+- [Service Generator](#service-generator)
+- [Performance](#performance)
 
 ## ⚠️ Start Here: Did You Configure ProPresenter?
 

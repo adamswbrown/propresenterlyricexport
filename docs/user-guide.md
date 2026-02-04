@@ -1,6 +1,21 @@
 # User Guide
 
+[← Back to Home](./index.md) | [Getting Started](./getting-started)
+
+---
+
 Complete guide to exporting lyrics from ProPresenter playlists.
+
+## Table of Contents
+
+1. [What This Tool Does](#what-does-this-tool-do)
+2. [Desktop App Guide](#desktop-app-guide)
+   - [First Launch](#first-launch)
+   - [Library Filter](#library-filter)
+   - [PPTX Settings](#pptx-export-settings)
+   - [Export Process](#export-process-lyrics-export)
+3. [CLI Guide](#cli-guide)
+4. [Need Help?](#need-help)
 
 ## What Does This Tool Do?
 
@@ -106,7 +121,12 @@ The app automatically expands all nested playlist folders so you can easily see 
 
 ---
 
-## CLI Guide
+## Need Help?
+
+- 📖 See the [FAQ](./faq) for troubleshooting
+- 🎨 Want to customize your exports? Check the [PPTX Export Guide](./guides/pptx-export)
+- 💻 Using CLI? See the [CLI Command Reference](./guides/cli-guide)
+- 🔄 Want to automate? Try the [Service Generator Guide](./guides/service-generator) (advanced)
 
 ### Basic Commands
 

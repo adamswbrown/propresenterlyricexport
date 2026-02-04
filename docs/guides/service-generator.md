@@ -1,5 +1,9 @@
 # Service Generator Guide
 
+[← Back to Home](../index.md) | [User Guide](../user-guide)
+
+---
+
 Automate your Sunday service playlist creation from PDF service orders in minutes.
 
 > **Note:** Service Generator is an **optional advanced feature**. The core functionality of ProPresenter Lyrics Export is extracting lyrics from existing playlists. Service Generator extends this by helping you build playlists from PDF service orders.

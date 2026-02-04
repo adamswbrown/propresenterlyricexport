@@ -1,6 +1,17 @@
 # Getting Started
 
+[← Back to Home](./index.md)
+
+---
+
 Get ProPresenter Lyrics Export up and running in just a few minutes.
+
+## Table of Contents
+
+1. [Configure ProPresenter First](#critical-configure-propresenter-first) ⚠️
+2. [Installation](#installation)
+3. [Next Steps](#next-steps)
+4. [Troubleshooting](#troubleshooting-setup)
 
 ---
 
@@ -137,3 +148,11 @@ $env:PROPRESENTER_PORT='1025'
 **Still stuck?**
 - Check the [FAQ](./faq#troubleshooting) for more detailed solutions
 - Open an [issue on GitHub](https://github.com/adamswbrown/propresenterlyricexport/issues)
+
+---
+
+## What's Next?
+
+- **Ready to export?** See the [User Guide](./user-guide) for desktop app and CLI workflows
+- **Want to customize?** Check the [PPTX Export Guide](./guides/pptx-export) for styling options
+- **Need help?** Browse the [FAQ](./faq) for common questions

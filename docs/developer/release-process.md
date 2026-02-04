@@ -1,5 +1,9 @@
 # Release Process Guide
 
+[← Back to Developer Guide](./index.md)
+
+---
+
 How to publish a new version of ProPresenter Lyrics Export.
 
 ## Versioning Scheme

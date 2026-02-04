@@ -1,5 +1,9 @@
 # Architecture & Design
 
+[← Back to Developer Guide](./index.md)
+
+---
+
 Understanding the ProPresenter Lyrics Export codebase.
 
 ## Dual Distribution Architecture

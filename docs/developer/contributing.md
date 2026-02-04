@@ -1,5 +1,9 @@
 # Contributing Guide
 
+[← Back to Developer Guide](./index.md)
+
+---
+
 How to contribute code to ProPresenter Lyrics Export.
 
 ## Code of Conduct
