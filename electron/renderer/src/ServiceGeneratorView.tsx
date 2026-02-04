@@ -1377,7 +1377,9 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                     disabled={isProcessing || !selectedPlaylistId}
                     type="button"
                   >
-                    {isProcessing ? 'Adding...' : `Add ${selectedSongs.length} Song${selectedSongs.length !== 1 ? 's' : ''}${matchedBibleVerses.length > 0 ? ` + ${matchedBibleVerses.length} Verse${matchedBibleVerses.length !== 1 ? 's' : ''}` : ''}`}
+                    {isProcessing
+                      ? 'Adding...'
+                      : `Add ${selectedSongs.length + matchedBibleVerses.length} Item${(selectedSongs.length + matchedBibleVerses.length) !== 1 ? 's' : ''}`}
                   </button>
                 </div>
               </div>
