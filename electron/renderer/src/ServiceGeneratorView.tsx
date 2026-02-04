@@ -1356,7 +1356,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
 
                         if (result.success) {
                           setNotification({
-                            message: `Added ${items.length} songs to playlist!`,
+                            message: `Added ${items.length} items to playlist!`,
                             type: 'success'
                           });
                         } else {
@@ -1377,7 +1377,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                     disabled={isProcessing || !selectedPlaylistId}
                     type="button"
                   >
-                    {isProcessing ? 'Adding...' : `Add ${selectedSongs.length} Songs to Playlist`}
+                    {isProcessing ? 'Adding...' : `Add ${selectedSongs.length} Song${selectedSongs.length !== 1 ? 's' : ''}${matchedBibleVerses.length > 0 ? ` + ${matchedBibleVerses.length} Verse${matchedBibleVerses.length !== 1 ? 's' : ''}` : ''}`}
                   </button>
                 </div>
               </div>
