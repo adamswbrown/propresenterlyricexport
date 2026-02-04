@@ -15,6 +15,11 @@ import { PDFParser } from '../../src/services/pdf-parser';
 import { SongMatcher } from '../../src/services/song-matcher';
 import { BibleFetcher } from '../../src/services/bible-fetcher';
 import { PlaylistBuilder } from '../../src/services/playlist-builder';
+import { StageAuditService } from '../../src/services/stage-audit';
+import type { StageLayoutType, ContentType, PlaylistAuditReport } from '../../src/types/stage-audit';
+
+// Initialize stage audit service (singleton)
+const stageAuditService = new StageAuditService();
 
 interface AppSettings {
   host: string;
@@ -726,5 +731,68 @@ ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message || 'Failed to build playlist' };
+  }
+});
+
+// Stage Audit IPC handlers
+ipcMain.handle('stageAudit:getReport', async (_event, playlistId: string, playlistName: string, items: any[]) => {
+  try {
+    const report = stageAuditService.auditPlaylist(playlistId, playlistName, items);
+    return { success: true, report };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Failed to generate audit report' };
+  }
+});
+
+ipcMain.handle('stageAudit:markVerified', async (
+  _event,
+  presentationUuid: string,
+  presentationName: string,
+  layoutType: StageLayoutType,
+  contentType: ContentType
+) => {
+  try {
+    stageAuditService.markVerified(presentationUuid, presentationName, layoutType, { contentType });
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Failed to mark as verified' };
+  }
+});
+
+ipcMain.handle('stageAudit:markNeedsSetup', async (
+  _event,
+  presentationUuid: string,
+  presentationName: string,
+  layoutType: StageLayoutType,
+  contentType: ContentType
+) => {
+  try {
+    stageAuditService.markNeedsSetup(presentationUuid, presentationName, layoutType, contentType);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Failed to mark as needs setup' };
+  }
+});
+
+ipcMain.handle('stageAudit:markNotApplicable', async (
+  _event,
+  presentationUuid: string,
+  presentationName: string,
+  contentType: ContentType
+) => {
+  try {
+    stageAuditService.markNotApplicable(presentationUuid, presentationName, contentType);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Failed to mark as not applicable' };
+  }
+});
+
+ipcMain.handle('stageAudit:getStats', async () => {
+  try {
+    const stats = stageAuditService.getStats();
+    return { success: true, stats };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Failed to get stats' };
   }
 });

@@ -68,6 +68,44 @@ type FontStatus = {
   downloadUrl?: string;
 };
 
+// Stage Audit Types
+type StageLayoutType = 'lyrics' | 'scripture' | 'video' | 'sermon' | 'service_content' | 'blank' | 'custom' | 'unknown';
+type ContentType = 'song' | 'scripture' | 'sermon' | 'video' | 'announcements' | 'prayer' | 'service_element' | 'header' | 'unknown';
+type VerificationStatus = 'verified' | 'unverified' | 'needs_setup' | 'not_applicable';
+
+type PlaylistAuditItem = {
+  playlistItemUuid: string;
+  playlistItemName: string;
+  presentationUuid: string | null;
+  presentationName: string;
+  contentType: ContentType;
+  isHeader: boolean;
+  status: VerificationStatus;
+  expectedLayout: StageLayoutType;
+  needsAttention: boolean;
+  recommendation: string;
+};
+
+type PlaylistAuditSummary = {
+  total: number;
+  verified: number;
+  unverified: number;
+  needsSetup: number;
+  notApplicable: number;
+  headers: number;
+  byContentType: Record<ContentType, { total: number; verified: number }>;
+};
+
+type PlaylistAuditReport = {
+  playlistId: string;
+  playlistName: string;
+  generatedAt: string;
+  summary: PlaylistAuditSummary;
+  items: PlaylistAuditItem[];
+  actionRequired: PlaylistAuditItem[];
+  readinessScore: number;
+};
+
 const api = {
   loadSettings: () => ipcRenderer.invoke('settings:load'),
   saveSettings: (data: SettingsPayload) => ipcRenderer.invoke('settings:save', data),
@@ -97,6 +135,35 @@ const api = {
   fetchVerses: (references: string[]) => ipcRenderer.invoke('verses:fetch', references),
   buildServicePlaylist: (config: ConnectionConfig, playlistId: string, items: any[]) =>
     ipcRenderer.invoke('playlist:build-service', config, playlistId, items),
+  // Stage Audit
+  getStageAuditReport: (
+    playlistId: string,
+    playlistName: string,
+    items: any[]
+  ): Promise<{ success: boolean; report?: PlaylistAuditReport; error?: string }> =>
+    ipcRenderer.invoke('stageAudit:getReport', playlistId, playlistName, items),
+  markStageVerified: (
+    presentationUuid: string,
+    presentationName: string,
+    layoutType: StageLayoutType,
+    contentType: ContentType
+  ): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('stageAudit:markVerified', presentationUuid, presentationName, layoutType, contentType),
+  markStageNeedsSetup: (
+    presentationUuid: string,
+    presentationName: string,
+    layoutType: StageLayoutType,
+    contentType: ContentType
+  ): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('stageAudit:markNeedsSetup', presentationUuid, presentationName, layoutType, contentType),
+  markStageNotApplicable: (
+    presentationUuid: string,
+    presentationName: string,
+    contentType: ContentType
+  ): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('stageAudit:markNotApplicable', presentationUuid, presentationName, contentType),
+  getStageAuditStats: (): Promise<{ success: boolean; stats?: any; error?: string }> =>
+    ipcRenderer.invoke('stageAudit:getStats'),
 };
 
 contextBridge.exposeInMainWorld('api', api);

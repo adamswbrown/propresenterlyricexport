@@ -1,4 +1,43 @@
 import { useState, useEffect } from 'react';
+import { PlaylistAuditChecklist } from './PlaylistAuditChecklist';
+
+// Stage Audit Types (matching preload types)
+type StageLayoutType = 'lyrics' | 'scripture' | 'video' | 'sermon' | 'service_content' | 'blank' | 'custom' | 'unknown';
+type ContentType = 'song' | 'scripture' | 'sermon' | 'video' | 'announcements' | 'prayer' | 'service_element' | 'header' | 'unknown';
+type VerificationStatus = 'verified' | 'unverified' | 'needs_setup' | 'not_applicable';
+
+type PlaylistAuditItem = {
+  playlistItemUuid: string;
+  playlistItemName: string;
+  presentationUuid: string | null;
+  presentationName: string;
+  contentType: ContentType;
+  isHeader: boolean;
+  status: VerificationStatus;
+  expectedLayout: StageLayoutType;
+  needsAttention: boolean;
+  recommendation: string;
+};
+
+type PlaylistAuditSummary = {
+  total: number;
+  verified: number;
+  unverified: number;
+  needsSetup: number;
+  notApplicable: number;
+  headers: number;
+  byContentType: Record<ContentType, { total: number; verified: number }>;
+};
+
+type PlaylistAuditReport = {
+  playlistId: string;
+  playlistName: string;
+  generatedAt: string;
+  summary: PlaylistAuditSummary;
+  items: PlaylistAuditItem[];
+  actionRequired: PlaylistAuditItem[];
+  readinessScore: number;
+};
 
 type ServiceGeneratorViewProps = {
   settings: {
@@ -21,7 +60,7 @@ type Notification = {
   type: 'success' | 'error' | 'info';
 };
 
-type Step = 'setup' | 'upload' | 'parse' | 'match' | 'verse' | 'build';
+type Step = 'setup' | 'upload' | 'parse' | 'match' | 'verse' | 'build' | 'stage';
 
 const STEPS: { id: Step; label: string }[] = [
   { id: 'setup', label: 'Setup' },
@@ -30,6 +69,7 @@ const STEPS: { id: Step; label: string }[] = [
   { id: 'match', label: 'Match Songs' },
   { id: 'verse', label: 'Verses' },
   { id: 'build', label: 'Build' },
+  { id: 'stage', label: 'Stage Check' },
 ];
 
 type PraiseSlot = 'praise1' | 'praise2' | 'praise3' | 'kids';
@@ -82,6 +122,10 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
   const [verseResults, setVerseResults] = useState<VerseResult[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Stage audit state
+  const [auditReport, setAuditReport] = useState<PlaylistAuditReport | null>(null);
+  const [isLoadingAudit, setIsLoadingAudit] = useState(false);
+
   // Auto-dismiss notification after 4 seconds
   useEffect(() => {
     if (notification) {
@@ -91,6 +135,126 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
       return () => clearTimeout(timer);
     }
   }, [notification]);
+
+  // Load audit report when entering stage step
+  async function loadAuditReport() {
+    if (!selectedPlaylistId || !selectedPlaylistName) {
+      setNotification({ message: 'No playlist selected', type: 'error' });
+      return;
+    }
+
+    setIsLoadingAudit(true);
+    try {
+      // Build mock playlist items from parsed items for demo
+      // In production, this would fetch actual playlist items from ProPresenter
+      const playlistItems = parsedItems.map((item, index) => ({
+        id: {
+          uuid: `item-${index}`,
+          name: item.text,
+          index,
+        },
+        type: item.type === 'heading' ? 'header' : 'presentation',
+        is_hidden: false,
+        is_pco: false,
+        presentation_info: {
+          presentation_uuid: matchResults.find(m => m.songName === item.text)?.selectedMatch?.uuid || `pres-${index}`,
+          arrangement_name: '',
+          arrangement_uuid: '',
+        },
+        destination: 'presentation',
+      }));
+
+      const result = await window.api.getStageAuditReport(
+        selectedPlaylistId,
+        selectedPlaylistName,
+        playlistItems
+      );
+
+      if (result.success && result.report) {
+        setAuditReport(result.report);
+      } else {
+        setNotification({
+          message: result.error || 'Failed to load audit report',
+          type: 'error',
+        });
+      }
+    } catch (error: any) {
+      setNotification({
+        message: error?.message || 'Error loading audit report',
+        type: 'error',
+      });
+    } finally {
+      setIsLoadingAudit(false);
+    }
+  }
+
+  async function handleMarkVerified(
+    presentationUuid: string,
+    layoutType: StageLayoutType,
+    contentType: ContentType
+  ) {
+    const item = auditReport?.items.find(i => i.presentationUuid === presentationUuid);
+    const presentationName = item?.presentationName || 'Unknown';
+
+    const result = await window.api.markStageVerified(
+      presentationUuid,
+      presentationName,
+      layoutType,
+      contentType
+    );
+
+    if (result.success) {
+      setNotification({ message: `Marked "${presentationName}" as verified`, type: 'success' });
+      // Reload audit report to reflect changes
+      await loadAuditReport();
+    } else {
+      setNotification({ message: result.error || 'Failed to mark as verified', type: 'error' });
+    }
+  }
+
+  async function handleMarkNeedsSetup(
+    presentationUuid: string,
+    layoutType: StageLayoutType,
+    contentType: ContentType
+  ) {
+    const item = auditReport?.items.find(i => i.presentationUuid === presentationUuid);
+    const presentationName = item?.presentationName || 'Unknown';
+
+    const result = await window.api.markStageNeedsSetup(
+      presentationUuid,
+      presentationName,
+      layoutType,
+      contentType
+    );
+
+    if (result.success) {
+      setNotification({ message: `Marked "${presentationName}" as needs setup`, type: 'success' });
+      await loadAuditReport();
+    } else {
+      setNotification({ message: result.error || 'Failed to mark as needs setup', type: 'error' });
+    }
+  }
+
+  async function handleMarkNotApplicable(
+    presentationUuid: string,
+    contentType: ContentType
+  ) {
+    const item = auditReport?.items.find(i => i.presentationUuid === presentationUuid);
+    const presentationName = item?.presentationName || 'Unknown';
+
+    const result = await window.api.markStageNotApplicable(
+      presentationUuid,
+      presentationName,
+      contentType
+    );
+
+    if (result.success) {
+      setNotification({ message: `Marked "${presentationName}" as N/A`, type: 'success' });
+      await loadAuditReport();
+    } else {
+      setNotification({ message: result.error || 'Failed to mark as N/A', type: 'error' });
+    }
+  }
 
   function renderStepContent() {
     switch (currentStep) {
@@ -563,6 +727,85 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
             <div className="empty-state" style={{ padding: '60px 20px' }}>
               Playlist building interface coming soon...
             </div>
+            <div style={{ marginTop: '24px' }}>
+              <button
+                className="primary"
+                onClick={() => {
+                  setCurrentStep('stage');
+                  loadAuditReport();
+                }}
+                type="button"
+              >
+                Continue to Stage Check →
+              </button>
+            </div>
+          </div>
+        );
+
+      case 'stage':
+        return (
+          <div className="service-step-content">
+            <h2>Stage Display Check</h2>
+            <p className="hint">Verify stage display settings for all playlist items</p>
+
+            {!selectedPlaylistName ? (
+              <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>📺</div>
+                <h3 style={{ margin: '0 0 8px', color: 'var(--muted)' }}>No Playlist Selected</h3>
+                <p style={{ margin: 0, color: 'var(--muted)', fontSize: '14px' }}>
+                  Go back to Setup and create or select a working playlist first
+                </p>
+              </div>
+            ) : isLoadingAudit ? (
+              <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', marginBottom: '16px' }}>⏳</div>
+                <p>Loading stage audit...</p>
+              </div>
+            ) : !auditReport ? (
+              <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px' }}>📋</div>
+                <h3 style={{ margin: '0 0 12px' }}>Generate Stage Audit</h3>
+                <p style={{ margin: '0 0 24px', color: 'var(--muted)', fontSize: '14px' }}>
+                  Check stage display settings for all items in "{selectedPlaylistName}"
+                </p>
+                <button
+                  className="primary"
+                  onClick={loadAuditReport}
+                  type="button"
+                >
+                  Generate Audit Report
+                </button>
+              </div>
+            ) : (
+              <div>
+                <PlaylistAuditChecklist
+                  playlistName={auditReport.playlistName}
+                  items={auditReport.items}
+                  summary={auditReport.summary}
+                  readinessScore={auditReport.readinessScore}
+                  onMarkVerified={handleMarkVerified}
+                  onMarkNeedsSetup={handleMarkNeedsSetup}
+                  onMarkNotApplicable={handleMarkNotApplicable}
+                />
+
+                <div style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
+                  <button
+                    className="ghost"
+                    onClick={() => setCurrentStep('build')}
+                    type="button"
+                  >
+                    ← Back to Build
+                  </button>
+                  <button
+                    className="accent"
+                    onClick={loadAuditReport}
+                    type="button"
+                  >
+                    Refresh Audit
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         );
 
