@@ -1,0 +1,21 @@
+title: ProPresenter Lyrics Export
+description: Extract and export worship song lyrics from ProPresenter 7
+theme: jekyll-theme-minimal
+logo: /assets/icon.png
+show_downloads: true
+github:
+  repository_url: https://github.com/adamswbrown/propresenterlyricexport
+  is_project_page: true
+
+# Navigation
+nav_links:
+  - title: Home
+    url: /
+  - title: Getting Started
+    url: /getting-started
+  - title: User Guide
+    url: /user-guide
+  - title: Developer
+    url: /developer
+  - title: FAQ
+    url: /faq
