@@ -30,6 +30,12 @@ ProPresenter Lyrics Export extracts song lyrics from your ProPresenter presentat
 - Export setlists for archival or planning
 - Create PowerPoint backups of your worship library
 
+### Watch It in Action
+
+See the song lyrics export feature demonstrated in this quick video:
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/6fKM3rUmUQI" title="ProPresenter Lyrics Export Demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
 ---
 
 ## Desktop App Guide
@@ -58,6 +64,8 @@ If you haven't already, you need to enable ProPresenter's Network API. See the [
    - Search for playlists using the search box
    - Click a playlist name to select it
    - The breadcrumb path shows your selection
+
+![Main Screen - Lyric Export](../assets/main_screen_Lyric_export.png)
 
 ### Library Filter
 

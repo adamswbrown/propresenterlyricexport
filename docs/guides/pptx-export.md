@@ -184,6 +184,8 @@ Makes all text bold for emphasis.
 **Desktop App:**
 - "Bold" checkbox in Settings
 
+![Text Formatting Options](../assets/lyric_formatting.png)
+
 **CLI:**
 ```bash
 export PP_BOLD=true

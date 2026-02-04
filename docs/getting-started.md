@@ -30,6 +30,8 @@ Get ProPresenter Lyrics Export up and running in just a few minutes.
 7. Click **OK** or **Save**
 8. **Restart ProPresenter** for changes to take effect
 
+![ProPresenter Network API Settings](../assets/pro-presneter-network.png)
+
 **Why this matters:** ProPresenter's Network API is how this tool communicates with ProPresenter. Without it enabled, the tool cannot connect, read playlists, or export lyrics.
 
 **Connection details you'll need:**

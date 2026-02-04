@@ -30,6 +30,8 @@ Service Generator takes a PDF service order (from Planning Center, Proclaim, Chu
 
 **Time saved:** What normally takes 15-20 minutes of manual playlist building now takes 2-3 minutes.
 
+![Service Generator Main Interface](../assets/service_gen_main.png)
+
 ## How It Works (6-Step Workflow)
 
 ### Step 1: Setup (One-Time Configuration)
@@ -48,6 +50,10 @@ Configure which libraries and playlists to use:
 
 Once configured, these settings are saved and remembered for future uses.
 
+![Select Library](../assets/select_libary.png)
+
+![Create Playlist](../assets/create_playlist.png)
+
 ### Step 2: Upload PDF
 
 1. Click **"Select PDF"** or drag-and-drop a PDF file
@@ -60,6 +66,8 @@ Once configured, these settings are saved and remembered for future uses.
 - ChurchPlanner exports
 - Any PDF with song titles and scripture references
 
+![Upload PDF](../assets/upload_pdf.png)
+
 ### Step 3: Parse
 
 The app **automatically extracts** from your PDF:
@@ -70,6 +78,8 @@ The app **automatically extracts** from your PDF:
 - **Worship slots** - Automatically categorized (Praise 1, Praise 2, Praise 3)
 
 **What you see:** A preview list of everything extracted from the PDF, organized by section.
+
+![Parse PDF Results](../assets/parse.png)
 
 ### Step 4: Match Songs
 
@@ -89,6 +99,10 @@ Each extracted song is matched against your Worship Library:
 
 **Step complete when:** All songs are matched or explicitly skipped.
 
+![Match Songs Results](../assets/match_songs.png)
+
+![Song Search (CCLI/Song Library)](../assets/ccli_search.png)
+
 ### Step 5: Bible (Verses & Presentations)
 
 Match scripture references to your Service Content library:
@@ -99,6 +113,12 @@ Match scripture references to your Service Content library:
 - **Green** - Strong match, auto-selected
 - **Yellow** - Possible matches, pick the right one
 - **Red** - No match found
+
+![Bible Search](../assets/bible_search.png)
+
+![Found Bible Verse Match](../assets/found_bible_verse.png)
+
+![Get Verse Details](../assets/get_verse_to_put_into_PP.png)
 
 **When no match is found:**
 - **Copy to clipboard** - Copy the reference
@@ -121,6 +141,10 @@ The app **automatically creates your playlist** with:
 - Your target playlist is populated and ready
 - All items are linked to your actual library presentations
 - Structure matches your service order
+
+![Service Build Preview](../assets/sevice_build.png)
+
+![Service Build Complete](../assets/build.png)
 
 **Final touches:**
 - Drop in your Birthday Bucket, Sermon, and Kids Talk PowerPoints manually

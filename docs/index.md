@@ -13,7 +13,7 @@ Both paths support rich PPTX exports, text/JSON dumps, and run on macOS and Wind
 ## Navigation
 
 - **User Docs**: [Getting Started](./getting-started) | [User Guide](./user-guide) | [FAQ](./faq)
-- **Guides**: [PPTX Export](./guides/pptx-export) | [CLI Commands](./guides/cli-guide) | [Service Generator](./guides/service-generator)
+- **Guides**: [PPTX Export](./guides/pptx-export) | [CLI Commands](./guides/cli-guide) | [Service Generator](./guides/service-generator) | [After Export](./guides/after-export)
 - **Developer**: [Setup](./developer/setup) | [Architecture](./developer/architecture) | [Building](./developer/building)
 
 ---
@@ -35,6 +35,7 @@ Both paths support rich PPTX exports, text/JSON dumps, and run on macOS and Wind
 - **[User Guide](./user-guide)** - Export lyrics from playlists to PowerPoint
 - **[PPTX Export Guide](./guides/pptx-export)** - Customize fonts, colors, and styling
 - **[Service Generator Guide](./guides/service-generator)** - Advanced: Automate service playlists from PDFs
+- **[After Export Guide](./guides/after-export)** - Add remaining artifacts (sermons, kids content, birthdays)
 - **[FAQ](./faq)** - Common questions and troubleshooting
 - **[Developer Guide](./developer)** - Setup, building, and contributing
 
