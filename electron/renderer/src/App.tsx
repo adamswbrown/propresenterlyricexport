@@ -126,14 +126,19 @@ const filterTree = (nodes: PlaylistNode[], query: string): PlaylistNode[] => {
 
 const defaultExpansion = (nodes: PlaylistNode[]): Record<string, boolean> => {
   const map: Record<string, boolean> = {};
-  nodes.forEach(node => {
-    const key = node.breadcrumb.join('>');
-    map[key] = true;
-    node.children.forEach(child => {
-      const childKey = child.breadcrumb.join('>');
-      map[childKey] = child.breadcrumb.length <= 2;
+  
+  const expandAll = (nodeList: PlaylistNode[]) => {
+    nodeList.forEach(node => {
+      const key = node.breadcrumb.join('>');
+      // Expand all folders by default (including nested folders)
+      map[key] = true;
+      if (node.children.length > 0) {
+        expandAll(node.children);
+      }
     });
-  });
+  };
+  
+  expandAll(nodes);
   return map;
 };
 
