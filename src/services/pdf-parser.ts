@@ -247,8 +247,9 @@ export class PDFParser {
       // Note: Must check before PRAISE & PLAY to avoid conflicts
       if (line.match(/^PRAISE:/i) || line.match(/^PRAISE\s+(?!&)/i)) {
         const song = this.extractSong(line, position++);
-        // Kids videos get 'kids' slot, regular songs get current praise slot
-        song.praiseSlot = song.isVideo ? 'kids' : currentPraiseSlot;
+        // Videos in PRAISE: get assigned based on current praise slot (not forced to 'kids')
+        // Unless explicitly marked as kids video, videos follow the normal praise slot flow
+        song.praiseSlot = song.isKidsVideo ? 'kids' : currentPraiseSlot;
         sections.push(song);
         continue;
       }
@@ -264,15 +265,19 @@ export class PDFParser {
       // Check for "PRAISE & PLAY:" (Nativity all-together services)
       if (line.match(/^PRAISE\s*&\s*PLAY:/i)) {
         const song = this.extractPraiseAndPlay(line, position++);
-        song.praiseSlot = song.isVideo ? 'kids' : currentPraiseSlot;
+        // Use isKidsVideo flag instead of generic isVideo
+        song.praiseSlot = song.isKidsVideo ? 'kids' : currentPraiseSlot;
         sections.push(song);
         continue;
       }
 
-      // Check for standalone VIDEO: (Remembrance services)
+      // Check for standalone VIDEO: (Remembrance services, closing videos, etc.)
       if (line.match(/^VIDEO:/i)) {
         const video = this.extractVideo(line, position++);
-        video.praiseSlot = 'kids'; // Standalone videos go to kids slot
+        // Use intelligent praise slot assignment based on current context
+        // If it's explicitly marked as kids video, use kids slot
+        // Otherwise use the current praise slot (which respects position in service)
+        video.praiseSlot = video.isKidsVideo ? 'kids' : currentPraiseSlot;
         sections.push(video);
         continue;
       }
@@ -409,6 +414,7 @@ export class PDFParser {
 
     // Check if video
     const isVideo = content.includes('(Video)');
+    const isKidsContent = /\b(kids?|children's?|children)\b/i.test(content);
     const title = content.replace(/\s*\(Video\)\s*/i, '').trim();
 
     // Extract leader if present
@@ -425,16 +431,20 @@ export class PDFParser {
       title: cleanTitle,
       leader,
       position,
-      isVideo
+      isVideo,
+      isKidsVideo: isVideo && isKidsContent
     };
   }
 
   /**
-   * Extract standalone VIDEO: lines (Remembrance services)
+   * Extract standalone VIDEO: lines (Remembrance services, closing videos, etc.)
    */
   private extractVideo(line: string, position: number): ServiceSection {
     // Remove "VIDEO:" prefix
     const content = line.replace(/^VIDEO:\s*/i, '').trim();
+
+    // Check if it's kids content
+    const isKidsContent = /\b(kids?|children's?|children)\b/i.test(content);
 
     // Extract leader if present
     const leaderMatch = content.match(/\(([^)]+)\)$/);
@@ -446,7 +456,8 @@ export class PDFParser {
       title,
       leader,
       position,
-      isVideo: true
+      isVideo: true,
+      isKidsVideo: isKidsContent
     };
   }
 

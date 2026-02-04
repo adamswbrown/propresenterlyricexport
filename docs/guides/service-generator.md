@@ -311,9 +311,49 @@ If you see unexpected video behavior in special services, remember that the app 
 - **Kids videos** - Explicitly marked "Kids Video" or "Children's Video"
 - **Ceremonial/hymn videos** - Used in special services, matched as regular content
 
----
+### Video Placement Recognition
 
-## Tips & Tricks
+Service Generator recognizes that videos can appear throughout a service, not just in the kids section. Videos are automatically placed in the appropriate worship slot based on their position in the service order.
+
+**Common video placements:**
+
+| Placement | Example | Handling |
+|---|---|---|
+| **Early (10-25%)** | Opening worship song video | Matched to appropriate library based on content |
+| **Middle (40-60%)** | Mid-service reflection video | Placed in Praise 2 slot or after sermon |
+| **End (80%+)** | Closing/finishing video | Placed at end of worship (Praise 3 or closing) |
+| **Special services** | Remembrance hymn video, Christmas carol video | Not assumed to be kids content |
+
+**Real data from 62 services:**
+- **64 videos** across services
+- **2 videos** at the very end as finisher (83% through service)
+- **8 videos** in the middle as transition piece (40-60%)
+- **54 videos** in early/praise slots (10-40%)
+
+**Examples:**
+
+1. **Christmas Service** - "Glory in the Manger" at 83% (finishing video)
+   - Placed in Praise 3 slot to wrap up service
+
+2. **Regular Sunday** - "If God is for me" at 50% (transition video)
+   - Placed after prayer/reflection, before final song
+
+3. **Remembrance Sunday** - "Remembrance Hymn" at 71% (closing reflection)
+   - Placed in Praise 3 slot as closing meditation
+
+**How it works:**
+- Service Generator detects video position in the PDF
+- Automatically assigns to the appropriate praise slot
+- Videos early in service → Praise 1
+- Videos mid-service → Praise 2 or after sermon section
+- Videos near end → Praise 3 or closing section
+
+**Tips:**
+- Videos as "finishing pieces" work well at the end of services (70%+ position)
+- Transition videos in the middle (40-60%) bridge sermon and closing worship
+- The app handles placement intelligently based on actual position in PDF
+
+---
 
 ### Before Running Service Generator
 
