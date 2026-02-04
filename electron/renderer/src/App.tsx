@@ -530,7 +530,8 @@ function App(): JSX.Element {
   async function handleChooseLogo(): Promise<void> {
     const result = await window.api.chooseLogo();
     if (result?.canceled || !result.filePath) return;
-    setSettings(prev => ({ ...prev, logoPath: result.filePath }));
+    const filePath = result.filePath; // Store for type narrowing
+    setSettings(prev => ({ ...prev, logoPath: filePath }));
   }
 
   async function handleCreatePlaylistFromTemplate(playlistName: string): Promise<{ success: boolean; error?: string; playlistId?: string }> {

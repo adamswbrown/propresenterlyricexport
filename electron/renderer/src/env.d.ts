@@ -107,8 +107,8 @@ interface ElectronAPI {
   testConnection: (config: ConnectionConfig) => Promise<ConnectionResult>;
   fetchPlaylists: (config: ConnectionConfig) => Promise<any[]>;
   fetchLibraries: (config: ConnectionConfig) => Promise<any[]>;
-  startExport: (payload: ExportPayload) => Promise<{ success: boolean; outputPath?: string; error?: string }>;
-  chooseLogo: () => Promise<{ canceled: boolean; filePath?: string }>;
+  startExport: (payload: ExportPayload) => Promise<{ success: boolean; outputPath?: string; error?: string; canceled?: boolean }>;
+  chooseLogo: () => Promise<{ canceled: boolean; filePath: string | undefined }>;
   createPlaylistFromTemplate: (config: ConnectionConfig, templateId: string, playlistName: string) => Promise<{ success: boolean; playlistId?: string; error?: string }>;
   // Shell utilities
   openExternal: (url: string) => Promise<{ success: boolean }>;
