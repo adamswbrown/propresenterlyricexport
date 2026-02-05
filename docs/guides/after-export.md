@@ -130,21 +130,23 @@ Birthday Blessings work best when imported as a PowerPoint presentation, which a
 
 2. **In ProPresenter:**
    - Right-click on your target playlist
-   - Select **Import** → **PowerPoint File**
+   - Select **Import** → **PowerPoint as Presentation**
    - Browse and select your birthday blessing PowerPoint
    - ProPresenter converts each slide to an editable presentation
 
    ![Import Birthday Blessing PowerPoint](../assets/import-remaining-artifacts-ppt.png)
 
-3. **Edit the presentation in ProPresenter**
-   - Double-click each birthday slide to edit
-   - Update the name to the birthday person
-   - Adjust text formatting if needed
-   - Save changes
+3. **Adjust formatting in ProPresenter** ⚠️
+   - **Important:** PowerPoint imports often require formatting adjustments
+   - Double-click each slide to edit in ProPresenter
+   - Check and fix font sizes, positions, and text alignment
+   - Verify colors and backgrounds imported correctly
+   - Update the name fields for this week's birthdays
 
 4. **Position in service**
    - Place birthday slides near the end of your service
    - Often used during announcements or closing time
+   - Preview on your actual projection display before the service
 
 #### PowerPoint Template Tips
 
@@ -162,11 +164,16 @@ Slide 3: [Name] Birthday Slide
 - Custom messages
 - Birthday graphics or backgrounds
 
-**Formatting Notes:**
-- ⚠️ After importing to ProPresenter, double-check your formatting
-- Some fonts may change slightly
-- Animations may need adjustment
-- Test the display on your actual projection screen
+**⚠️ Formatting Warning:**
+
+ProPresenter's PowerPoint import frequently changes formatting. **Always review and adjust after importing:**
+- Font sizes may shrink or change
+- Text alignment and positions may shift
+- Colors may appear differently
+- Animations may not import correctly
+- Text boxes may resize unexpectedly
+
+**Fix these issues directly in ProPresenter's editor before service.**
 
 #### Best Practices for Birthday Blessings
 
