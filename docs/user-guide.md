@@ -65,7 +65,7 @@ If you haven't already, you need to enable ProPresenter's Network API. See the [
    - Click a playlist name to select it
    - The breadcrumb path shows your selection
 
-![Main Screen - Lyric Export](../assets/main_screen_Lyric_export.png)
+![Main Screen - Lyric Export](./assets/main_screen_Lyric_export.png)
 
 ### Library Filter
 

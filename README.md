@@ -32,7 +32,7 @@ The easiest way to get started.
 
 3. **Export** - Connect, select playlist, customize fonts, export PowerPoint
 
-👉 **[Full Desktop App Guide](https://adamswbrown.github.io/propresenterlyricexport/getting-started/)**
+👉 **[Full Desktop App Guide](https://adamswbrown.github.io/propresenterlyricexport/getting-started)**
 
 ### Option 2: CLI (Power Users)
 
@@ -52,7 +52,7 @@ The original workflow with terminal commands.
    propresenter-lyrics pptx <id> output   # Direct mode
    ```
 
-👉 **[Full CLI Guide](https://adamswbrown.github.io/propresenterlyricexport/guides/cli-guide/)**
+👉 **[Full CLI Guide](https://adamswbrown.github.io/propresenterlyricexport/guides/cli-guide)**
 
 ## Requirements
 
@@ -63,13 +63,13 @@ The original workflow with terminal commands.
 
 Complete documentation is available at **[adamswbrown.github.io/propresenterlyricexport/](https://adamswbrown.github.io/propresenterlyricexport/)** including:
 
-- **[Getting Started](https://adamswbrown.github.io/propresenterlyricexport/getting-started/)** - Installation and setup (replaces QUICK_START.md, SETUP.md)
-- **[User Guide](https://adamswbrown.github.io/propresenterlyricexport/user-guide/)** - Desktop and CLI usage, connection settings, troubleshooting
-- **[Service Generator Guide](https://adamswbrown.github.io/propresenterlyricexport/guides/service-generator/)** - Create professional worship service documents
-- **[CLI Command Reference](https://adamswbrown.github.io/propresenterlyricexport/guides/cli-guide/)** - All commands with examples
-- **[PPTX Export Guide](https://adamswbrown.github.io/propresenterlyricexport/guides/pptx-export/)** - Customization and styling
-- **[FAQ & Troubleshooting](https://adamswbrown.github.io/propresenterlyricexport/faq/)** - Common questions and solutions
-- **[Developer Guide](https://adamswbrown.github.io/propresenterlyricexport/developer/)** - Contributing, architecture, building
+- **[Getting Started](https://adamswbrown.github.io/propresenterlyricexport/getting-started)** - Installation and setup (replaces QUICK_START.md, SETUP.md)
+- **[User Guide](https://adamswbrown.github.io/propresenterlyricexport/user-guide)** - Desktop and CLI usage, connection settings, troubleshooting
+- **[Service Generator Guide](https://adamswbrown.github.io/propresenterlyricexport/guides/service-generator)** - Create professional worship service documents
+- **[CLI Command Reference](https://adamswbrown.github.io/propresenterlyricexport/guides/cli-guide)** - All commands with examples
+- **[PPTX Export Guide](https://adamswbrown.github.io/propresenterlyricexport/guides/pptx-export)** - Customization and styling
+- **[FAQ & Troubleshooting](https://adamswbrown.github.io/propresenterlyricexport/faq)** - Common questions and solutions
+- **[Developer Guide](https://adamswbrown.github.io/propresenterlyricexport/developer)** - Contributing, architecture, building
 
 ## Release History
 
@@ -81,13 +81,13 @@ MIT
 
 ## Contributing
 
-Contributions are welcome! See the [Contributing Guide](https://adamswbrown.github.io/propresenterlyricexport/developer/contributing/) for details.
+Contributions are welcome! See the [Contributing Guide](https://adamswbrown.github.io/propresenterlyricexport/developer/contributing) for details.
 
 ## Support
 
 - 📖 **[Documentation](https://adamswbrown.github.io/propresenterlyricexport/)** - Guides and references
 - 🐛 **[GitHub Issues](https://github.com/adamswbrown/propresenterlyricexport/issues)** - Report bugs or request features
-- ❓ **[FAQ](https://adamswbrown.github.io/propresenterlyricexport/faq/)** - Common questions and answers
+- ❓ **[FAQ](https://adamswbrown.github.io/propresenterlyricexport/faq)** - Common questions and answers
 
 ## Acknowledgments
 

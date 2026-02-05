@@ -8,6 +8,21 @@ Automate your Sunday service playlist creation from PDF service orders in minute
 
 > **Note:** Service Generator is an **optional advanced feature**. The core functionality of ProPresenter Lyrics Export is extracting lyrics from existing playlists. Service Generator extends this by helping you build playlists from PDF service orders.
 
+## Table of Contents
+
+1. [How to Enable Service Generator](#how-to-enable-service-generator)
+2. [What is Service Generator?](#what-is-service-generator)
+3. [How It Works (6-Step Workflow)](#how-it-works-6-step-workflow)
+4. [Workflow Details](#workflow-details)
+5. [Troubleshooting](#troubleshooting)
+6. [Understanding Service Libraries](#understanding-service-libraries)
+7. [Service Library Structure](#service-library-structure)
+8. [PDF Format Requirements](#pdf-format-requirements) - How to structure your PDFs
+9. [Service Order Sources](#service-order-sources)
+10. [Getting Help](#getting-help)
+
+---
+
 ## How to Enable Service Generator
 
 **Desktop App:**
@@ -42,6 +57,18 @@ Configure which libraries and playlists to use:
 - **Kids Library** - Separate library for children's content (e.g., "Kids")
 - **Service Content Library** - Library containing Bible verses and service elements
 - **Target Playlist** - The playlist to populate with this week's service
+
+**ProPresenter Setup Required:**
+
+Before using Service Generator, create a **playlist folder** in ProPresenter to hold your generated service playlists:
+
+1. Open ProPresenter
+2. Go to the **Playlists** panel
+3. Right-click and select **New Folder**
+4. Name it something like "Services" or "Weekly Services"
+5. This folder will appear as a target location when selecting your Target Playlist
+
+Service Generator will create new playlists inside this folder each week.
 
 **How to find your libraries:**
 1. In the desktop app, look at available libraries (loaded during connection)
@@ -125,7 +152,7 @@ If Service Generator can't find a song in your Worship Library, you can search f
    - This is the ID number you need to copy to search in ProPresenter
    - Copy this number
 
-![CCLI Song ID Location](../assets/CCLI-ID-copy.png)
+![CCLI Song ID Location](../assets/ccli-id-copy.png)
 
 4. **Search in ProPresenter**
    - Open ProPresenter
@@ -133,7 +160,7 @@ If Service Generator can't find a song in your Worship Library, you can search f
    - Enter the CCLI Song Number in the search field
    - ProPresenter will search its database for songs matching that number
 
-![ProPresenter CCLI Song Search](../assets/PP-CCLI-search.png)
+![ProPresenter CCLI Song Search](../assets/pp-ccli-search.png)
 
 5. **Import into Your Worship Library**
    - When ProPresenter finds the song, select it from the results
@@ -788,14 +815,6 @@ If your PDFs come from Planning Center or Proclaim, they're already formatted co
 - **Scanned PDFs:** Will work but OCR accuracy may vary
 - **Password-protected:** Must be unlocked first
 - **Images/graphics:** Won't affect parsing (text extraction only)
-
-### Examples of Good PDF Sources
-
-These services export PDFs that Service Generator handles well:
-- **Planning Center Online** - Designed specifically for church workflows
-- **Proclaim** - Produces clean, structured exports
-- **ChurchPlanner** - Clear, simple PDF format
-- **Custom PDFs** - If formatted according to guidelines above
 
 ---
 
