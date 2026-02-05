@@ -23,10 +23,10 @@ ProPresenter Lyrics Export focuses on one thing: **extracting and exporting song
 | Content Type | Method | Format | Purpose |
 |---|---|---|---|
 | **Song Lyrics** | ProPresenter Lyrics Export | PPTX + Audio | Congregation singing |
-| **Sermon** | Manual import | Images + Video | Main message |
-| **Kids' Content** | Manual import | Images + Video | Children's service |
+| **Sermon** | Import PowerPoint as Images | PPTX → Images | Main message |
+| **Kids' Content** | Import PowerPoint as Images | PPTX → Images | Children's service |
 | **Announcements** | Service Generator (optional) | Text + Images | Important notices |
-| **Birthday Blessings** | Manual import | PowerPoint | Celebrate congregants |
+| **Birthday Blessings** | Import PowerPoint | PPTX (editable) | Celebrate congregants |
 
 This guide focuses on the manual imports (Sermon, Kids' Content, Birthday Blessings) that come **after** you've exported your lyrics.
 
@@ -36,72 +36,62 @@ This guide focuses on the manual imports (Sermon, Kids' Content, Birthday Blessi
 
 Your sermon is typically delivered with visual support—slides, graphics, video, or photo backgrounds. Here's how to bring that into ProPresenter.
 
-### Method 1: Import Images (Recommended for Most Sermons)
+### Import PowerPoint as Images (Recommended)
 
-Use image-based imports when your sermon content is a sequence of static images, graphics, or screenshots.
+The easiest way to import your sermon slides is to use ProPresenter's **Import PowerPoint as Images** feature. This converts each slide in your sermon PowerPoint into an image-based slide in ProPresenter.
 
-#### Step-by-Step: Import Sermon Images
+#### Step-by-Step: Import Sermon PowerPoint
 
-1. **Organize your images**
-   - Place all sermon images in a single folder (e.g., `Sermon_2026_02_09/`)
-   - Name them sequentially if order matters:
-     - `01_title.png`
-     - `02_main_point.png`
-     - `03_supporting_graphic.png`
-     - etc.
-   - Supported formats: PNG, JPG, JPEG, GIF, TIFF
+1. **Prepare your sermon PowerPoint**
+   - Create your sermon slides in PowerPoint as usual
+   - Save the file (e.g., `Sermon_2026_02_09.pptx`)
+   - No need to export individual images—ProPresenter handles the conversion
 
 2. **In ProPresenter:**
    - Right-click on your target playlist (or service playlist)
-   - Select **Import** → **Images**
-   - Browse to your sermon images folder
-   - ProPresenter will create slides for each image in order
+   - Select **Import** → **PowerPoint as Images**
+   - Browse to your sermon PowerPoint file
+   - ProPresenter will convert each slide to an image and create slides in order
 
-   ![Import Sermon Images](../assets/Import-remaining-artifacts-images.png)
+   ![Import Sermon PowerPoint](../assets/Import-remaining-artifacts-images.png)
 
 3. **Position in playlist**
-   - Drag the imported image group to the correct position in your service flow
+   - Drag the imported sermon presentation to the correct position in your service flow
    - Typically between songs or as a dedicated sermon section
 
-#### Best Practices for Sermon Images
+#### Best Practices for Sermon PowerPoint
 
-- **Resolution**: Use at least 1920x1080 for good quality on projection
+- **Resolution**: Design slides at 1920x1080 for optimal projection quality
 - **Aspect ratio**: Match your presentation display (usually 16:9)
-- **File size**: Keep individual images under 10 MB for smooth playback
-- **Naming**: Use descriptive names (not generic like "image1.png")
-- **Organization**: One folder per sermon for easy reuse and updates
+- **Fonts**: Use standard fonts that render well when converted to images
+- **Organization**: Keep one PowerPoint per sermon for easy reuse and updates
 
-### When to Use Image Import
+### When to Use PowerPoint as Images Import
 
-✓ PowerPoint slides exported as images
-✓ Graphic design work (Canva, Illustrator, etc.)
-✓ Photo montages or backgrounds
+✓ Sermon PowerPoint presentations
+✓ Any PowerPoint slides you want displayed as static images
+✓ Canva or other tools that export to PowerPoint format
 ✓ Multi-slide teachings with visual progression
-✓ Motion graphics or animated GIFs
 
 ---
 
 ## Kids' Sermon Content
 
-Kids' content follows the same import process as main sermon content, but with different file organization and considerations.
+Kids' content follows the same import process as main sermon content, using ProPresenter's **Import PowerPoint as Images** feature.
 
-### Method 1: Import Images (Recommended)
+### Import Kids' PowerPoint as Images
 
-Kids' sermons often rely on colorful graphics and engaging visuals. Import them the same way as main sermon images:
+Kids' sermons often rely on colorful graphics and engaging visuals. Import them the same way as main sermon content:
 
-1. **Organize kids' images**
-   - Create a dedicated folder for kids' content (e.g., `Kids_2026_02_09/`)
-   - Name images to reflect the story flow:
-     - `01_welcome_slide.png`
-     - `02_character_intro.png`
-     - `03_story_action.png`
-     - etc.
+1. **Prepare your kids' PowerPoint**
+   - Create your kids' sermon slides in PowerPoint
+   - Save the file (e.g., `Kids_2026_02_09.pptx`)
 
 2. **In ProPresenter:**
    - Right-click on your **Kids Library** or kids playlist
-   - Select **Import** → **Images**
-   - Select the kids' content folder
-   - ProPresenter creates slides for each image
+   - Select **Import** → **PowerPoint as Images**
+   - Select your kids' PowerPoint file
+   - ProPresenter converts each slide to an image
 
 3. **Position in service**
    - Place the imported kids' section where your children's service occurs
@@ -140,21 +130,23 @@ Birthday Blessings work best when imported as a PowerPoint presentation, which a
 
 2. **In ProPresenter:**
    - Right-click on your target playlist
-   - Select **Import** → **PowerPoint File**
+   - Select **Import** → **PowerPoint as Presentation**
    - Browse and select your birthday blessing PowerPoint
    - ProPresenter converts each slide to an editable presentation
 
    ![Import Birthday Blessing PowerPoint](../assets/import-remaining-artifacts-ppt.png)
 
-3. **Edit the presentation in ProPresenter**
-   - Double-click each birthday slide to edit
-   - Update the name to the birthday person
-   - Adjust text formatting if needed
-   - Save changes
+3. **Adjust formatting in ProPresenter** ⚠️
+   - **Important:** PowerPoint imports often require formatting adjustments
+   - Double-click each slide to edit in ProPresenter
+   - Check and fix font sizes, positions, and text alignment
+   - Verify colors and backgrounds imported correctly
+   - Update the name fields for this week's birthdays
 
 4. **Position in service**
    - Place birthday slides near the end of your service
    - Often used during announcements or closing time
+   - Preview on your actual projection display before the service
 
 #### PowerPoint Template Tips
 
@@ -172,11 +164,16 @@ Slide 3: [Name] Birthday Slide
 - Custom messages
 - Birthday graphics or backgrounds
 
-**Formatting Notes:**
-- ⚠️ After importing to ProPresenter, double-check your formatting
-- Some fonts may change slightly
-- Animations may need adjustment
-- Test the display on your actual projection screen
+**⚠️ Formatting Warning:**
+
+ProPresenter's PowerPoint import frequently changes formatting. **Always review and adjust after importing:**
+- Font sizes may shrink or change
+- Text alignment and positions may shift
+- Colors may appear differently
+- Animations may not import correctly
+- Text boxes may resize unexpectedly
+
+**Fix these issues directly in ProPresenter's editor before service.**
 
 #### Best Practices for Birthday Blessings
 
@@ -195,8 +192,8 @@ Slide 3: [Name] Birthday Slide
 **Your complete Sunday service workflow should look like:**
 
 1. **Export lyrics** → ProPresenter Lyrics Export (creates PPTX with song lyrics)
-2. **Add sermon content** → Import images or PowerPoint (you handle this)
-3. **Add kids' content** → Import images for children's service (you handle this)
+2. **Add sermon content** → Import PowerPoint as Images (you handle this)
+3. **Add kids' content** → Import PowerPoint as Images (you handle this)
 4. **Add birthday blessings** → Import PowerPoint template (you handle this)
 5. **Arrange playlist** → Drag items into service order in ProPresenter
 6. **Test and preview** → Run through the service once before Sunday
@@ -208,22 +205,16 @@ Keep your content organized for faster workflow:
 ```
 2026_02_09_Sunday_Service/
 ├── Lyrics_Export.pptx          (from ProPresenter Lyrics Export)
-├── Sermon_Content/
-│   ├── 01_title.png
-│   ├── 02_main_point.png
-│   └── 03_prayer_graphic.png
-├── Kids_Content/
-│   ├── 01_welcome.png
-│   ├── 02_story.png
-│   └── 03_game.png
+├── Sermon_2026_02_09.pptx      (import as images in ProPresenter)
+├── Kids_2026_02_09.pptx        (import as images in ProPresenter)
 └── Birthday_Blessing_2026_02.pptx
 ```
 
 ### Quality Checklist Before Service
 
-- [ ] All images imported and in correct order
+- [ ] All PowerPoint files imported and in correct order
 - [ ] Playlist arranged in correct service flow
-- [ ] Sermon images display properly on projection
+- [ ] Sermon slides display properly on projection
 - [ ] Kids' content is age-appropriate and visible
 - [ ] Birthday slides have correct names and dates
 - [ ] All fonts are readable at viewing distance
