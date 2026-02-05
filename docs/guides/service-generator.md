@@ -58,6 +58,18 @@ Configure which libraries and playlists to use:
 - **Service Content Library** - Library containing Bible verses and service elements
 - **Target Playlist** - The playlist to populate with this week's service
 
+**ProPresenter Setup Required:**
+
+Before using Service Generator, create a **playlist folder** in ProPresenter to hold your generated service playlists:
+
+1. Open ProPresenter
+2. Go to the **Playlists** panel
+3. Right-click and select **New Folder**
+4. Name it something like "Services" or "Weekly Services"
+5. This folder will appear as a target location when selecting your Target Playlist
+
+Service Generator will create new playlists inside this folder each week.
+
 **How to find your libraries:**
 1. In the desktop app, look at available libraries (loaded during connection)
 2. You'll typically have: "Worship," "Service Content," "Kids," "Announcements," etc.
@@ -804,14 +816,6 @@ If your PDFs come from Planning Center or Proclaim, they're already formatted co
 - **Scanned PDFs:** Will work but OCR accuracy may vary
 - **Password-protected:** Must be unlocked first
 - **Images/graphics:** Won't affect parsing (text extraction only)
-
-### Examples of Good PDF Sources
-
-These services export PDFs that Service Generator handles well:
-- **Planning Center Online** - Designed specifically for church workflows
-- **Proclaim** - Produces clean, structured exports
-- **ChurchPlanner** - Clear, simple PDF format
-- **Custom PDFs** - If formatted according to guidelines above
 
 ---
 
