@@ -805,14 +805,6 @@ If your PDFs come from Planning Center or Proclaim, they're already formatted co
 - **Password-protected:** Must be unlocked first
 - **Images/graphics:** Won't affect parsing (text extraction only)
 
-### Examples of Good PDF Sources
-
-These services export PDFs that Service Generator handles well:
-- **Planning Center Online** - Designed specifically for church workflows
-- **Proclaim** - Produces clean, structured exports
-- **ChurchPlanner** - Clear, simple PDF format
-- **Custom PDFs** - If formatted according to guidelines above
-
 ---
 
 ## Service Order Sources
