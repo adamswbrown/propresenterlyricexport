@@ -47,6 +47,12 @@ Service Generator takes a PDF service order (from Planning Center, Proclaim, Chu
 
 ![Service Generator Main Interface](../assets/service_gen_main.png)
 
+### Watch It In Action
+
+See a complete end-to-end run of Service Generator — from PDF upload to a fully built ProPresenter playlist:
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/-HhIuxfkNXc" title="Service Generator End-to-End Demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
 ## How It Works (6-Step Workflow)
 
 ### Step 1: Setup (One-Time Configuration)
