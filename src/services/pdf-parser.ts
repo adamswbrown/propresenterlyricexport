@@ -6,14 +6,28 @@
 import * as fs from 'fs';
 import { ParsedService, ServiceSection, ServiceSectionType, PraiseSlot, SpecialServiceType } from '../types/service-order';
 
-// pdf-parse is a CommonJS module, use require with destructuring
-const { PDFParse } = require('pdf-parse');
-
 export class PDFParser {
   /**
    * Parse a PDF file and extract service order sections
    */
   async parsePDF(pdfPath: string): Promise<ParsedService> {
+    // Polyfill DOMMatrix for Node.js/Electron main process (required by pdfjs-dist used by pdf-parse)
+    if (typeof (globalThis as any).DOMMatrix === 'undefined') {
+      (globalThis as any).DOMMatrix = class DOMMatrix {
+        m11 = 1; m12 = 0; m13 = 0; m14 = 0;
+        m21 = 0; m22 = 1; m23 = 0; m24 = 0;
+        m31 = 0; m32 = 0; m33 = 1; m34 = 0;
+        m41 = 0; m42 = 0; m43 = 0; m44 = 1;
+        a = 1; b = 0; c = 0; d = 1; e = 0; f = 0;
+        is2D = true; isIdentity = true;
+        constructor() {}
+        toString() { return 'matrix(1, 0, 0, 1, 0, 0)'; }
+      };
+    }
+
+    // Lazy-load pdf-parse to avoid DOMMatrix error at app startup
+    const { PDFParse } = require('pdf-parse');
+
     // Read and parse PDF - convert Buffer to Uint8Array as required by pdf-parse v2
     const nodeBuffer = fs.readFileSync(pdfPath);
     const uint8Array = new Uint8Array(nodeBuffer.buffer, nodeBuffer.byteOffset, nodeBuffer.byteLength);

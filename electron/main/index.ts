@@ -11,7 +11,7 @@ import { collectPlaylistLyrics, PlaylistProgressEvent } from '../../src/services
 import { mapPlaylistTree, PlaylistTreeNode } from '../../src/utils/playlist-utils';
 import { findLogoPath } from '../../src/services/logo';
 import { exportToPowerPoint, DEFAULT_PPTX_TEXT_STYLE, PptxTextStyle } from '../../src/pptx-exporter';
-import { PDFParser } from '../../src/services/pdf-parser';
+// PDFParser is lazy-loaded in the pdf:parse handler to avoid DOMMatrix errors at startup
 import { SongMatcher } from '../../src/services/song-matcher';
 import { BibleFetcher } from '../../src/services/bible-fetcher';
 import { PlaylistBuilder } from '../../src/services/playlist-builder';
@@ -726,6 +726,7 @@ ipcMain.handle('pdf:choose', async () => {
 
 ipcMain.handle('pdf:parse', async (_event, filePath: string) => {
   try {
+    const { PDFParser } = await import('../../src/services/pdf-parser');
     const parser = new PDFParser();
     const result = await parser.parsePDF(filePath);
     // Convert parsed service to simple items array for UI
