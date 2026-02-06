@@ -261,8 +261,10 @@ export class PDFParser {
       // Note: Must check before PRAISE & PLAY to avoid conflicts
       if (line.match(/^PRAISE:/i) || line.match(/^PRAISE\s+(?!&)/i)) {
         const song = this.extractSong(line, position++);
-        // Videos in PRAISE: get assigned based on current praise slot (not forced to 'kids')
-        // Unless explicitly marked as kids video, videos follow the normal praise slot flow
+        // If it's a video but not yet identified as kids, look ahead for "[Children leave..."
+        if (song.isVideo && !song.isKidsVideo) {
+          song.isKidsVideo = this.hasChildrenLeavingContext(lines, i);
+        }
         song.praiseSlot = song.isKidsVideo ? 'kids' : currentPraiseSlot;
         sections.push(song);
         continue;
@@ -279,7 +281,9 @@ export class PDFParser {
       // Check for "PRAISE & PLAY:" (Nativity all-together services)
       if (line.match(/^PRAISE\s*&\s*PLAY:/i)) {
         const song = this.extractPraiseAndPlay(line, position++);
-        // Use isKidsVideo flag instead of generic isVideo
+        if (song.isVideo && !song.isKidsVideo) {
+          song.isKidsVideo = this.hasChildrenLeavingContext(lines, i);
+        }
         song.praiseSlot = song.isKidsVideo ? 'kids' : currentPraiseSlot;
         sections.push(song);
         continue;
@@ -288,9 +292,9 @@ export class PDFParser {
       // Check for standalone VIDEO: (Remembrance services, closing videos, etc.)
       if (line.match(/^VIDEO:/i)) {
         const video = this.extractVideo(line, position++);
-        // Use intelligent praise slot assignment based on current context
-        // If it's explicitly marked as kids video, use kids slot
-        // Otherwise use the current praise slot (which respects position in service)
+        if (!video.isKidsVideo) {
+          video.isKidsVideo = this.hasChildrenLeavingContext(lines, i);
+        }
         video.praiseSlot = video.isKidsVideo ? 'kids' : currentPraiseSlot;
         sections.push(video);
         continue;
@@ -312,6 +316,24 @@ export class PDFParser {
     }
 
     return sections;
+  }
+
+  /**
+   * Look ahead from a video line to check if children leave afterwards,
+   * indicating this is the kids video even if the title doesn't say "kids"
+   */
+  private hasChildrenLeavingContext(lines: string[], currentIndex: number): boolean {
+    for (let j = currentIndex + 1; j < Math.min(currentIndex + 4, lines.length); j++) {
+      const nextLine = lines[j].toLowerCase();
+      if (nextLine.includes('children leave') || nextLine.includes('leave for')) {
+        return true;
+      }
+      // Stop looking if we hit another section marker
+      if (nextLine.match(/^(praise|bible|sermon|prayer|family news|time of)/i)) {
+        break;
+      }
+    }
+    return false;
   }
 
   /**
