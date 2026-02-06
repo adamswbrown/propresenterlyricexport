@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.1] - 2026-02-06
+
+### Fixed
+- **App Crash on Launch** - Fixed `DOMMatrix is not defined` error that prevented the desktop app from opening
+  - The `pdf-parse` library (used by Service Generator) requires browser APIs unavailable in Electron's main process
+  - PDF parser is now lazy-loaded only when a PDF is actually parsed, keeping app startup clean
+  - Added lightweight `DOMMatrix` polyfill for the Node.js environment so PDF parsing works correctly
+
 ## [2.3.0] - 2026-02-04
 
 ### Added
