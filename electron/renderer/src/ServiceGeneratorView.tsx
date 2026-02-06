@@ -59,6 +59,7 @@ function formatPraiseSlot(slot?: PraiseSlot): string {
 type MatchResult = {
   songName: string;
   praiseSlot?: PraiseSlot;
+  isKidsVideo?: boolean;
   matches: Array<{ uuid: string; name: string; library: string; confidence: number }>;
   bestMatch?: { uuid: string; name: string; library: string; confidence: number };
   requiresReview: boolean;
@@ -111,10 +112,11 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
       case 'parse':
         return parsedItems.length > 0;
       case 'match':
-        // All songs must have a selected match
-        const songsToMatch = matchResults.length;
+        // All songs must have a selected match; kids videos without matches can be skipped (imported manually)
+        const songsToMatch = matchResults.filter(r => !r.isKidsVideo || r.matches.length > 0).length;
         const matchedSongs = matchResults.filter(r => r.selectedMatch).length;
-        return songsToMatch > 0 && matchedSongs === songsToMatch;
+        const unmatchedKidsVideos = matchResults.filter(r => r.isKidsVideo && r.matches.length === 0).length;
+        return matchResults.length > 0 && (matchedSongs + unmatchedKidsVideos) === matchResults.length;
       case 'verse':
         // Verses are complete if:
         // - No verses to match, OR
@@ -154,6 +156,51 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
       return () => clearTimeout(timer);
     }
   }, [notification]);
+
+  // Auto-search Bible verses when entering the verse step
+  useEffect(() => {
+    if (currentStep !== 'verse') return;
+    if (bibleMatches.length > 0) return; // Already searched
+    if (!props.settings.serviceContentLibraryId) return;
+
+    const verseItems = parsedItems.filter(item => item.type === 'verse');
+    if (verseItems.length === 0) return;
+
+    const autoMatchVerses = async () => {
+      setIsProcessing(true);
+      setNotification({ message: 'Searching for Bible verses in library...', type: 'info' });
+
+      try {
+        const references = verseItems.map(v => v.text || v.reference || '');
+        const result = await window.api.matchVerses(
+          references,
+          props.connectionConfig,
+          props.settings.serviceContentLibraryId
+        );
+
+        if (result.success && result.results) {
+          setBibleMatches(result.results);
+          const matched = result.results.filter((r: any) => r.selectedMatch).length;
+          const needReview = result.results.filter((r: any) => r.requiresReview).length;
+          setNotification({
+            message: matched > 0
+              ? `Found ${matched} verse(s) in library, ${needReview} need review`
+              : 'No verses found in library - use manual workflow below',
+            type: matched > 0 ? 'success' : 'info'
+          });
+        }
+      } catch (error: any) {
+        setNotification({
+          message: error?.message || 'Error searching for verses',
+          type: 'error'
+        });
+      } finally {
+        setIsProcessing(false);
+      }
+    };
+
+    autoMatchVerses();
+  }, [currentStep]);
 
   function renderStepContent() {
     switch (currentStep) {
@@ -574,10 +621,11 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                           );
 
                           if (result.success) {
-                            // Add praiseSlot from parsed items to match results
+                            // Add praiseSlot and isKidsVideo from parsed items to match results
                             const resultsWithSlots = result.results.map((r: MatchResult, idx: number) => ({
                               ...r,
-                              praiseSlot: songsToMatch[idx]?.praiseSlot
+                              praiseSlot: songsToMatch[idx]?.praiseSlot,
+                              isKidsVideo: songsToMatch[idx]?.type === 'kids_video' || songsToMatch[idx]?.isKidsVideo
                             }));
                             setMatchResults(resultsWithSlots);
                             const autoMatched = resultsWithSlots.filter((r: MatchResult) => r.selectedMatch).length;
@@ -681,10 +729,11 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
               );
 
               if (result.success) {
-                // Add praiseSlot from parsed items to match results
+                // Add praiseSlot and isKidsVideo from parsed items to match results
                 const resultsWithSlots = result.results.map((r: MatchResult, idx: number) => ({
                   ...r,
-                  praiseSlot: songsToMatch[idx]?.praiseSlot
+                  praiseSlot: songsToMatch[idx]?.praiseSlot,
+                  isKidsVideo: songsToMatch[idx]?.type === 'kids_video' || songsToMatch[idx]?.isKidsVideo
                 }));
                 setMatchResults(resultsWithSlots);
                 const autoMatched = resultsWithSlots.filter((r: MatchResult) => r.selectedMatch).length;
@@ -839,37 +888,52 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                             </option>
                           ))}
                         </select>
-                        {/* CCLI lookup for songs with no matches OR low confidence (needs review) */}
+                        {/* Guidance for unmatched items */}
                         {(result.matches.length === 0 || result.requiresReview) && (
                           <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
-                            <div style={{ fontSize: '13px', color: result.matches.length === 0 ? '#f44336' : '#ffc107', marginBottom: '10px' }}>
-                              {result.matches.length === 0
-                                ? 'No matches found in libraries.'
-                                : 'Can\'t find the right match? Add it from CCLI:'}
-                            </div>
-                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                              <button
-                                className="ghost small"
-                                onClick={() => copyToClipboard(result.songName)}
-                                type="button"
-                                title="Copy song name to clipboard"
-                                style={{ fontSize: '12px', padding: '6px 12px' }}
-                              >
-                                📋 Copy Name
-                              </button>
-                              <button
-                                className="ghost small"
-                                onClick={() => searchCCLI(result.songName)}
-                                type="button"
-                                title="Search CCLI SongSelect for this song"
-                                style={{ fontSize: '12px', padding: '6px 12px' }}
-                              >
-                                🔍 Search CCLI
-                              </button>
-                            </div>
-                            <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '8px' }}>
-                              Add the song to ProPresenter, then click "Rescan Libraries" above.
-                            </div>
+                            {result.isKidsVideo ? (
+                              <>
+                                <div style={{ fontSize: '13px', color: result.matches.length === 0 ? '#ffc107' : '#ffc107', marginBottom: '10px' }}>
+                                  {result.matches.length === 0
+                                    ? 'Not found in Kids library.'
+                                    : 'Can\'t find the right match?'}
+                                </div>
+                                <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
+                                  Import this video into your Kids library in ProPresenter, then click "Rescan Libraries" above.
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div style={{ fontSize: '13px', color: result.matches.length === 0 ? '#f44336' : '#ffc107', marginBottom: '10px' }}>
+                                  {result.matches.length === 0
+                                    ? 'No matches found in libraries.'
+                                    : 'Can\'t find the right match? Add it from CCLI:'}
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                  <button
+                                    className="ghost small"
+                                    onClick={() => copyToClipboard(result.songName)}
+                                    type="button"
+                                    title="Copy song name to clipboard"
+                                    style={{ fontSize: '12px', padding: '6px 12px' }}
+                                  >
+                                    📋 Copy Name
+                                  </button>
+                                  <button
+                                    className="ghost small"
+                                    onClick={() => searchCCLI(result.songName)}
+                                    type="button"
+                                    title="Search CCLI SongSelect for this song"
+                                    style={{ fontSize: '12px', padding: '6px 12px' }}
+                                  >
+                                    🔍 Search CCLI
+                                  </button>
+                                </div>
+                                <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '8px' }}>
+                                  Add the song to ProPresenter, then click "Rescan Libraries" above.
+                                </div>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1186,13 +1250,50 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                                 fontSize: '14px'
                               }}
                             >
-                              <option value="">-- Select a match --</option>
+                              <option value="">-- None of these / Add manually --</option>
                               {match.matches.map((m) => (
                                 <option key={m.uuid} value={m.uuid}>
                                   {m.name} ({m.confidence}%)
                                 </option>
                               ))}
                             </select>
+                            {/* Show manual workflow when no match is selected or confidence is low */}
+                            {(!match.selectedMatch || match.requiresReview) && (
+                              <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
+                                <div style={{ fontSize: '13px', color: '#ffc107', marginBottom: '10px' }}>
+                                  {!match.selectedMatch ? 'Not the right verse? Add manually:' : 'Low confidence match — verify or add manually:'}
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                  <button
+                                    className="ghost small"
+                                    onClick={() => copyVerseRef(verseRef)}
+                                    type="button"
+                                    style={{ fontSize: '12px', padding: '6px 12px' }}
+                                  >
+                                    📋 Copy Reference
+                                  </button>
+                                  <button
+                                    className="ghost small"
+                                    onClick={() => openVerseInBibleGateway(verseRef)}
+                                    type="button"
+                                    style={{ fontSize: '12px', padding: '6px 12px' }}
+                                  >
+                                    🔗 Bible Gateway
+                                  </button>
+                                  <button
+                                    className="ghost small"
+                                    onClick={focusReading}
+                                    type="button"
+                                    style={{ fontSize: '12px', padding: '6px 12px' }}
+                                  >
+                                    🎯 Focus Reading
+                                  </button>
+                                </div>
+                                <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '8px' }}>
+                                  Use <kbd style={{ background: 'rgba(255,255,255,0.1)', padding: '1px 4px', borderRadius: '3px', fontSize: '10px' }}>Cmd+B</kbd> to open Bible panel in ProPresenter
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ) : match ? (
                           /* No matches found - show manual workflow */

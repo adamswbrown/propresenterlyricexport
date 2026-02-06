@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.2] - 2026-02-06
+
+### Fixed
+- **Playlist Build 404 Error** - Fixed playlist update failing with HTTP 404 when building service playlists
+  - ProPresenter's PUT API rejects presentation items with empty `id.uuid` for certain presentations
+  - New items now use the `presentation_uuid` as `id.uuid` instead of empty string
+  - All playlist items are now cleaned before PUT to strip extra fields from GET responses
+  - Also fixed in `createPlaylistFromTemplate` to prevent same issue when copying playlists
+
+### Improved
+- **Kids Video Detection** - Kids videos now show "Import to Kids library" guidance instead of CCLI search buttons
+  - Contextual look-ahead detects kids videos even when title doesn't explicitly say "kids"
+  - Unmatched kids videos no longer block the workflow (can be imported manually)
+- **Bible Verse Auto-Search** - Verses are now automatically searched when entering the verse matching step
+  - No more manual "Search" button click required
+  - Shows results immediately with count of matches found
+- **Bible Verse Manual Workflow** - Improved UI for verses not found in library
+  - Dropdown now shows "None of these / Add manually" as default option
+  - Clearer guidance for manual verse import
+
 ## [2.3.1] - 2026-02-06
 
 ### Fixed

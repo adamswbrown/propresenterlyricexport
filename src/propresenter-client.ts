@@ -329,13 +329,19 @@ export class ProPresenterClient extends EventEmitter {
 
     const templateItems = templateResult.data.items || [];
 
-    // Step 2: Clean up items - keep name but remove UUIDs so ProPresenter generates new ones
+    // Step 2: Clean up items - ProPresenter PUT requires valid id.uuid for presentations
     const cleanedItems = templateItems.map((item: any, index: number) => {
+      // For presentations, use presentation_uuid as id.uuid (ProPresenter rejects empty uuid for some presentations)
+      let itemUuid = '';
+      if (item.type === 'presentation' && item.presentation_info?.presentation_uuid) {
+        itemUuid = item.presentation_info.presentation_uuid;
+      }
+
       const cleaned: any = {
         id: {
           name: item.id?.name || item.name || 'Untitled',
           index: index,
-          uuid: '', // Empty UUID means ProPresenter will generate a new one
+          uuid: itemUuid,
         },
         type: item.type,
         is_hidden: item.is_hidden || false,

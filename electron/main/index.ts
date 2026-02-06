@@ -1083,9 +1083,12 @@ ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig
     // Items should be an array of { type, uuid, name, praiseSlot } representing songs/videos
     // praiseSlot can be: 'praise1', 'praise2', 'praise3', 'kids'
 
+    console.log(`[playlist:build-service] Config: host=${config.host}, port=${config.port}, playlistId=${playlistId}`);
+
     // Step 1: Fetch current playlist items to preserve structure
-    console.log('[playlist:build-service] Fetching current playlist items...');
-    const getResponse = await fetch(`http://${config.host}:${config.port}/v1/playlist/${playlistId}`);
+    const getUrl = `http://${config.host}:${config.port}/v1/playlist/${playlistId}`;
+    console.log(`[playlist:build-service] GET ${getUrl}`);
+    const getResponse = await fetch(getUrl);
     if (!getResponse.ok) {
       throw new Error(`Failed to fetch playlist: ${getResponse.status}`);
     }
@@ -1132,13 +1135,6 @@ ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig
     let currentSlot: string | null = null;
     let skipUntilNextHeader = false;
 
-    // Debug: Log all items to understand structure
-    console.log('[playlist:build-service] Current items in playlist:');
-    for (const item of currentItems) {
-      const name = item.id?.name || item.name || 'UNNAMED';
-      console.log(`  - type="${item.type}" name="${name}"`);
-    }
-
     for (let i = 0; i < currentItems.length; i++) {
       const item = currentItems[i];
       const isHeader = item.type === 'header';
@@ -1162,7 +1158,7 @@ ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig
             newItems.push({
               id: {
                 name: songItem.name,
-                uuid: '',
+                uuid: songItem.uuid,
                 index: newItems.length
               },
               type: 'presentation',
@@ -1172,7 +1168,8 @@ ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig
                 presentation_uuid: songItem.uuid,
                 arrangement_name: '',
                 arrangement_uuid: ''
-              }
+              },
+              destination: 'presentation'
             });
           }
 
@@ -1205,28 +1202,77 @@ ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig
       }
     }
 
-    // Update indices
-    newItems.forEach((item, index) => {
-      if (item.id) {
-        item.id.index = index;
+    // Step 5: Clean all items before sending - ProPresenter PUT expects specific fields only
+    // Raw GET response items contain extra fields that cause PUT to return 404
+    // CRITICAL: presentation items must have a valid id.uuid (use presentation_uuid as fallback)
+    const cleanedItems = newItems.map((item: any, index: number) => {
+      // For presentations, ensure id.uuid is set - ProPresenter rejects items with empty uuid
+      let itemUuid = item.id?.uuid || '';
+      if (item.type === 'presentation' && !itemUuid && item.presentation_info?.presentation_uuid) {
+        itemUuid = item.presentation_info.presentation_uuid;
       }
+
+      const cleaned: any = {
+        id: {
+          name: item.id?.name || item.name || 'Untitled',
+          index: index,
+          uuid: itemUuid,
+        },
+        type: item.type,
+        is_hidden: item.is_hidden || false,
+        is_pco: item.is_pco || false,
+      };
+
+      // For headers, include color
+      if (item.type === 'header') {
+        if (item.header_color) {
+          cleaned.header_color = item.header_color;
+        }
+      }
+
+      // For presentations, include presentation info and duration
+      if (item.type === 'presentation') {
+        if (item.presentation_info) {
+          cleaned.presentation_info = {
+            presentation_uuid: item.presentation_info.presentation_uuid,
+            arrangement_name: item.presentation_info.arrangement_name || '',
+            arrangement_uuid: item.presentation_info.arrangement_uuid || '',
+          };
+        }
+        if (item.duration) {
+          cleaned.duration = item.duration;
+        }
+      }
+
+      // Include destination if present
+      if (item.destination) {
+        cleaned.destination = item.destination;
+      }
+
+      return cleaned;
     });
 
-    console.log(`[playlist:build-service] Built ${newItems.length} items (was ${currentItems.length})`);
+    console.log(`[playlist:build-service] Built ${cleanedItems.length} items (was ${currentItems.length})`);
 
-    // Step 5: Send PUT request with modified items
-    const response = await fetch(`http://${config.host}:${config.port}/v1/playlist/${playlistId}`, {
+    // Step 6: Send PUT request with cleaned items
+    const putBody = JSON.stringify(cleanedItems);
+    console.log(`[playlist:build-service] PUT http://${config.host}:${config.port}/v1/playlist/${playlistId} (${putBody.length} bytes, ${cleanedItems.length} items)`);
+
+    const putResponse = await fetch(`http://${config.host}:${config.port}/v1/playlist/${playlistId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newItems)
+      body: putBody,
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to update playlist: ${response.status} ${errorText}`);
+    console.log(`[playlist:build-service] PUT response: ${putResponse.status}`);
+
+    if (!putResponse.ok) {
+      const errorText = await putResponse.text();
+      console.error(`[playlist:build-service] PUT failed: ${putResponse.status} ${errorText}`);
+      throw new Error(`Failed to update playlist: ${putResponse.status} ${errorText}`);
     }
 
-    return { success: true, itemCount: newItems.length };
+    return { success: true, itemCount: cleanedItems.length };
   } catch (error: any) {
     console.error('Playlist build error:', error);
     return { success: false, error: error.message || 'Failed to build playlist' };
