@@ -31,8 +31,25 @@ input {
   font-family: inherit;
 }
 
+.titlebar-drag {
+  -webkit-app-region: drag;
+  height: 28px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.titlebar-drag button,
+.titlebar-drag a,
+.titlebar-drag input,
+.titlebar-drag select {
+  -webkit-app-region: no-drag;
+}
+
 .app-shell {
-  padding: 32px 40px 48px;
+  padding: 60px 40px 48px;
   min-height: 100vh;
 }
 
@@ -585,7 +602,7 @@ select option {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  padding: 32px 40px 48px;
+  padding: 60px 40px 48px;
 }
 
 .service-header {

@@ -647,6 +647,7 @@ function App(): JSX.Element {
   // Export mode (default)
   return (
     <div className="app-shell">
+      <div className="titlebar-drag" />
       <header className="app-header">
         <div>
           <h1>ProPresenter Lyrics</h1>

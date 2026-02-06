@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New items now use the `presentation_uuid` as `id.uuid` instead of empty string
   - All playlist items are now cleaned before PUT to strip extra fields from GET responses
   - Also fixed in `createPlaylistFromTemplate` to prevent same issue when copying playlists
+- **Window Not Draggable** - Added title bar drag region so the window can be moved like a native macOS app
+  - The `hiddenInset` title bar style hid the native drag area without providing a replacement
+  - Both Export and Service Generator views now have a draggable title bar zone
 
 ### Improved
 - **Kids Video Detection** - Kids videos now show "Import to Kids library" guidance instead of CCLI search buttons

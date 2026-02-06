@@ -1591,6 +1591,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
 
   return (
     <div className="service-generator-container">
+      <div className="titlebar-drag" />
       {/* Header */}
       <div className="service-header">
         <button className="icon-button" onClick={props.onBack} title="Back to Export" type="button">
