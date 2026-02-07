@@ -86,8 +86,8 @@ Once the tag is pushed and GitHub Actions completes (10-15 minutes):
 ## Branch Information
 
 - Current Branch: `copilot/update-release-notes`
-- Latest Commit: `f3534d5` - "Initial plan"
-- Tag Location: `v2.3.3` → commit `f3534d5`
+- Latest Commit: `bc3fcb7` - "Prepare release v2.3.3 - tag created, ready for push"
+- Tag Location: `v2.3.3` → commit `bc3fcb7`
 
 ---
 
