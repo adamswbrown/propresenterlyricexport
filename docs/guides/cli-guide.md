@@ -265,6 +265,75 @@ propresenter-lyrics watch -h 192.168  # Custom host
 
 ---
 
+### alias
+
+Manage song alias mappings. Aliases let you permanently map an order-of-service song title to a specific ProPresenter presentation.
+
+#### alias list
+
+Show all saved aliases.
+
+```bash
+propresenter-lyrics alias list
+propresenter-lyrics alias list --json    # JSON output
+```
+
+**Output:**
+```
+Song Aliases
+============
+
+  "Be Thou My Vision"
+    → You Are My Vision
+      UUID: abc123-def456
+
+  1 alias(es) stored in ~/.propresenter-words/aliases.json
+```
+
+#### alias add
+
+Interactively search your ProPresenter library and create an alias.
+
+```bash
+propresenter-lyrics alias add "Be Thou My Vision"
+```
+
+**Requires ProPresenter connection.** The command will:
+1. Connect to ProPresenter and fetch all libraries
+2. Prompt you to search for the target song
+3. Let you select from matching results
+4. Save the alias
+
+**Example session:**
+```
+Adding alias for: "Be Thou My Vision"
+Fetching libraries...
+
+Found 245 presentations across 3 libraries.
+
+Search for a song (or "q" to cancel): vision
+  Found 3 match(es):
+
+  1) You Are My Vision  [Worship]
+  2) Vision of You  [Worship]
+  3) Open The Eyes Of My Heart  [Worship]
+
+Select a song (number), or press Enter to search again: 1
+
+✓ Alias saved:
+  "Be Thou My Vision" → "You Are My Vision" [Worship]
+```
+
+#### alias remove
+
+Remove a saved alias.
+
+```bash
+propresenter-lyrics alias remove "Be Thou My Vision"
+```
+
+---
+
 ### inspect
 
 Inspect a specific presentation's details.

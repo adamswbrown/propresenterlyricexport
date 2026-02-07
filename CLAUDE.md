@@ -187,13 +187,19 @@ git push origin vX.Y.Z
 - **Fix Applied**: Image encoding commented out in `src/pptx-exporter.ts` lines 91-99, 129-137
 - **DO NOT**: Upgrade pptxgenjs without resolving this first
 
-### ✅ Recent Updates (Feb 3, 2026)
+### ✅ Recent Updates (Feb 7, 2026)
+1. **Song alias/override mapping** - Persistent mappings for songs with different names in order of service vs library
+2. **CLI alias commands** - `alias list/add/remove` for managing song mappings from the terminal
+3. **Inline library search** - Search all ProPresenter libraries from the match review step
+4. **Save as Alias button** - One-click persistent override from Service Generator
+
+### ✅ Updates (Feb 3, 2026)
 1. **Font detection & curated dropdown** - Smart font selection with installation status and download links
 2. **Cross-platform font checking** - Detects installed fonts on macOS, Windows, and Linux
 3. **25+ curated presentation fonts** - Organized by category (sans-serif, serif, display)
 4. **One-click font downloads** - Opens Google Fonts for missing fonts
 
-### ✅ Previous Updates (Feb 2, 2026)
+### ✅ Updates (Feb 2, 2026)
 1. **Electron GUI added** - Full desktop app with React UI for playlist management
 2. **App icons created** - Professional .icns (macOS) and .ico (Windows) icons
 3. **GitHub Actions workflow** - Automated releases on version tags
@@ -265,6 +271,13 @@ src/
 ├── propresenter-client.ts    # ProPresenter API wrapper (shared)
 ├── lyrics-extractor.ts       # Parse lyrics from slides (shared)
 ├── pptx-exporter.ts          # Generate PowerPoint files (shared)
+├── services/
+│   ├── alias-store.ts        # Song alias persistence (~/.propresenter-words/aliases.json)
+│   ├── song-matcher.ts       # Fuzzy song matching with alias support
+│   ├── pdf-parser.ts         # Parse order-of-service PDFs
+│   ├── playlist-builder.ts   # Build playlists from matched songs
+│   ├── playlist-exporter.ts  # Export lyrics from playlists
+│   └── bible-fetcher.ts      # Fetch Bible verses
 └── gui/                      # Electron React components
     ├── App.tsx               # Main Electron UI
     ├── components/           # React components
@@ -325,6 +338,8 @@ Configuration/
 - ✅ Connection validation before operations
 - ✅ Font detection with curated dropdown (25+ fonts)
 - ✅ One-click font download links (Google Fonts)
+- ✅ Song alias/override mapping (CLI + GUI)
+- ✅ Inline library search in Service Generator match review
 
 **Not Recommended:**
 - Upgrading pptxgenjs beyond 3.10.0 (causes crashes in CLI executables)

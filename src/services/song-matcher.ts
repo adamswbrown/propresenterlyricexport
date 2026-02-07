@@ -26,9 +26,10 @@ export class SongMatcher {
     const matches: SongMatch[] = [];
 
     for (const section of songSections) {
-      // Check custom mappings first
-      if (this.customMappings[section.title]) {
-        const customUUID = this.customMappings[section.title];
+      // Check custom mappings first (normalize title for lookup)
+      const normalizedLookup = this.normalizeSongTitle(section.title);
+      if (this.customMappings[normalizedLookup] || this.customMappings[section.title]) {
+        const customUUID = this.customMappings[normalizedLookup] || this.customMappings[section.title];
         const presentation = libraryPresentations.find(p => p.uuid === customUUID);
 
         if (presentation) {

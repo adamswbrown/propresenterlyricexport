@@ -290,9 +290,32 @@ This is useful for adding:
 3. Song isn't in your library at all
 
 **Solutions:**
-1. Check spelling in Planning Center vs. your library
-2. Rename songs in your library to match planning source
-3. Add missing songs to your library before running Service Generator
+1. **Use Search Library** - Click "Search Library" in the match review to search all your ProPresenter libraries and pick the right song
+2. **Create an alias** - If a song is consistently listed under a different name (e.g., "Be Thou My Vision" vs. "You Are My Vision"), click "Save as Alias" to remember the mapping permanently
+3. Check spelling in Planning Center vs. your library
+4. Add missing songs to your library via CCLI Song Select, then click "Rescan Libraries"
+
+---
+
+### How do song aliases work?
+
+**Song aliases** let you permanently map an order-of-service song title to a specific ProPresenter presentation. They're useful when:
+
+- The order of service uses a traditional name but you use a modern version
+- A song has a different title in Planning Center vs. your library
+- You consistently need to override the same song
+
+**Create aliases in two ways:**
+1. **Desktop App** - In Step 4 (Match Songs), select the correct song, then click "Save as Alias"
+2. **CLI** - Run `propresenter-lyrics alias add "Song Title"` and search interactively
+
+Aliases are stored at `~/.propresenter-words/aliases.json` and shared between both the Desktop App and CLI. They're checked before fuzzy matching with 100% confidence.
+
+**Manage aliases:**
+```bash
+propresenter-lyrics alias list       # See all aliases
+propresenter-lyrics alias remove "Song Title"  # Remove one
+```
 
 ---
 

@@ -5,7 +5,36 @@ All notable changes to ProPresenter Lyrics Export will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.4.0] - 2026-02-07
+
+### Added
+- **Song Alias/Override Mapping** - Persistent mappings for songs listed under different names in the order of service
+  - When the PDF says "Be Thou My Vision" but your library has "You Are My Vision", create an alias to auto-match
+  - Aliases are checked before fuzzy matching with 100% confidence
+  - Shared between CLI and Desktop App (stored at `~/.propresenter-words/aliases.json`)
+- **CLI Alias Commands** - `alias list`, `alias add`, `alias remove` for managing song mappings from the terminal
+  - `alias add` connects to ProPresenter and lets you interactively search the library
+- **Inline Library Search** - Search ProPresenter libraries directly from the match review step
+  - Click "Search Library" on any song to find and select any presentation
+  - Searches are scoped to the relevant library (worship, kids, or service content)
+  - No need to leave the app to fix a wrong match
+- **Save as Alias** - One-click button to save manual overrides as persistent aliases for future services
+  - Only shown for worship songs (not kids videos)
+- **Bible Verse Library Search** - Inline search for Bible verses in the service content library
+  - Search for specific verse presentations when auto-matching doesn't find the right one
+  - Scoped to the service content library only
+
+### Fixed
+- **Library Search Scoping** - Search is now scoped to the relevant library instead of searching all libraries
+  - Worship songs search the worship library only
+  - Kids videos search the kids library only
+  - Bible verses search the service content library only
+- **Bible Verse Matching** - Fixed verse matching showing worship songs instead of only Bible content
+  - Now pre-filters to presentations with translation markers (NIV, ESV, NLT, KJV, etc.)
+  - Replaced overly broad partial word matching with targeted book + chapter matching
+  - Falls back to all presentations if no translation-marked items found
+- **Override Display** - Manual overrides from library search now show "(Override)" instead of misleading "100%" confidence
+- **Auto-advance After Playlist Creation** - App now automatically advances to the Upload PDF step after creating a playlist
 
 ## [2.3.3] - 2026-02-07
 

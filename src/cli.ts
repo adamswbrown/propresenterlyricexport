@@ -11,6 +11,7 @@ import { exportToPowerPoint } from './pptx-exporter';
 import { collectPlaylistLyrics, PlaylistProgressEvent } from './services/playlist-exporter';
 import { findLogoPath } from './services/logo';
 import { flattenPlaylists, formatPlaylistName } from './utils/playlist-utils';
+import { loadAliases, setAlias, removeAlias, getAliasFilePath } from './services/alias-store';
 import * as readline from 'readline';
 
 // Default connection settings
@@ -89,6 +90,10 @@ COMMANDS:
   focused             Show focused presentation
   inspect <uuid>      Get full details of a presentation
   watch               Watch for real-time slide changes
+  alias               Manage song alias mappings (list/add/remove)
+  alias list          Show all saved song aliases
+  alias add <title>   Map a song title to a ProPresenter library song
+  alias remove <title> Remove a song alias
 
 OPTIONS:
   --host, -h <addr>   ProPresenter host (default: 127.0.0.1)
@@ -531,12 +536,208 @@ async function validateConnection(client: ProPresenterClient): Promise<void> {
   }
 }
 
+/**
+ * List all saved song aliases
+ */
+function listAliases(format: string): void {
+  const aliases = loadAliases();
+  const entries = Object.entries(aliases);
+
+  if (format === 'json') {
+    console.log(JSON.stringify(aliases, null, 2));
+    return;
+  }
+
+  console.log('\nSong Aliases');
+  console.log('============');
+
+  if (entries.length === 0) {
+    console.log('  No aliases configured.');
+    console.log(`\n  Add one with: npm start -- alias add "Song Title"`);
+    return;
+  }
+
+  for (const [key, value] of entries) {
+    const originalTitle = (value as any)._originalTitle || key;
+    console.log(`\n  "${originalTitle}"`);
+    console.log(`    → ${value.name}`);
+    console.log(`      UUID: ${value.uuid}`);
+  }
+
+  console.log(`\n  ${entries.length} alias(es) stored in ${getAliasFilePath()}`);
+}
+
+/**
+ * Interactively add a song alias by searching the ProPresenter library
+ */
+async function addAlias(
+  client: ProPresenterClient,
+  songTitle: string,
+  format: string
+): Promise<void> {
+  await client.connect();
+
+  console.log(`\nAdding alias for: "${songTitle}"`);
+  console.log('Fetching libraries...\n');
+
+  const libraries = await client.getLibraries();
+  const allPresentations: Array<{ uuid: string; name: string; library: string }> = [];
+
+  for (const lib of libraries) {
+    try {
+      const presentations = await client.getLibraryPresentations(lib.uuid);
+      for (const pres of presentations) {
+        allPresentations.push({
+          uuid: pres.uuid,
+          name: pres.name,
+          library: lib.name,
+        });
+      }
+    } catch {
+      // skip libraries we can't read
+    }
+  }
+
+  if (allPresentations.length === 0) {
+    console.log('No presentations found in any library.');
+    return;
+  }
+
+  console.log(`Found ${allPresentations.length} presentations across ${libraries.length} libraries.\n`);
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  const askQuestion = (prompt: string): Promise<string> =>
+    new Promise(resolve => rl.question(prompt, resolve));
+
+  // Search loop
+  let selected: { uuid: string; name: string; library: string } | null = null;
+
+  while (!selected) {
+    const searchTerm = await askQuestion('Search for a song (or "q" to cancel): ');
+    if (searchTerm.toLowerCase() === 'q') {
+      rl.close();
+      console.log('Cancelled.');
+      return;
+    }
+
+    const term = searchTerm.toLowerCase();
+    const matches = allPresentations.filter(p =>
+      p.name.toLowerCase().includes(term)
+    );
+
+    if (matches.length === 0) {
+      console.log(`  No matches for "${searchTerm}". Try again.\n`);
+      continue;
+    }
+
+    // Show up to 20 matches
+    const shown = matches.slice(0, 20);
+    console.log(`\n  Found ${matches.length} match(es)${matches.length > 20 ? ' (showing first 20)' : ''}:\n`);
+
+    for (let i = 0; i < shown.length; i++) {
+      console.log(`  ${i + 1}) ${shown[i].name}  [${shown[i].library}]`);
+    }
+
+    console.log('');
+    const choice = await askQuestion('Select a song (number), or press Enter to search again: ');
+
+    if (choice.trim() === '') continue;
+
+    const idx = parseInt(choice, 10) - 1;
+    if (isNaN(idx) || idx < 0 || idx >= shown.length) {
+      console.log('  Invalid selection.\n');
+      continue;
+    }
+
+    selected = shown[idx];
+  }
+
+  rl.close();
+
+  // Save the alias
+  setAlias(songTitle, { uuid: selected.uuid, name: selected.name });
+
+  console.log(`\n✓ Alias saved:`);
+  console.log(`  "${songTitle}" → "${selected.name}" [${selected.library}]`);
+}
+
+/**
+ * Remove a song alias
+ */
+function removeAliasCommand(songTitle: string): void {
+  const removed = removeAlias(songTitle);
+
+  if (removed) {
+    console.log(`\n✓ Alias removed for "${songTitle}"`);
+  } else {
+    console.log(`\n  No alias found for "${songTitle}"`);
+
+    // Show existing aliases to help the user
+    const aliases = loadAliases();
+    const entries = Object.entries(aliases);
+    if (entries.length > 0) {
+      console.log('\n  Existing aliases:');
+      for (const [key, value] of entries) {
+        const originalTitle = (value as any)._originalTitle || key;
+        console.log(`    - "${originalTitle}"`);
+      }
+    }
+  }
+}
+
 async function main(): Promise<void> {
   const options = parseArgs(process.argv);
 
   if (options.command === 'help') {
     printHelp();
     process.exit(0);
+  }
+
+  // Handle alias commands that may not need a connection
+  if (options.command === 'alias') {
+    const subcommand = options.args[0] || 'list';
+
+    if (subcommand === 'list') {
+      listAliases(options.format);
+      process.exit(0);
+    }
+
+    if (subcommand === 'remove') {
+      const title = options.args.slice(1).join(' ');
+      if (!title) {
+        console.error('Error: alias remove requires a song title');
+        console.log('Usage: npm start -- alias remove "Song Title"');
+        process.exit(1);
+      }
+      removeAliasCommand(title);
+      process.exit(0);
+    }
+
+    if (subcommand === 'add') {
+      const title = options.args.slice(1).join(' ');
+      if (!title) {
+        console.error('Error: alias add requires a song title');
+        console.log('Usage: npm start -- alias add "Be Thou My Vision"');
+        process.exit(1);
+      }
+      // alias add needs a connection to search the library
+      const client = new ProPresenterClient({
+        host: options.host,
+        port: options.port,
+      });
+      console.log(`Connecting to ProPresenter at ${options.host}:${options.port}...`);
+      await validateConnection(client);
+      await addAlias(client, title, options.format);
+      process.exit(0);
+    }
+
+    console.error(`Unknown alias subcommand: "${subcommand}"`);
+    console.log('Usage: npm start -- alias [list|add|remove]');
+    process.exit(1);
   }
 
   const client = new ProPresenterClient({

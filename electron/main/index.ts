@@ -414,6 +414,65 @@ ipcMain.handle('settings:save', (_event, data: Partial<AppSettings>) => {
   return settings.store;
 });
 
+// Song Alias management
+ipcMain.handle('aliases:load', async () => {
+  const { loadAliases } = await import('../../src/services/alias-store');
+  return loadAliases();
+});
+
+ipcMain.handle('aliases:save', async (_event, songTitle: string, target: { uuid: string; name: string }) => {
+  const { setAlias, loadAliases } = await import('../../src/services/alias-store');
+  setAlias(songTitle, target);
+  return loadAliases();
+});
+
+ipcMain.handle('aliases:remove', async (_event, songTitle: string) => {
+  const { removeAlias, loadAliases } = await import('../../src/services/alias-store');
+  const removed = removeAlias(songTitle);
+  return { removed, aliases: loadAliases() };
+});
+
+// Search presentations across libraries (for manual song override)
+ipcMain.handle('library:search-presentations', async (_event, config: ConnectionConfig, libraryIds: string[], query: string) => {
+  try {
+    const { ProPresenterClient } = await import('../../src/propresenter-client');
+    const client = new ProPresenterClient(config);
+
+    const libraries = await client.getLibraries();
+    const results: Array<{ uuid: string; name: string; library: string }> = [];
+    const term = query.toLowerCase();
+
+    for (const libraryId of libraryIds) {
+      if (!libraryId) continue;
+      try {
+        const presentations = await client.getLibraryPresentations(libraryId);
+        const library = libraries.find(l => l.uuid === libraryId);
+        const libraryName = library?.name || 'Unknown';
+
+        for (const pres of presentations) {
+          if (pres.name.toLowerCase().includes(term)) {
+            results.push({ uuid: pres.uuid, name: pres.name, library: libraryName });
+          }
+        }
+      } catch {
+        // skip libraries we can't read
+      }
+    }
+
+    // Sort by relevance: exact start match first, then alphabetical
+    results.sort((a, b) => {
+      const aStarts = a.name.toLowerCase().startsWith(term) ? 0 : 1;
+      const bStarts = b.name.toLowerCase().startsWith(term) ? 0 : 1;
+      if (aStarts !== bStarts) return aStarts - bStarts;
+      return a.name.localeCompare(b.name);
+    });
+
+    return { success: true, results: results.slice(0, 25) };
+  } catch (error: any) {
+    return { success: false, error: error.message, results: [] };
+  }
+});
+
 ipcMain.handle('logo:choose', async () => {
   const result = await dialog.showOpenDialog({
     title: 'Select Logo Image',
@@ -772,10 +831,15 @@ ipcMain.handle('songs:match', async (_event, songItems: SongItemToMatch[], confi
   try {
     const { ProPresenterClient } = await import('../../src/propresenter-client');
     const { SongMatcher } = await import('../../src/services/song-matcher');
+    const { loadAliases, aliasesToCustomMappings } = await import('../../src/services/alias-store');
 
     // ProPresenter API is REST/HTTP - no persistent connection needed
     const client = new ProPresenterClient(config);
-    const matcher = new SongMatcher(0.7); // 70% confidence threshold
+
+    // Load persistent song aliases and pass to matcher
+    const aliases = loadAliases();
+    const customMappings = aliasesToCustomMappings(aliases);
+    const matcher = new SongMatcher(0.7, customMappings); // 70% confidence threshold
 
     // Get library names for display
     const libraries = await client.getLibraries();
@@ -976,31 +1040,46 @@ ipcMain.handle('verses:match', async (_event, verseReferences: string[], config:
     const presentations = await client.getLibraryPresentations(serviceContentLibraryId);
     console.log(`[verses:match] Loaded ${presentations.length} presentations from service content library`);
 
+    // Pre-filter to Bible verse presentations (those with NIV, ESV, NLT, KJV etc. in name)
+    // This prevents worship songs and other content from appearing in verse matches
+    const bibleTranslationPattern = /\b(niv|esv|nlt|kjv|nkjv|nasb|csb|msg)\b/i;
+    const biblePresentations = presentations.filter(pres => bibleTranslationPattern.test(pres.name));
+    console.log(`[verses:match] Filtered to ${biblePresentations.length} Bible presentations (from ${presentations.length} total)`);
+
+    // Fall back to all presentations if no Bible-specific ones found
+    const searchPresentations = biblePresentations.length > 0 ? biblePresentations : presentations;
+
     // Match each verse reference against presentations
     const results = verseReferences.map(reference => {
       const normalizedRef = reference.toLowerCase().trim();
       // Normalize: remove punctuation (colons, underscores, hyphens, parentheses) for better matching
-      const normalizedRefStripped = normalizedRef.replace(/[:\-_()]/g, '').trim();
+      const normalizedRefStripped = normalizedRef.replace(/[:\-_()]/g, ' ').replace(/\s+/g, ' ').trim();
+
+      // Extract book name and chapter from reference for targeted matching
+      // e.g., "Luke 12:35-59" → book="luke", chapter="12"
+      const refParts = normalizedRef.match(/^(\d?\s*[a-z]+)\s+(\d+)/);
+      const refBook = refParts ? refParts[1].replace(/\s+/g, ' ').trim() : '';
+      const refChapter = refParts ? refParts[2] : '';
 
       // Find presentations that contain the reference in their name
-      const matches = presentations
+      const matches = searchPresentations
         .filter(pres => {
           const presName = pres.name.toLowerCase();
-          const presNameStripped = presName.replace(/[:\-_()]/g, '').trim();
-          
+          const presNameStripped = presName.replace(/[:\-_()]/g, ' ').replace(/\s+/g, ' ').trim();
+
           // Check if presentation name contains the reference
           // e.g., "Luke 12:35-59" should match "Luke 12_35-59 (NIV)-1"
           return presName.includes(normalizedRef) ||
                  presNameStripped.includes(normalizedRefStripped) ||
                  normalizedRef.includes(presName) ||
                  normalizedRefStripped.includes(presNameStripped) ||
-                 // Also check for partial book/chapter match
-                 presName.split(/[:\s\-_()]+/).some(part => normalizedRef.includes(part) && part.length > 2);
+                 // Match by book + chapter (more targeted than generic word matching)
+                 (refBook && refChapter && presName.includes(refBook) && presName.includes(refChapter));
         })
         .map(pres => {
           // Calculate a simple confidence based on string similarity
           const presName = pres.name.toLowerCase();
-          const presNameStripped = presName.replace(/[:\-_()]/g, '').trim();
+          const presNameStripped = presName.replace(/[:\-_()]/g, ' ').replace(/\s+/g, ' ').trim();
           let confidence = 0;
           if (presName === normalizedRef || presNameStripped === normalizedRefStripped) {
             confidence = 100;

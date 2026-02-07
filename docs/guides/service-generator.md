@@ -126,13 +126,56 @@ Each extracted song is matched against your Worship Library:
 
 **What to do:**
 1. **Accept green matches** - Leave as-is
-2. **Review yellow/red matches** - Click to select the correct song
-3. **Manual selection** - If no match found, search by typing
-4. **Skip items** - Some items might not be songs (announcements, etc.)
+2. **Review yellow/red matches** - Click the dropdown to select the correct song
+3. **Search Library** - Click "Search Library" to search the relevant ProPresenter library (worship or kids) and pick any song
+4. **Save as Alias** - Click "Save as Alias" to remember overrides for future services (worship songs only)
+5. **Skip items** - Some items might not be songs (announcements, etc.)
 
 **Step complete when:** All songs are matched or explicitly skipped.
 
 ![Match Songs Results](../assets/match_songs.png)
+
+#### Search Library (Override a Song)
+
+If the right song isn't in the dropdown (e.g., the order of service says "Be Thou My Vision" but you use a modern version called "You Are My Vision"):
+
+1. Click **"Search Library"** next to the song
+2. Type the name of the song you actually want to use
+3. Press **Enter** or click **Search**
+4. Click the correct result to select it
+
+The search is automatically scoped to the relevant library — worship songs search only the worship library, kids videos search only the kids library, and Bible verses search only the service content library. This prevents cross-library confusion.
+
+The selected song replaces the original match and is labelled as "(Override)". You can then click **"Save as Alias"** to remember this mapping, so next time the order of service lists "Be Thou My Vision", it will automatically match to "You Are My Vision."
+
+> **Note:** "Save as Alias" is only available for worship songs, not kids videos (which are mapped differently).
+
+#### Song Aliases (Persistent Overrides)
+
+Song aliases let you permanently map an order-of-service title to a specific ProPresenter presentation. This is useful when:
+
+- The order of service uses an old/traditional name but you use a modern version
+- A song has a different title in Planning Center vs. your library
+- You consistently need to override the same song
+
+**To create an alias:**
+1. In Step 4 (Match Songs), select the correct song (via dropdown or Search Library)
+2. Click **"Save as Alias"**
+3. The alias is saved and will auto-match in all future services
+
+**To manage aliases from the CLI:**
+```bash
+# List all aliases
+propresenter-lyrics alias list
+
+# Add a new alias (interactive)
+propresenter-lyrics alias add "Be Thou My Vision"
+
+# Remove an alias
+propresenter-lyrics alias remove "Be Thou My Vision"
+```
+
+Aliases are stored at `~/.propresenter-words/aliases.json` and shared between the Desktop App and CLI.
 
 ![Song Search (CCLI/Song Library)](../assets/ccli_search.png)
 
@@ -201,10 +244,13 @@ Match scripture references to your Service Content library:
 ![Get Verse Details](../assets/get_verse_to_put_into_PP.png)
 
 **When no match is found:**
+- **Search Library** - Search the Service Content library to manually find the right presentation
 - **Copy to clipboard** - Copy the reference
 - **Open Bible Gateway** - Opens the verse in a web browser
 - **Focus ProPresenter** - Opens the Bible reading panel in ProPresenter (Cmd+B)
 - Then manually add the verse to your Service Content library and re-run
+
+> **Tip:** Bible verse matching looks for presentations containing translation markers like "(NIV)", "(ESV)", "(NLT)", etc. in their names. This ensures only Bible verse presentations are matched, not worship songs or other content in the same library.
 
 #### Adding Bible Verses to ProPresenter
 
@@ -485,9 +531,10 @@ Service Generator recognizes that videos can appear throughout a service, not ju
 
 **Solutions:**
 1. Verify Service Content library has the verses
-2. Check verse format in the PDF (should be "John 3:16" style)
-3. Try different Bible translation if available
-4. Use "Open Bible Gateway" fallback to manually create presentation
+2. Ensure verse presentations include translation in the name (e.g., "John 3:16 (NIV)") — this is how the app identifies Bible verses vs. other content
+3. Check verse format in the PDF (should be "John 3:16" style)
+4. Use "Search Library" to manually find and select the verse
+5. Use "Open Bible Gateway" fallback to manually create presentation
 
 ### Wrong songs getting selected
 

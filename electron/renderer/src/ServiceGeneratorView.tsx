@@ -99,6 +99,18 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [specialServiceType, setSpecialServiceType] = useState<string | null>(null);  // Track special service type
 
+  // Library search state for manual song override
+  const [librarySearchIndex, setLibrarySearchIndex] = useState<number | null>(null);
+  const [librarySearchQuery, setLibrarySearchQuery] = useState('');
+  const [librarySearchResults, setLibrarySearchResults] = useState<Array<{ uuid: string; name: string; library: string }>>([]);
+  const [librarySearchLoading, setLibrarySearchLoading] = useState(false);
+
+  // Bible verse library search state
+  const [verseSearchIndex, setVerseSearchIndex] = useState<number | null>(null);
+  const [verseSearchQuery, setVerseSearchQuery] = useState('');
+  const [verseSearchResults, setVerseSearchResults] = useState<Array<{ uuid: string; name: string; library: string }>>([]);
+  const [verseSearchLoading, setVerseSearchLoading] = useState(false);
+
   // Context menu state for worship slot override
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; matchIndex: number } | null>(null);
 
@@ -298,6 +310,13 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                   >
                     Change
                   </button>
+                  <button
+                    className="primary"
+                    onClick={() => setCurrentStep('upload')}
+                    type="button"
+                  >
+                    Upload PDF →
+                  </button>
                 </div>
               </div>
             )}
@@ -356,11 +375,13 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                               setSelectedPlaylistId(result.playlistId);
                             }
                             setNotification({
-                              message: `Playlist "${playlistName}" created and selected`,
+                              message: `Playlist "${playlistName}" created — upload your PDF to continue`,
                               type: 'success'
                             });
                             setNewPlaylistName('');
                             setShowCreatePlaylist(false);
+                            // Auto-advance to upload step
+                            setCurrentStep('upload');
                           } else {
                             setNotification({
                               message: result.error || 'Failed to create playlist',
@@ -827,7 +848,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                         }}
                       >
                         <span style={{ fontSize: '18px' }}>
-                          {result.selectedMatch && !result.requiresReview ? '✓' : result.requiresReview ? '⚠' : '✗'}
+                          {result.selectedMatch ? '✓' : result.requiresReview ? '⚠' : '✗'}
                         </span>
                         <div style={{ flex: 1 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
@@ -884,16 +905,190 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                           <option value="">-- Select a match --</option>
                           {result.matches.map((match) => (
                             <option key={match.uuid} value={match.uuid}>
-                              {match.name} ({match.confidence}%){match.library ? ` - ${match.library}` : ''}
+                              {match.name} {match.confidence === -1 ? '(Override)' : `(${match.confidence}%)`}{match.library ? ` - ${match.library}` : ''}
                             </option>
                           ))}
                         </select>
-                        {/* Guidance for unmatched items */}
-                        {(result.matches.length === 0 || result.requiresReview) && (
+                        {/* Action buttons row */}
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                          {/* Save as Alias button - only for worship songs, not kids videos */}
+                          {result.selectedMatch && !result.isKidsVideo && (
+                            <button
+                              className="ghost small"
+                              type="button"
+                              title={`Always map "${result.songName}" to "${result.selectedMatch.name}"`}
+                              style={{ fontSize: '11px', padding: '4px 10px' }}
+                              onClick={async () => {
+                                if (!result.selectedMatch) return;
+                                try {
+                                  await window.api.saveAlias(result.songName, {
+                                    uuid: result.selectedMatch.uuid,
+                                    name: result.selectedMatch.name,
+                                  });
+                                  setNotification({ message: `Alias saved: "${result.songName}" → "${result.selectedMatch.name}"`, type: 'success' });
+                                } catch (err: any) {
+                                  setNotification({ message: `Failed to save alias: ${err.message}`, type: 'error' });
+                                }
+                              }}
+                            >
+                              💾 Save as Alias
+                            </button>
+                          )}
+                          {/* Search Library button - scoped to relevant library */}
+                          <button
+                            className="ghost small"
+                            type="button"
+                            title={result.isKidsVideo ? 'Search Kids library' : 'Search Worship library'}
+                            style={{ fontSize: '11px', padding: '4px 10px' }}
+                            onClick={() => {
+                              if (librarySearchIndex === index) {
+                                setLibrarySearchIndex(null);
+                                setLibrarySearchQuery('');
+                                setLibrarySearchResults([]);
+                              } else {
+                                setLibrarySearchIndex(index);
+                                setLibrarySearchQuery('');
+                                setLibrarySearchResults([]);
+                              }
+                            }}
+                          >
+                            {librarySearchIndex === index ? '✕ Close Search' : result.isKidsVideo ? '🔍 Search Kids Library' : '🔍 Search Library'}
+                          </button>
+                        </div>
+
+                        {/* Inline library search */}
+                        {librarySearchIndex === index && (
+                          <div style={{ marginTop: '10px', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid var(--panel-border)' }}>
+                            <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '8px' }}>
+                              Search {result.isKidsVideo ? 'Kids' : 'Worship'} library:
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <input
+                                type="text"
+                                placeholder="Type to search..."
+                                value={librarySearchQuery}
+                                onChange={(e) => setLibrarySearchQuery(e.target.value)}
+                                onKeyDown={async (e) => {
+                                  if (e.key === 'Enter' && librarySearchQuery.trim()) {
+                                    setLibrarySearchLoading(true);
+                                    try {
+                                      // Scope search to the relevant library
+                                      const searchLibraryIds = result.isKidsVideo
+                                        ? [props.settings.kidsLibraryId].filter(Boolean) as string[]
+                                        : [props.settings.worshipLibraryId].filter(Boolean) as string[];
+                                      const searchResult = await window.api.searchPresentations(
+                                        props.connectionConfig,
+                                        searchLibraryIds,
+                                        librarySearchQuery.trim()
+                                      );
+                                      if (searchResult.success) {
+                                        setLibrarySearchResults(searchResult.results);
+                                      }
+                                    } catch (err: any) {
+                                      setNotification({ message: `Search failed: ${err.message}`, type: 'error' });
+                                    }
+                                    setLibrarySearchLoading(false);
+                                  }
+                                }}
+                                style={{
+                                  flex: 1,
+                                  padding: '8px 12px',
+                                  borderRadius: '6px',
+                                  border: '1px solid var(--panel-border)',
+                                  background: 'var(--bg)',
+                                  color: 'var(--text)',
+                                  fontSize: '13px'
+                                }}
+                              />
+                              <button
+                                className="ghost small"
+                                type="button"
+                                disabled={!librarySearchQuery.trim() || librarySearchLoading}
+                                onClick={async () => {
+                                  if (!librarySearchQuery.trim()) return;
+                                  setLibrarySearchLoading(true);
+                                  try {
+                                    // Scope search to the relevant library
+                                    const searchLibraryIds = result.isKidsVideo
+                                      ? [props.settings.kidsLibraryId].filter(Boolean) as string[]
+                                      : [props.settings.worshipLibraryId].filter(Boolean) as string[];
+                                    const searchResult = await window.api.searchPresentations(
+                                      props.connectionConfig,
+                                      searchLibraryIds,
+                                      librarySearchQuery.trim()
+                                    );
+                                    if (searchResult.success) {
+                                      setLibrarySearchResults(searchResult.results);
+                                    }
+                                  } catch (err: any) {
+                                    setNotification({ message: `Search failed: ${err.message}`, type: 'error' });
+                                  }
+                                  setLibrarySearchLoading(false);
+                                }}
+                                style={{ fontSize: '12px', padding: '8px 14px' }}
+                              >
+                                {librarySearchLoading ? '...' : 'Search'}
+                              </button>
+                            </div>
+                            {/* Search results */}
+                            {librarySearchResults.length > 0 && (
+                              <div style={{ marginTop: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+                                {librarySearchResults.map((pres) => (
+                                  <div
+                                    key={pres.uuid}
+                                    onClick={() => {
+                                      // Update the match result with this selection
+                                      setMatchResults(prev => prev.map((r, i) =>
+                                        i === index
+                                          ? {
+                                              ...r,
+                                              selectedMatch: { uuid: pres.uuid, name: pres.name },
+                                              // Add to matches list so it shows in dropdown too
+                                              matches: r.matches.some(m => m.uuid === pres.uuid)
+                                                ? r.matches
+                                                : [...r.matches, { uuid: pres.uuid, name: pres.name, library: pres.library, confidence: -1 }]
+                                            }
+                                          : r
+                                      ));
+                                      // Close search
+                                      setLibrarySearchIndex(null);
+                                      setLibrarySearchQuery('');
+                                      setLibrarySearchResults([]);
+                                      setNotification({ message: `Selected "${pres.name}" for "${result.songName}"`, type: 'success' });
+                                    }}
+                                    style={{
+                                      padding: '8px 12px',
+                                      cursor: 'pointer',
+                                      borderRadius: '6px',
+                                      fontSize: '13px',
+                                      display: 'flex',
+                                      justifyContent: 'space-between',
+                                      alignItems: 'center',
+                                      transition: 'background 0.15s',
+                                    }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                                  >
+                                    <span>{pres.name}</span>
+                                    <span style={{ fontSize: '11px', color: 'var(--muted)' }}>{pres.library}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {librarySearchResults.length === 0 && librarySearchQuery && !librarySearchLoading && (
+                              <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--muted)' }}>
+                                Press Enter or click Search to find songs.
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Guidance for unmatched items (only when search is not open) */}
+                        {librarySearchIndex !== index && (result.matches.length === 0 || result.requiresReview) && (
                           <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
                             {result.isKidsVideo ? (
                               <>
-                                <div style={{ fontSize: '13px', color: result.matches.length === 0 ? '#ffc107' : '#ffc107', marginBottom: '10px' }}>
+                                <div style={{ fontSize: '13px', color: '#ffc107', marginBottom: '10px' }}>
                                   {result.matches.length === 0
                                     ? 'Not found in Kids library.'
                                     : 'Can\'t find the right match?'}
@@ -907,7 +1102,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                                 <div style={{ fontSize: '13px', color: result.matches.length === 0 ? '#f44336' : '#ffc107', marginBottom: '10px' }}>
                                   {result.matches.length === 0
                                     ? 'No matches found in libraries.'
-                                    : 'Can\'t find the right match? Add it from CCLI:'}
+                                    : 'Can\'t find the right match?'}
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                   <button
@@ -1253,7 +1448,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                               <option value="">-- None of these / Add manually --</option>
                               {match.matches.map((m) => (
                                 <option key={m.uuid} value={m.uuid}>
-                                  {m.name} ({m.confidence}%)
+                                  {m.name} {m.confidence === -1 ? '(Override)' : `(${m.confidence}%)`}
                                 </option>
                               ))}
                             </select>
@@ -1261,9 +1456,21 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                             {(!match.selectedMatch || match.requiresReview) && (
                               <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
                                 <div style={{ fontSize: '13px', color: '#ffc107', marginBottom: '10px' }}>
-                                  {!match.selectedMatch ? 'Not the right verse? Add manually:' : 'Low confidence match — verify or add manually:'}
+                                  {!match.selectedMatch ? 'Not the right verse? Search or add manually:' : 'Low confidence match — verify, search, or add manually:'}
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                  <button
+                                    className="ghost small"
+                                    onClick={() => {
+                                      setVerseSearchIndex(verseSearchIndex === idx ? null : idx);
+                                      setVerseSearchQuery('');
+                                      setVerseSearchResults([]);
+                                    }}
+                                    type="button"
+                                    style={{ fontSize: '12px', padding: '6px 12px' }}
+                                  >
+                                    🔍 Search Library
+                                  </button>
                                   <button
                                     className="ghost small"
                                     onClick={() => copyVerseRef(verseRef)}
@@ -1294,14 +1501,132 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                                 </div>
                               </div>
                             )}
+
+                            {/* Inline verse library search */}
+                            {verseSearchIndex === idx && (
+                              <div style={{ marginTop: '10px', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid var(--panel-border)' }}>
+                                <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '8px' }}>
+                                  Search service content library:
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                  <input
+                                    type="text"
+                                    placeholder="Type to search..."
+                                    value={verseSearchQuery}
+                                    onChange={(e) => setVerseSearchQuery(e.target.value)}
+                                    onKeyDown={async (e) => {
+                                      if (e.key === 'Enter' && verseSearchQuery.trim()) {
+                                        setVerseSearchLoading(true);
+                                        try {
+                                          const searchResult = await window.api.searchPresentations(
+                                            props.connectionConfig,
+                                            [props.settings.serviceContentLibraryId].filter(Boolean) as string[],
+                                            verseSearchQuery.trim()
+                                          );
+                                          if (searchResult.success) {
+                                            setVerseSearchResults(searchResult.results);
+                                          }
+                                        } catch (err: any) {
+                                          setNotification({ message: `Search failed: ${err.message}`, type: 'error' });
+                                        }
+                                        setVerseSearchLoading(false);
+                                      }
+                                    }}
+                                    style={{
+                                      flex: 1,
+                                      padding: '8px 12px',
+                                      borderRadius: '6px',
+                                      border: '1px solid var(--panel-border)',
+                                      background: 'var(--bg)',
+                                      color: 'var(--text)',
+                                      fontSize: '13px'
+                                    }}
+                                  />
+                                  <button
+                                    className="ghost small"
+                                    type="button"
+                                    disabled={!verseSearchQuery.trim() || verseSearchLoading}
+                                    onClick={async () => {
+                                      if (!verseSearchQuery.trim()) return;
+                                      setVerseSearchLoading(true);
+                                      try {
+                                        const searchResult = await window.api.searchPresentations(
+                                          props.connectionConfig,
+                                          [props.settings.serviceContentLibraryId].filter(Boolean) as string[],
+                                          verseSearchQuery.trim()
+                                        );
+                                        if (searchResult.success) {
+                                          setVerseSearchResults(searchResult.results);
+                                        }
+                                      } catch (err: any) {
+                                        setNotification({ message: `Search failed: ${err.message}`, type: 'error' });
+                                      }
+                                      setVerseSearchLoading(false);
+                                    }}
+                                    style={{ fontSize: '12px', padding: '8px 14px' }}
+                                  >
+                                    {verseSearchLoading ? '...' : 'Search'}
+                                  </button>
+                                </div>
+                                {verseSearchResults.length > 0 && (
+                                  <div style={{ marginTop: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+                                    {verseSearchResults.map((pres) => (
+                                      <div
+                                        key={pres.uuid}
+                                        onClick={() => {
+                                          setBibleMatches(prev => prev.map((v, i) =>
+                                            i === idx
+                                              ? {
+                                                  ...v,
+                                                  selectedMatch: { uuid: pres.uuid, name: pres.name },
+                                                  matches: v.matches.some(m => m.uuid === pres.uuid)
+                                                    ? v.matches
+                                                    : [...v.matches, { uuid: pres.uuid, name: pres.name, confidence: -1 }]
+                                                }
+                                              : v
+                                          ));
+                                          setVerseSearchIndex(null);
+                                          setVerseSearchQuery('');
+                                          setVerseSearchResults([]);
+                                          setNotification({ message: `Selected "${pres.name}" for "${verseRef}"`, type: 'success' });
+                                        }}
+                                        style={{
+                                          padding: '8px 12px',
+                                          cursor: 'pointer',
+                                          borderRadius: '6px',
+                                          fontSize: '13px',
+                                          transition: 'background 0.15s'
+                                        }}
+                                        onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+                                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                                      >
+                                        {pres.name}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ) : match ? (
                           /* No matches found - show manual workflow */
                           <div style={{ marginLeft: '30px', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
                             <div style={{ fontSize: '13px', color: '#f44336', marginBottom: '10px' }}>
-                              Not found in library. Add manually using ProPresenter's Bible panel:
+                              Not found in library. Search or add manually:
                             </div>
                             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                              <button
+                                className="ghost small"
+                                onClick={() => {
+                                  setVerseSearchIndex(verseSearchIndex === idx ? null : idx);
+                                  setVerseSearchQuery('');
+                                  setVerseSearchResults([]);
+                                }}
+                                type="button"
+                                style={{ fontSize: '12px', padding: '6px 12px' }}
+                              >
+                                🔍 Search Library
+                              </button>
                               <button
                                 className="ghost small"
                                 onClick={() => copyVerseRef(verseRef)}
@@ -1330,6 +1655,112 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                             <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '8px' }}>
                               Use <kbd style={{ background: 'rgba(255,255,255,0.1)', padding: '1px 4px', borderRadius: '3px', fontSize: '10px' }}>Cmd+B</kbd> to open Bible panel in ProPresenter
                             </div>
+
+                            {/* Inline verse library search */}
+                            {verseSearchIndex === idx && (
+                              <div style={{ marginTop: '10px', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid var(--panel-border)' }}>
+                                <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '8px' }}>
+                                  Search service content library:
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                  <input
+                                    type="text"
+                                    placeholder="Type to search..."
+                                    value={verseSearchQuery}
+                                    onChange={(e) => setVerseSearchQuery(e.target.value)}
+                                    onKeyDown={async (e) => {
+                                      if (e.key === 'Enter' && verseSearchQuery.trim()) {
+                                        setVerseSearchLoading(true);
+                                        try {
+                                          const searchResult = await window.api.searchPresentations(
+                                            props.connectionConfig,
+                                            [props.settings.serviceContentLibraryId].filter(Boolean) as string[],
+                                            verseSearchQuery.trim()
+                                          );
+                                          if (searchResult.success) {
+                                            setVerseSearchResults(searchResult.results);
+                                          }
+                                        } catch (err: any) {
+                                          setNotification({ message: `Search failed: ${err.message}`, type: 'error' });
+                                        }
+                                        setVerseSearchLoading(false);
+                                      }
+                                    }}
+                                    style={{
+                                      flex: 1,
+                                      padding: '8px 12px',
+                                      borderRadius: '6px',
+                                      border: '1px solid var(--panel-border)',
+                                      background: 'var(--bg)',
+                                      color: 'var(--text)',
+                                      fontSize: '13px'
+                                    }}
+                                  />
+                                  <button
+                                    className="ghost small"
+                                    type="button"
+                                    disabled={!verseSearchQuery.trim() || verseSearchLoading}
+                                    onClick={async () => {
+                                      if (!verseSearchQuery.trim()) return;
+                                      setVerseSearchLoading(true);
+                                      try {
+                                        const searchResult = await window.api.searchPresentations(
+                                          props.connectionConfig,
+                                          [props.settings.serviceContentLibraryId].filter(Boolean) as string[],
+                                          verseSearchQuery.trim()
+                                        );
+                                        if (searchResult.success) {
+                                          setVerseSearchResults(searchResult.results);
+                                        }
+                                      } catch (err: any) {
+                                        setNotification({ message: `Search failed: ${err.message}`, type: 'error' });
+                                      }
+                                      setVerseSearchLoading(false);
+                                    }}
+                                    style={{ fontSize: '12px', padding: '8px 14px' }}
+                                  >
+                                    {verseSearchLoading ? '...' : 'Search'}
+                                  </button>
+                                </div>
+                                {verseSearchResults.length > 0 && (
+                                  <div style={{ marginTop: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+                                    {verseSearchResults.map((pres) => (
+                                      <div
+                                        key={pres.uuid}
+                                        onClick={() => {
+                                          setBibleMatches(prev => prev.map((v, i) =>
+                                            i === idx
+                                              ? {
+                                                  ...v,
+                                                  selectedMatch: { uuid: pres.uuid, name: pres.name },
+                                                  matches: v.matches.some(m => m.uuid === pres.uuid)
+                                                    ? v.matches
+                                                    : [...v.matches, { uuid: pres.uuid, name: pres.name, confidence: -1 }]
+                                                }
+                                              : v
+                                          ));
+                                          setVerseSearchIndex(null);
+                                          setVerseSearchQuery('');
+                                          setVerseSearchResults([]);
+                                          setNotification({ message: `Selected "${pres.name}" for "${verseRef}"`, type: 'success' });
+                                        }}
+                                        style={{
+                                          padding: '8px 12px',
+                                          cursor: 'pointer',
+                                          borderRadius: '6px',
+                                          fontSize: '13px',
+                                          transition: 'background 0.15s'
+                                        }}
+                                        onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+                                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                                      >
+                                        {pres.name}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ) : (
                           /* Not searched yet - show basic buttons */
