@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Song Alias/Override Mapping** - Persistent mappings for songs listed under different names in the order of service
+  - When the PDF says "Be Thou My Vision" but your library has "You Are My Vision", create an alias to auto-match
+  - Aliases are checked before fuzzy matching with 100% confidence
+  - Shared between CLI and Desktop App (stored at `~/.propresenter-words/aliases.json`)
+- **CLI Alias Commands** - `alias list`, `alias add`, `alias remove` for managing song mappings from the terminal
+  - `alias add` connects to ProPresenter and lets you interactively search the library
+- **Inline Library Search** - Search all ProPresenter libraries directly from the match review step
+  - Click "Search Library" on any song to find and select any presentation
+  - No need to leave the app to fix a wrong match
+- **Save as Alias** - One-click button to save manual overrides as persistent aliases for future services
+
 ## [2.3.3] - 2026-02-07
 
 ### Fixed

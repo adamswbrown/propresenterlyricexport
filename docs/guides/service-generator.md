@@ -126,13 +126,52 @@ Each extracted song is matched against your Worship Library:
 
 **What to do:**
 1. **Accept green matches** - Leave as-is
-2. **Review yellow/red matches** - Click to select the correct song
-3. **Manual selection** - If no match found, search by typing
-4. **Skip items** - Some items might not be songs (announcements, etc.)
+2. **Review yellow/red matches** - Click the dropdown to select the correct song
+3. **Search Library** - Click "Search Library" to search all your ProPresenter libraries and pick any song
+4. **Save as Alias** - Click "Save as Alias" to remember overrides for future services
+5. **Skip items** - Some items might not be songs (announcements, etc.)
 
 **Step complete when:** All songs are matched or explicitly skipped.
 
 ![Match Songs Results](../assets/match_songs.png)
+
+#### Search Library (Override a Song)
+
+If the right song isn't in the dropdown (e.g., the order of service says "Be Thou My Vision" but you use a modern version called "You Are My Vision"):
+
+1. Click **"Search Library"** next to the song
+2. Type the name of the song you actually want to use
+3. Press **Enter** or click **Search**
+4. Click the correct result to select it
+
+The selected song replaces the original match. You can then click **"Save as Alias"** to remember this mapping, so next time the order of service lists "Be Thou My Vision", it will automatically match to "You Are My Vision."
+
+#### Song Aliases (Persistent Overrides)
+
+Song aliases let you permanently map an order-of-service title to a specific ProPresenter presentation. This is useful when:
+
+- The order of service uses an old/traditional name but you use a modern version
+- A song has a different title in Planning Center vs. your library
+- You consistently need to override the same song
+
+**To create an alias:**
+1. In Step 4 (Match Songs), select the correct song (via dropdown or Search Library)
+2. Click **"Save as Alias"**
+3. The alias is saved and will auto-match in all future services
+
+**To manage aliases from the CLI:**
+```bash
+# List all aliases
+propresenter-lyrics alias list
+
+# Add a new alias (interactive)
+propresenter-lyrics alias add "Be Thou My Vision"
+
+# Remove an alias
+propresenter-lyrics alias remove "Be Thou My Vision"
+```
+
+Aliases are stored at `~/.propresenter-words/aliases.json` and shared between the Desktop App and CLI.
 
 ![Song Search (CCLI/Song Library)](../assets/ccli_search.png)
 
