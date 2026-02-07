@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.3] - 2026-02-07
+
+### Fixed
+- **Library Filter Not Respecting "All items in playlist"** - Fixed exports failing when "All items in playlist" was selected
+  - When library filter was set to blank/"All items in playlist", the app incorrectly fell back to the stored "Worship" default
+  - Playlists with items from non-Worship libraries (Kids, STEAM, etc.) would fail with "No lyric slides found" error
+  - Filter logic now correctly distinguishes between explicit `null` (user wants all items) and `undefined` (use stored setting)
+  - Both export and settings persistence now use consistent null-checking pattern
+
 ## [2.3.2] - 2026-02-06
 
 ### Fixed
