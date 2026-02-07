@@ -642,7 +642,9 @@ ipcMain.handle('export:start', async (event, payload: ExportPayload) => {
     const outputPath = await runPlaylistExport(payload, target.filePath, event.sender);
     const valuesToPersist: Partial<AppSettings> = {
       lastPlaylistId: payload.playlistId,
-      libraryFilter: payload.libraryFilter !== undefined ? payload.libraryFilter : settings.get('libraryFilter') ?? null,
+      libraryFilter: payload.libraryFilter !== undefined 
+        ? (payload.libraryFilter?.trim() || null)
+        : (settings.get('libraryFilter') ?? null),
     };
     if (typeof payload.includeSongTitles === 'boolean') {
       valuesToPersist.includeSongTitles = payload.includeSongTitles;
