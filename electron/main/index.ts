@@ -1040,31 +1040,46 @@ ipcMain.handle('verses:match', async (_event, verseReferences: string[], config:
     const presentations = await client.getLibraryPresentations(serviceContentLibraryId);
     console.log(`[verses:match] Loaded ${presentations.length} presentations from service content library`);
 
+    // Pre-filter to Bible verse presentations (those with NIV, ESV, NLT, KJV etc. in name)
+    // This prevents worship songs and other content from appearing in verse matches
+    const bibleTranslationPattern = /\b(niv|esv|nlt|kjv|nkjv|nasb|csb|msg)\b/i;
+    const biblePresentations = presentations.filter(pres => bibleTranslationPattern.test(pres.name));
+    console.log(`[verses:match] Filtered to ${biblePresentations.length} Bible presentations (from ${presentations.length} total)`);
+
+    // Fall back to all presentations if no Bible-specific ones found
+    const searchPresentations = biblePresentations.length > 0 ? biblePresentations : presentations;
+
     // Match each verse reference against presentations
     const results = verseReferences.map(reference => {
       const normalizedRef = reference.toLowerCase().trim();
       // Normalize: remove punctuation (colons, underscores, hyphens, parentheses) for better matching
-      const normalizedRefStripped = normalizedRef.replace(/[:\-_()]/g, '').trim();
+      const normalizedRefStripped = normalizedRef.replace(/[:\-_()]/g, ' ').replace(/\s+/g, ' ').trim();
+
+      // Extract book name and chapter from reference for targeted matching
+      // e.g., "Luke 12:35-59" → book="luke", chapter="12"
+      const refParts = normalizedRef.match(/^(\d?\s*[a-z]+)\s+(\d+)/);
+      const refBook = refParts ? refParts[1].replace(/\s+/g, ' ').trim() : '';
+      const refChapter = refParts ? refParts[2] : '';
 
       // Find presentations that contain the reference in their name
-      const matches = presentations
+      const matches = searchPresentations
         .filter(pres => {
           const presName = pres.name.toLowerCase();
-          const presNameStripped = presName.replace(/[:\-_()]/g, '').trim();
-          
+          const presNameStripped = presName.replace(/[:\-_()]/g, ' ').replace(/\s+/g, ' ').trim();
+
           // Check if presentation name contains the reference
           // e.g., "Luke 12:35-59" should match "Luke 12_35-59 (NIV)-1"
           return presName.includes(normalizedRef) ||
                  presNameStripped.includes(normalizedRefStripped) ||
                  normalizedRef.includes(presName) ||
                  normalizedRefStripped.includes(presNameStripped) ||
-                 // Also check for partial book/chapter match
-                 presName.split(/[:\s\-_()]+/).some(part => normalizedRef.includes(part) && part.length > 2);
+                 // Match by book + chapter (more targeted than generic word matching)
+                 (refBook && refChapter && presName.includes(refBook) && presName.includes(refChapter));
         })
         .map(pres => {
           // Calculate a simple confidence based on string similarity
           const presName = pres.name.toLowerCase();
-          const presNameStripped = presName.replace(/[:\-_()]/g, '').trim();
+          const presNameStripped = presName.replace(/[:\-_()]/g, ' ').replace(/\s+/g, ' ').trim();
           let confidence = 0;
           if (presName === normalizedRef || presNameStripped === normalizedRefStripped) {
             confidence = 100;

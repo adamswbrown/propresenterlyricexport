@@ -127,8 +127,8 @@ Each extracted song is matched against your Worship Library:
 **What to do:**
 1. **Accept green matches** - Leave as-is
 2. **Review yellow/red matches** - Click the dropdown to select the correct song
-3. **Search Library** - Click "Search Library" to search all your ProPresenter libraries and pick any song
-4. **Save as Alias** - Click "Save as Alias" to remember overrides for future services
+3. **Search Library** - Click "Search Library" to search the relevant ProPresenter library (worship or kids) and pick any song
+4. **Save as Alias** - Click "Save as Alias" to remember overrides for future services (worship songs only)
 5. **Skip items** - Some items might not be songs (announcements, etc.)
 
 **Step complete when:** All songs are matched or explicitly skipped.
@@ -144,7 +144,11 @@ If the right song isn't in the dropdown (e.g., the order of service says "Be Tho
 3. Press **Enter** or click **Search**
 4. Click the correct result to select it
 
-The selected song replaces the original match. You can then click **"Save as Alias"** to remember this mapping, so next time the order of service lists "Be Thou My Vision", it will automatically match to "You Are My Vision."
+The search is automatically scoped to the relevant library — worship songs search only the worship library, kids videos search only the kids library, and Bible verses search only the service content library. This prevents cross-library confusion.
+
+The selected song replaces the original match and is labelled as "(Override)". You can then click **"Save as Alias"** to remember this mapping, so next time the order of service lists "Be Thou My Vision", it will automatically match to "You Are My Vision."
+
+> **Note:** "Save as Alias" is only available for worship songs, not kids videos (which are mapped differently).
 
 #### Song Aliases (Persistent Overrides)
 
@@ -240,10 +244,13 @@ Match scripture references to your Service Content library:
 ![Get Verse Details](../assets/get_verse_to_put_into_PP.png)
 
 **When no match is found:**
+- **Search Library** - Search the Service Content library to manually find the right presentation
 - **Copy to clipboard** - Copy the reference
 - **Open Bible Gateway** - Opens the verse in a web browser
 - **Focus ProPresenter** - Opens the Bible reading panel in ProPresenter (Cmd+B)
 - Then manually add the verse to your Service Content library and re-run
+
+> **Tip:** Bible verse matching looks for presentations containing translation markers like "(NIV)", "(ESV)", "(NLT)", etc. in their names. This ensures only Bible verse presentations are matched, not worship songs or other content in the same library.
 
 #### Adding Bible Verses to ProPresenter
 
@@ -524,9 +531,10 @@ Service Generator recognizes that videos can appear throughout a service, not ju
 
 **Solutions:**
 1. Verify Service Content library has the verses
-2. Check verse format in the PDF (should be "John 3:16" style)
-3. Try different Bible translation if available
-4. Use "Open Bible Gateway" fallback to manually create presentation
+2. Ensure verse presentations include translation in the name (e.g., "John 3:16 (NIV)") — this is how the app identifies Bible verses vs. other content
+3. Check verse format in the PDF (should be "John 3:16" style)
+4. Use "Search Library" to manually find and select the verse
+5. Use "Open Bible Gateway" fallback to manually create presentation
 
 ### Wrong songs getting selected
 
