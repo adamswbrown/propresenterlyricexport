@@ -432,6 +432,47 @@ ipcMain.handle('aliases:remove', async (_event, songTitle: string) => {
   return { removed, aliases: loadAliases() };
 });
 
+// Search presentations across libraries (for manual song override)
+ipcMain.handle('library:search-presentations', async (_event, config: ConnectionConfig, libraryIds: string[], query: string) => {
+  try {
+    const { ProPresenterClient } = await import('../../src/propresenter-client');
+    const client = new ProPresenterClient(config);
+
+    const libraries = await client.getLibraries();
+    const results: Array<{ uuid: string; name: string; library: string }> = [];
+    const term = query.toLowerCase();
+
+    for (const libraryId of libraryIds) {
+      if (!libraryId) continue;
+      try {
+        const presentations = await client.getLibraryPresentations(libraryId);
+        const library = libraries.find(l => l.uuid === libraryId);
+        const libraryName = library?.name || 'Unknown';
+
+        for (const pres of presentations) {
+          if (pres.name.toLowerCase().includes(term)) {
+            results.push({ uuid: pres.uuid, name: pres.name, library: libraryName });
+          }
+        }
+      } catch {
+        // skip libraries we can't read
+      }
+    }
+
+    // Sort by relevance: exact start match first, then alphabetical
+    results.sort((a, b) => {
+      const aStarts = a.name.toLowerCase().startsWith(term) ? 0 : 1;
+      const bStarts = b.name.toLowerCase().startsWith(term) ? 0 : 1;
+      if (aStarts !== bStarts) return aStarts - bStarts;
+      return a.name.localeCompare(b.name);
+    });
+
+    return { success: true, results: results.slice(0, 25) };
+  } catch (error: any) {
+    return { success: false, error: error.message, results: [] };
+  }
+});
+
 ipcMain.handle('logo:choose', async () => {
   const result = await dialog.showOpenDialog({
     title: 'Select Logo Image',

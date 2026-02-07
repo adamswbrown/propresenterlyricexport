@@ -99,6 +99,12 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [specialServiceType, setSpecialServiceType] = useState<string | null>(null);  // Track special service type
 
+  // Library search state for manual song override
+  const [librarySearchIndex, setLibrarySearchIndex] = useState<number | null>(null);
+  const [librarySearchQuery, setLibrarySearchQuery] = useState('');
+  const [librarySearchResults, setLibrarySearchResults] = useState<Array<{ uuid: string; name: string; library: string }>>([]);
+  const [librarySearchLoading, setLibrarySearchLoading] = useState(false);
+
   // Context menu state for worship slot override
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; matchIndex: number } | null>(null);
 
@@ -888,35 +894,180 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                             </option>
                           ))}
                         </select>
-                        {/* Save as Alias button - shown when user manually selects a match */}
-                        {result.selectedMatch && (
+                        {/* Action buttons row */}
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                          {/* Save as Alias button - shown when user manually selects a match */}
+                          {result.selectedMatch && (
+                            <button
+                              className="ghost small"
+                              type="button"
+                              title={`Always map "${result.songName}" to "${result.selectedMatch.name}"`}
+                              style={{ fontSize: '11px', padding: '4px 10px' }}
+                              onClick={async () => {
+                                if (!result.selectedMatch) return;
+                                try {
+                                  await window.api.saveAlias(result.songName, {
+                                    uuid: result.selectedMatch.uuid,
+                                    name: result.selectedMatch.name,
+                                  });
+                                  setNotification({ message: `Alias saved: "${result.songName}" → "${result.selectedMatch.name}"`, type: 'success' });
+                                } catch (err: any) {
+                                  setNotification({ message: `Failed to save alias: ${err.message}`, type: 'error' });
+                                }
+                              }}
+                            >
+                              💾 Save as Alias
+                            </button>
+                          )}
+                          {/* Search Library button */}
                           <button
                             className="ghost small"
                             type="button"
-                            title={`Always map "${result.songName}" to "${result.selectedMatch.name}"`}
-                            style={{ fontSize: '11px', padding: '4px 10px', marginTop: '6px' }}
-                            onClick={async () => {
-                              if (!result.selectedMatch) return;
-                              try {
-                                await window.api.saveAlias(result.songName, {
-                                  uuid: result.selectedMatch.uuid,
-                                  name: result.selectedMatch.name,
-                                });
-                                setNotification({ message: `Alias saved: "${result.songName}" → "${result.selectedMatch.name}"`, type: 'success' });
-                              } catch (err: any) {
-                                setNotification({ message: `Failed to save alias: ${err.message}`, type: 'error' });
+                            title="Search all libraries for a different song"
+                            style={{ fontSize: '11px', padding: '4px 10px' }}
+                            onClick={() => {
+                              if (librarySearchIndex === index) {
+                                setLibrarySearchIndex(null);
+                                setLibrarySearchQuery('');
+                                setLibrarySearchResults([]);
+                              } else {
+                                setLibrarySearchIndex(index);
+                                setLibrarySearchQuery('');
+                                setLibrarySearchResults([]);
                               }
                             }}
                           >
-                            💾 Save as Alias
+                            {librarySearchIndex === index ? '✕ Close Search' : '🔍 Search Library'}
                           </button>
+                        </div>
+
+                        {/* Inline library search */}
+                        {librarySearchIndex === index && (
+                          <div style={{ marginTop: '10px', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid var(--panel-border)' }}>
+                            <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '8px' }}>
+                              Search all libraries for a different song:
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <input
+                                type="text"
+                                placeholder="Type to search..."
+                                value={librarySearchQuery}
+                                onChange={(e) => setLibrarySearchQuery(e.target.value)}
+                                onKeyDown={async (e) => {
+                                  if (e.key === 'Enter' && librarySearchQuery.trim()) {
+                                    setLibrarySearchLoading(true);
+                                    try {
+                                      const allLibraryIds = props.libraryOptions.map(l => l.uuid);
+                                      const result = await window.api.searchPresentations(
+                                        props.connectionConfig,
+                                        allLibraryIds,
+                                        librarySearchQuery.trim()
+                                      );
+                                      if (result.success) {
+                                        setLibrarySearchResults(result.results);
+                                      }
+                                    } catch (err: any) {
+                                      setNotification({ message: `Search failed: ${err.message}`, type: 'error' });
+                                    }
+                                    setLibrarySearchLoading(false);
+                                  }
+                                }}
+                                style={{
+                                  flex: 1,
+                                  padding: '8px 12px',
+                                  borderRadius: '6px',
+                                  border: '1px solid var(--panel-border)',
+                                  background: 'var(--bg)',
+                                  color: 'var(--text)',
+                                  fontSize: '13px'
+                                }}
+                              />
+                              <button
+                                className="ghost small"
+                                type="button"
+                                disabled={!librarySearchQuery.trim() || librarySearchLoading}
+                                onClick={async () => {
+                                  if (!librarySearchQuery.trim()) return;
+                                  setLibrarySearchLoading(true);
+                                  try {
+                                    const allLibraryIds = props.libraryOptions.map(l => l.uuid);
+                                    const searchResult = await window.api.searchPresentations(
+                                      props.connectionConfig,
+                                      allLibraryIds,
+                                      librarySearchQuery.trim()
+                                    );
+                                    if (searchResult.success) {
+                                      setLibrarySearchResults(searchResult.results);
+                                    }
+                                  } catch (err: any) {
+                                    setNotification({ message: `Search failed: ${err.message}`, type: 'error' });
+                                  }
+                                  setLibrarySearchLoading(false);
+                                }}
+                                style={{ fontSize: '12px', padding: '8px 14px' }}
+                              >
+                                {librarySearchLoading ? '...' : 'Search'}
+                              </button>
+                            </div>
+                            {/* Search results */}
+                            {librarySearchResults.length > 0 && (
+                              <div style={{ marginTop: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+                                {librarySearchResults.map((pres) => (
+                                  <div
+                                    key={pres.uuid}
+                                    onClick={() => {
+                                      // Update the match result with this selection
+                                      setMatchResults(prev => prev.map((r, i) =>
+                                        i === index
+                                          ? {
+                                              ...r,
+                                              selectedMatch: { uuid: pres.uuid, name: pres.name },
+                                              // Add to matches list so it shows in dropdown too
+                                              matches: r.matches.some(m => m.uuid === pres.uuid)
+                                                ? r.matches
+                                                : [...r.matches, { uuid: pres.uuid, name: pres.name, library: pres.library, confidence: 100 }]
+                                            }
+                                          : r
+                                      ));
+                                      // Close search
+                                      setLibrarySearchIndex(null);
+                                      setLibrarySearchQuery('');
+                                      setLibrarySearchResults([]);
+                                      setNotification({ message: `Selected "${pres.name}" for "${result.songName}"`, type: 'success' });
+                                    }}
+                                    style={{
+                                      padding: '8px 12px',
+                                      cursor: 'pointer',
+                                      borderRadius: '6px',
+                                      fontSize: '13px',
+                                      display: 'flex',
+                                      justifyContent: 'space-between',
+                                      alignItems: 'center',
+                                      transition: 'background 0.15s',
+                                    }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                                  >
+                                    <span>{pres.name}</span>
+                                    <span style={{ fontSize: '11px', color: 'var(--muted)' }}>{pres.library}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {librarySearchResults.length === 0 && librarySearchQuery && !librarySearchLoading && (
+                              <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--muted)' }}>
+                                Press Enter or click Search to find songs.
+                              </div>
+                            )}
+                          </div>
                         )}
-                        {/* Guidance for unmatched items */}
-                        {(result.matches.length === 0 || result.requiresReview) && (
+
+                        {/* Guidance for unmatched items (only when search is not open) */}
+                        {librarySearchIndex !== index && (result.matches.length === 0 || result.requiresReview) && (
                           <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
                             {result.isKidsVideo ? (
                               <>
-                                <div style={{ fontSize: '13px', color: result.matches.length === 0 ? '#ffc107' : '#ffc107', marginBottom: '10px' }}>
+                                <div style={{ fontSize: '13px', color: '#ffc107', marginBottom: '10px' }}>
                                   {result.matches.length === 0
                                     ? 'Not found in Kids library.'
                                     : 'Can\'t find the right match?'}
@@ -930,7 +1081,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                                 <div style={{ fontSize: '13px', color: result.matches.length === 0 ? '#f44336' : '#ffc107', marginBottom: '10px' }}>
                                   {result.matches.length === 0
                                     ? 'No matches found in libraries.'
-                                    : 'Can\'t find the right match? Add it from CCLI:'}
+                                    : 'Can\'t find the right match?'}
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                   <button
