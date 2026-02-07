@@ -888,6 +888,29 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                             </option>
                           ))}
                         </select>
+                        {/* Save as Alias button - shown when user manually selects a match */}
+                        {result.selectedMatch && (
+                          <button
+                            className="ghost small"
+                            type="button"
+                            title={`Always map "${result.songName}" to "${result.selectedMatch.name}"`}
+                            style={{ fontSize: '11px', padding: '4px 10px', marginTop: '6px' }}
+                            onClick={async () => {
+                              if (!result.selectedMatch) return;
+                              try {
+                                await window.api.saveAlias(result.songName, {
+                                  uuid: result.selectedMatch.uuid,
+                                  name: result.selectedMatch.name,
+                                });
+                                setNotification({ message: `Alias saved: "${result.songName}" → "${result.selectedMatch.name}"`, type: 'success' });
+                              } catch (err: any) {
+                                setNotification({ message: `Failed to save alias: ${err.message}`, type: 'error' });
+                              }
+                            }}
+                          >
+                            💾 Save as Alias
+                          </button>
+                        )}
                         {/* Guidance for unmatched items */}
                         {(result.matches.length === 0 || result.requiresReview) && (
                           <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>

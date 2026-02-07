@@ -91,6 +91,12 @@ const api = {
   listFonts: (): Promise<FontStatus[]> => ipcRenderer.invoke('fonts:list'),
   checkFont: (fontName: string): Promise<FontStatus | null> => ipcRenderer.invoke('fonts:check', fontName),
   downloadFont: (url: string): Promise<{ success: boolean }> => ipcRenderer.invoke('fonts:download', url),
+  // Song Aliases
+  loadAliases: (): Promise<Record<string, { uuid: string; name: string }>> => ipcRenderer.invoke('aliases:load'),
+  saveAlias: (songTitle: string, target: { uuid: string; name: string }): Promise<Record<string, { uuid: string; name: string }>> =>
+    ipcRenderer.invoke('aliases:save', songTitle, target),
+  removeAlias: (songTitle: string): Promise<{ removed: boolean; aliases: Record<string, { uuid: string; name: string }> }> =>
+    ipcRenderer.invoke('aliases:remove', songTitle),
   // Service Generator
   choosePDF: () => ipcRenderer.invoke('pdf:choose'),
   parsePDF: (filePath: string) => ipcRenderer.invoke('pdf:parse', filePath),

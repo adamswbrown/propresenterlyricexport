@@ -414,6 +414,24 @@ ipcMain.handle('settings:save', (_event, data: Partial<AppSettings>) => {
   return settings.store;
 });
 
+// Song Alias management
+ipcMain.handle('aliases:load', async () => {
+  const { loadAliases } = await import('../../src/services/alias-store');
+  return loadAliases();
+});
+
+ipcMain.handle('aliases:save', async (_event, songTitle: string, target: { uuid: string; name: string }) => {
+  const { setAlias, loadAliases } = await import('../../src/services/alias-store');
+  setAlias(songTitle, target);
+  return loadAliases();
+});
+
+ipcMain.handle('aliases:remove', async (_event, songTitle: string) => {
+  const { removeAlias, loadAliases } = await import('../../src/services/alias-store');
+  const removed = removeAlias(songTitle);
+  return { removed, aliases: loadAliases() };
+});
+
 ipcMain.handle('logo:choose', async () => {
   const result = await dialog.showOpenDialog({
     title: 'Select Logo Image',
@@ -772,10 +790,15 @@ ipcMain.handle('songs:match', async (_event, songItems: SongItemToMatch[], confi
   try {
     const { ProPresenterClient } = await import('../../src/propresenter-client');
     const { SongMatcher } = await import('../../src/services/song-matcher');
+    const { loadAliases, aliasesToCustomMappings } = await import('../../src/services/alias-store');
 
     // ProPresenter API is REST/HTTP - no persistent connection needed
     const client = new ProPresenterClient(config);
-    const matcher = new SongMatcher(0.7); // 70% confidence threshold
+
+    // Load persistent song aliases and pass to matcher
+    const aliases = loadAliases();
+    const customMappings = aliasesToCustomMappings(aliases);
+    const matcher = new SongMatcher(0.7, customMappings); // 70% confidence threshold
 
     // Get library names for display
     const libraries = await client.getLibraries();
