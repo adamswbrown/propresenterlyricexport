@@ -364,8 +364,14 @@ async function runPlaylistExport(
   const client = createClient({ host: payload.host, port: payload.port });
   await client.connect();
 
+  // When payload.libraryFilter is explicitly null, use null (export all items)
+  // Only fall back to stored setting if payload.libraryFilter is undefined
+  const libraryFilter = payload.libraryFilter !== undefined 
+    ? (payload.libraryFilter?.trim() || null)
+    : (settings.get('libraryFilter') || null);
+
   const result = await collectPlaylistLyrics(client, payload.playlistId, {
-    libraryFilter: payload.libraryFilter?.trim() || settings.get('libraryFilter') || null,
+    libraryFilter,
     onProgress: (event) => forwardProgress(payload.playlistId, event, window),
   });
 
@@ -636,7 +642,7 @@ ipcMain.handle('export:start', async (event, payload: ExportPayload) => {
     const outputPath = await runPlaylistExport(payload, target.filePath, event.sender);
     const valuesToPersist: Partial<AppSettings> = {
       lastPlaylistId: payload.playlistId,
-      libraryFilter: payload.libraryFilter ?? settings.get('libraryFilter') ?? null,
+      libraryFilter: payload.libraryFilter !== undefined ? payload.libraryFilter : settings.get('libraryFilter') ?? null,
     };
     if (typeof payload.includeSongTitles === 'boolean') {
       valuesToPersist.includeSongTitles = payload.includeSongTitles;
