@@ -304,6 +304,13 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                   >
                     Change
                   </button>
+                  <button
+                    className="primary"
+                    onClick={() => setCurrentStep('upload')}
+                    type="button"
+                  >
+                    Upload PDF →
+                  </button>
                 </div>
               </div>
             )}
@@ -362,11 +369,13 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                               setSelectedPlaylistId(result.playlistId);
                             }
                             setNotification({
-                              message: `Playlist "${playlistName}" created and selected`,
+                              message: `Playlist "${playlistName}" created — upload your PDF to continue`,
                               type: 'success'
                             });
                             setNewPlaylistName('');
                             setShowCreatePlaylist(false);
+                            // Auto-advance to upload step
+                            setCurrentStep('upload');
                           } else {
                             setNotification({
                               message: result.error || 'Failed to create playlist',
@@ -833,7 +842,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                         }}
                       >
                         <span style={{ fontSize: '18px' }}>
-                          {result.selectedMatch && !result.requiresReview ? '✓' : result.requiresReview ? '⚠' : '✗'}
+                          {result.selectedMatch ? '✓' : result.requiresReview ? '⚠' : '✗'}
                         </span>
                         <div style={{ flex: 1 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
@@ -890,7 +899,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                           <option value="">-- Select a match --</option>
                           {result.matches.map((match) => (
                             <option key={match.uuid} value={match.uuid}>
-                              {match.name} ({match.confidence}%){match.library ? ` - ${match.library}` : ''}
+                              {match.name} {match.confidence === -1 ? '(Override)' : `(${match.confidence}%)`}{match.library ? ` - ${match.library}` : ''}
                             </option>
                           ))}
                         </select>
@@ -1025,7 +1034,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                                               // Add to matches list so it shows in dropdown too
                                               matches: r.matches.some(m => m.uuid === pres.uuid)
                                                 ? r.matches
-                                                : [...r.matches, { uuid: pres.uuid, name: pres.name, library: pres.library, confidence: 100 }]
+                                                : [...r.matches, { uuid: pres.uuid, name: pres.name, library: pres.library, confidence: -1 }]
                                             }
                                           : r
                                       ));
