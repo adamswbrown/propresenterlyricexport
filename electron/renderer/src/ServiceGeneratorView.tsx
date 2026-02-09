@@ -449,10 +449,10 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
 
                             // Auto-parse the PDF
                             const parseResult = await window.api.parsePDF(result.filePath);
-                            if (parseResult.success) {
+                            if (parseResult.success && parseResult.items) {
                               setParsedItems(parseResult.items);
                               setSpecialServiceType(parseResult.specialServiceType || null);
-                              
+
                               let notificationMessage = `Found ${parseResult.items.length} items in PDF`;
                               if (parseResult.specialServiceType) {
                                 notificationMessage += ` (${parseResult.specialServiceType} service)`;
@@ -641,7 +641,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                             props.settings.serviceContentLibraryId || undefined
                           );
 
-                          if (result.success) {
+                          if (result.success && result.results) {
                             // Add praiseSlot and isKidsVideo from parsed items to match results
                             const resultsWithSlots = result.results.map((r: MatchResult, idx: number) => ({
                               ...r,
@@ -749,7 +749,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                 props.settings.serviceContentLibraryId || undefined
               );
 
-              if (result.success) {
+              if (result.success && result.results) {
                 // Add praiseSlot and isKidsVideo from parsed items to match results
                 const resultsWithSlots = result.results.map((r: MatchResult, idx: number) => ({
                   ...r,
@@ -1158,7 +1158,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                         minWidth: '200px'
                       }}
                     >
-                      <div style={{ padding: '8px 0', fontSize: '12px', fontWeight: 600, color: 'var(--muted)', padding: '8px 12px', borderBottom: '1px solid var(--panel-border)' }}>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--muted)', padding: '8px 12px', borderBottom: '1px solid var(--panel-border)' }}>
                         Change Worship Slot
                       </div>
                       {(['praise1', 'praise2', 'praise3', 'kids'] as const).map((slot) => (

@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "composite": true,
+    "target": "ES2020",
     "module": "ESNext",
     "moduleResolution": "Node",
     "lib": ["ESNext"],
@@ -13,9 +14,9 @@
     "baseUrl": "."
   },
   "include": [
-    "electron/**/*.ts",
-    "electron/**/*.tsx",
-    "electron/**/*.d.ts",
+    "electron/main/**/*.ts",
+    "electron/preload/**/*.ts",
+    "src/**/*.ts",
     "electron.vite.config.ts"
   ]
 }
