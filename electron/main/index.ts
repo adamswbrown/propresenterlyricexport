@@ -638,19 +638,15 @@ ipcMain.handle('playlists:list', async (_event, config: ConnectionConfig) => {
       const data = await response.json();
       console.log(`[playlists:list] Got ${(data as any[]).length} playlists via direct fetch`);
 
-      // Parse the raw response into our format
-      const playlists = (data as any[]).map((item: any) => ({
+      // Parse the raw response into our format (recursive to handle nested folders)
+      const parseItems = (items: any[]): any[] => items.map((item: any) => ({
         uuid: item.id?.uuid || item.uuid || '',
         name: item.id?.name || item.name || 'Unnamed',
         type: item.field_type || item.type || 'unknown',
         isHeader: item.field_type === 'header' || item.type === 'header',
-        children: item.children ? item.children.map((child: any) => ({
-          uuid: child.id?.uuid || child.uuid || '',
-          name: child.id?.name || child.name || 'Unnamed',
-          type: child.field_type || child.type || 'unknown',
-          isHeader: child.field_type === 'header' || child.type === 'header',
-        })) : undefined,
+        children: (item.items || item.children) ? parseItems(item.items || item.children) : undefined,
       }));
+      const playlists = parseItems(data as any[]);
 
       return mapPlaylistTree(playlists);
     } catch (fetchError: any) {

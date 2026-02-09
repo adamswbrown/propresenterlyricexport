@@ -68,37 +68,28 @@ type FontStatus = {
   downloadUrl?: string;
 };
 
-type ParsedService = {
-  date: string;
-  rawDate: string;
-  sections: ServiceSection[];
-  rawText: string;
+type ParsePDFResult = {
+  success: boolean;
+  items?: ParsedServiceItem[];
+  specialServiceType?: string | null;
+  error?: string;
 };
 
-type ServiceSection = {
-  type: 'song' | 'video' | 'bible';
-  title: string;
-  leader?: string;
-  position: number;
-  isVideo?: boolean;
+type ParsedServiceItem = {
+  type: 'song' | 'kids_video' | 'verse' | 'heading';
+  text: string;
+  reference?: string;
+  isKidsVideo?: boolean;
   praiseSlot?: 'praise1' | 'praise2' | 'praise3' | 'kids';
 };
 
-type SongMatch = {
-  pdfTitle: string;
-  originalLine: string;
-  matches: MatchCandidate[];
-  bestMatch?: MatchCandidate;
+type SongMatchResult = {
+  songName: string;
+  praiseSlot?: 'praise1' | 'praise2' | 'praise3' | 'kids';
+  matches: Array<{ uuid: string; name: string; library: string; confidence: number }>;
+  bestMatch?: { uuid: string; name: string; library: string; confidence: number };
   requiresReview: boolean;
-};
-
-type MatchCandidate = {
-  presentation: {
-    uuid: string;
-    name: string;
-  };
-  confidence: number;
-  distance: number;
+  selectedMatch?: { uuid: string; name: string };
 };
 
 interface ElectronAPI {
@@ -117,16 +108,26 @@ interface ElectronAPI {
   listFonts: () => Promise<FontStatus[]>;
   checkFont: (fontName: string) => Promise<FontStatus | null>;
   downloadFont: (url: string) => Promise<{ success: boolean }>;
+  // Song Aliases
+  loadAliases: () => Promise<Record<string, { uuid: string; name: string }>>;
+  saveAlias: (songTitle: string, target: { uuid: string; name: string }) => Promise<Record<string, { uuid: string; name: string }>>;
+  removeAlias: (songTitle: string) => Promise<{ removed: boolean; aliases: Record<string, { uuid: string; name: string }> }>;
+  // Library search
+  searchPresentations: (
+    config: ConnectionConfig,
+    libraryIds: string[],
+    query: string
+  ) => Promise<{ success: boolean; results: Array<{ uuid: string; name: string; library: string }>; error?: string }>;
   // Service Generator
   choosePDF: () => Promise<{ canceled: boolean; filePath?: string }>;
-  parsePDF: (filePath: string) => Promise<ParsedService>;
+  parsePDF: (filePath: string) => Promise<ParsePDFResult>;
   matchSongs: (
     songItems: Array<{ text: string; isKidsVideo?: boolean; praiseSlot?: string; specialServiceType?: string | null }>,
     config: ConnectionConfig,
     libraryIds: string[],
     kidsLibraryId?: string,
     serviceContentLibraryId?: string
-  ) => Promise<{ success: boolean; results?: SongMatch[]; error?: string }>;
+  ) => Promise<{ success: boolean; results?: SongMatchResult[]; error?: string }>;
   fetchVerses: (references: string[]) => Promise<any[]>;
   matchVerses: (
     verseReferences: string[],

@@ -252,7 +252,7 @@ async function testAllPDFs() {
 
   console.log(`\nBy Category:`);
   for (const [category, categoryResults] of sortedCategories) {
-    const unique = categoryResults.filter(r => !r.isDuplicate).length;
+    const unique = categoryResults.filter((r: PDFTestResult) => !r.isDuplicate).length;
     console.log(`  ${category}: ${categoryResults.length} (${unique} unique)`);
   }
 
