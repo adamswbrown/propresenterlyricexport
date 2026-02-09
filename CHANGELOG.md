@@ -5,6 +5,15 @@ All notable changes to ProPresenter Lyrics Export will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.1] - 2026-02-09
+
+### Fixed
+- **Nested Folder Playlists in Electron GUI** - Playlists inside folders now appear correctly in the Electron desktop app
+  - The playlists:list IPC handler was only parsing one level of children, losing nested playlists
+  - Replaced flat mapping with recursive parseItems() helper to handle arbitrary nesting depth
+  - Matches the pattern already used in ProPresenterClient.parsePlaylistItems()
+  - Fixes issue #6 (folder-based playlist export follow-up)
+
 ## [2.4.0] - 2026-02-07
 
 ### Added
