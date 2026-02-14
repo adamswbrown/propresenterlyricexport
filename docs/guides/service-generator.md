@@ -179,52 +179,44 @@ Aliases are stored at `~/.propresenter-words/aliases.json` and shared between th
 
 ![Song Search (CCLI/Song Library)](../assets/ccli_search.png)
 
-#### Can't Find a Song? Use CCLI Song Select
+#### Can't Find a Worship Song? Use CCLI Song Select
 
-If Service Generator can't find a song in your Worship Library, you can search for it using CCLI Song Select:
+If Service Generator can't find a worship song in your library, it shows **"Copy Song Name"** and **"Search CCLI"** buttons. The key message is: **make sure the song has been imported into ProPresenter first.**
 
 **Step-by-step:**
 
-1. **Copy the song name**
-   - In the Service Generator interface, click the **"Copy Name"** field next to the unmatched song
-   - This copies the song title to your clipboard
-
-2. **Search CCLI Song Select**
-   - Click **"Search CCLI"** button in Service Generator
-   - This opens your default browser to **CCLI Song Select** (ccli.com/songsselect)
-   - Log in with your CCLI username and password
-   - Paste the song name in the search field
-   - Find the correct song in the results
-
-3. **Get the CCLI Song Number**
-   - Once you've found the song, note its **CCLI Song Number** (a unique 7-8 digit code)
-   - This is the ID number you need to copy to search in ProPresenter
-   - Copy this number
+1. **Copy the song name** — Click **"Copy Song Name"** next to the unmatched song
+2. **Search CCLI** — Click **"Search CCLI"** to open CCLI Song Select in your browser
+   - Log in and paste the song name to find it
+   - Note the **CCLI Song Number** (7-8 digit code)
 
 ![CCLI Song ID Location](../assets/ccli-id-copy.png)
 
-4. **Search in ProPresenter**
-   - Open ProPresenter
-   - Click the **Search icon** (magnifying glass)
-   - Enter the CCLI Song Number in the search field
-   - ProPresenter will search its database for songs matching that number
+3. **Import into ProPresenter** — Open ProPresenter, search by CCLI number, and import the song into your **Worship library**
 
 ![ProPresenter CCLI Song Search](../assets/pp-ccli-search.png)
 
-5. **Import into Your Worship Library**
-   - When ProPresenter finds the song, select it from the results
-   - **Import it into your Worship Library** (the same library you configured in Service Generator Step 1 - typically "Worship")
-   - Save the import
-
-6. **Re-run Service Generator**
-   - Return to Service Generator
-   - Click **"Re-scan Library"** or restart from Step 4 (Match Songs)
-   - Service Generator will now find the newly imported song and match it automatically
+4. **Rescan** — Return to Service Generator and click **"Rescan Libraries"** to find the newly imported song
 
 **Tips:**
 - Make sure to import into the correct library (your "Worship" library, not a different one)
 - If the song still doesn't match, try a slightly different spelling or search again
 - Some songs may have multiple CCLI numbers (different arrangements); try different results if the first doesn't work
+
+#### Can't Find a Kids Song? Search YouTube
+
+Kids songs are typically YouTube videos. When a kids song isn't found, the app shows **"Copy Song Name"** and **"Search YouTube"** buttons. The key message is: **make sure it's been imported into ProPresenter first.**
+
+> **Note:** The matcher also automatically searches all libraries as a fallback if the Kids library doesn't have a match.
+
+**Step-by-step:**
+
+1. **Copy the song name** — Click **"Copy Song Name"** to copy the title to your clipboard
+2. **Search YouTube** — Click **"Search YouTube"** to open a YouTube search with the song name
+3. **Import into ProPresenter** — Download or link the video, then import it into your **Kids library** in ProPresenter
+4. **Rescan** — Return to Service Generator and click **"Rescan Libraries"**
+
+You can also skip unmatched kids items — they won't be added to the playlist.
 
 ### Step 5: Bible (Verses & Presentations)
 
@@ -243,24 +235,33 @@ Match scripture references to your Service Content library:
 
 ![Get Verse Details](../assets/get_verse_to_put_into_PP.png)
 
-**When no match is found:**
-- **Search Library** - Search the Service Content library to manually find the right presentation
-- **Copy to clipboard** - Copy the reference
-- **Open Bible Gateway** - Opens the verse in a web browser
-- **Focus ProPresenter** - Opens the Bible reading panel in ProPresenter (Cmd+B)
-- Then manually add the verse to your Service Content library and re-run
+**When no match is found**, the key message is: **make sure the verse has been imported into ProPresenter first.** The app shows:
+- **Copy Reference** (first action) — Copy the verse reference to paste into ProPresenter's Bible panel
+- **Bible Gateway** — Opens the verse in a web browser to preview the text
+- **Search Library** — Search the Service Content library manually
+- **Focus Reading** — Opens the Bible reading panel in ProPresenter (Cmd+B)
 
 > **Tip:** Bible verse matching looks for presentations containing translation markers like "(NIV)", "(ESV)", "(NLT)", etc. in their names. This ensures only Bible verse presentations are matched, not worship songs or other content in the same library.
 
 #### Adding Bible Verses to ProPresenter
 
-If a Bible verse isn't found in your Service Content library, you'll need to add it manually to ProPresenter. Watch this short video to learn how:
+If a Bible verse isn't found in your Service Content library, you need to create it in ProPresenter:
+
+1. **Copy the reference** — Click **"Copy Reference"** to copy it to your clipboard (e.g., "Luke 12:35-59")
+2. **Open ProPresenter** — Press **Cmd+B** to open the Bible panel
+3. **Search for the verse** — Paste the reference and find the passage
+4. **Create a presentation** — Save it to your **Service Content library**
+5. **Rescan** — Return to Service Generator and click **"Rescan"** to find the new presentation
+
+Watch this short video to learn how:
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/-QcnpuenVno" title="Adding Bible Verses to ProPresenter" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
-Once you've added the verse to your Service Content library, return to Service Generator and click **"Re-scan Library"** to find the newly added verse.
+#### Skipping Verses
 
-**Step complete when:** All verses are matched or marked as manual.
+If you don't need verse presentations in your playlist (or want to add them manually later), click **"Skip Verses"** to bypass the verse step entirely. You can always go back from the Build step if you change your mind.
+
+**Step complete when:** All verses are matched, or the step is explicitly skipped.
 
 ### Step 6: Build
 
@@ -590,7 +591,9 @@ Service Generator relies on three types of libraries in ProPresenter. Understand
 **What Service Generator does:**
 - Detects kids items in the PDF (looks for "kids video," "kids song," "children's story," etc.)
 - Searches this library instead of the Worship library
+- If no match is found in the Kids library, **automatically falls back to searching all libraries**
 - Adds them to the Kids Talk section with their own categorization
+- If still not found, shows "Copy Song Name" and "Search YouTube" buttons (since kids songs are typically YouTube videos)
 
 **Example:** PDF says "Kids Video: Sing Wherever I Go" → App finds in Kids library → Adds to Kids Talk section
 

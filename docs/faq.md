@@ -324,12 +324,17 @@ propresenter-lyrics alias remove "Song Title"  # Remove one
 **Problem:** Verses show "No match" even though you have them.
 
 **Solutions:**
-1. Check verse format (should be "John 3:16" style)
-2. Bible verses might be in different library than Service Content
-3. Different Bible translations are separate presentations
-4. Check verse actually exists in your library
+1. Make sure the verse presentation has been imported into ProPresenter's **Service Content library**
+2. Check verse format (should be "John 3:16" style)
+3. Bible verses might be in a different library than Service Content — configure the correct one in Setup
+4. Different Bible translations are separate presentations
+5. Use **"Copy Reference"** to copy the verse, then open ProPresenter's Bible panel (**Cmd+B**) to create it
 
-**Fallback:** Use "Open Bible Gateway" to create the presentation manually.
+**If the verse isn't in your library yet:**
+1. Click **"Copy Reference"** to copy it
+2. Open ProPresenter and press **Cmd+B** for the Bible panel
+3. Search for the verse, create a presentation, and save to your Service Content library
+4. Come back and click **"Rescan"** — or click **"Skip Verses"** to bypass this step entirely
 
 ---
 
@@ -349,11 +354,23 @@ Useful for:
 
 ### What if a song/verse truly isn't in my library?
 
-**Options:**
-1. **Skip it** - Mark as manual, add manually to playlist later
-2. **Create it** - Add the song/verse to your library, then re-run
-3. **Similar match** - Use the closest match you have
-4. **Leave blank** - Let the pastor ad-lib or use backup
+The app shows specific actions depending on the type of content:
+
+**For worship songs:**
+1. Click **"Copy Song Name"** and **"Search CCLI"** to find and import the song via CCLI SongSelect
+2. Import it into your **Worship library** in ProPresenter
+3. Click **"Rescan Libraries"** to find the newly imported song
+
+**For kids songs (typically YouTube videos):**
+1. Click **"Copy Song Name"** and **"Search YouTube"** to find the video
+2. Import the video into your **Kids library** in ProPresenter
+3. Click **"Rescan Libraries"** — or skip the item (it won't be added to the playlist)
+
+**For Bible verses:**
+1. Click **"Copy Reference"** to copy the verse reference
+2. Open ProPresenter, press **Cmd+B** for the Bible panel, and create the presentation
+3. Save to your **Service Content library**, then click **"Rescan"**
+4. Or click **"Skip Verses"** to bypass the entire verse step
 
 ---
 
