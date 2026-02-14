@@ -5,6 +5,25 @@ All notable changes to ProPresenter Lyrics Export will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.2] - 2026-02-14
+
+### Added
+- **Skip Verses Button** - Verse step can now be explicitly skipped if Bible presentations aren't in the library yet
+  - "Skip Verses" button shown at both top and bottom of the verse step
+  - Navigating back from Build resets the skip state so you can re-engage
+- **YouTube Search for Kids Songs** - One-click "Search YouTube" button for unmatched kids songs
+  - Kids songs are typically YouTube videos; this opens a YouTube search with the song name pre-filled
+- **Cross-Library Fallback for Kids Matching** - When a kids song isn't found in the Kids library, the matcher now automatically searches all libraries as a fallback
+  - If a better match is found in any library (worship, service content), it uses that instead
+
+### Improved
+- **Not-Found Guidance** - All not-found states now show clear, consistent messaging:
+  - Kids songs: "Copy Song Name" + "Search YouTube" + step-by-step to import into Kids library and Rescan
+  - Worship songs: "Copy Song Name" + "Search CCLI" + step-by-step to import into Worship library and Rescan
+  - Bible verses: "Copy Reference" (first action) + "Bible Gateway" + step-by-step to create in ProPresenter Bible panel (Cmd+B), save to Service Content library, and Rescan
+  - All states explain: "Make sure it's been imported into ProPresenter"
+- **Copy Actions Promoted** - Copy buttons are now the first action in all not-found panels, making it easy to paste into YouTube/CCLI/ProPresenter Bible panel
+
 ## [2.4.1] - 2026-02-09
 
 ### Fixed

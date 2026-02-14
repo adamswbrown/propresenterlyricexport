@@ -187,7 +187,13 @@ git push origin vX.Y.Z
 - **Fix Applied**: Image encoding commented out in `src/pptx-exporter.ts` lines 91-99, 129-137
 - **DO NOT**: Upgrade pptxgenjs without resolving this first
 
-### ✅ Recent Updates (Feb 7, 2026)
+### ✅ Recent Updates (Feb 14, 2026)
+1. **Skip Verses button** - Verse step can now be explicitly skipped when Bible presentations aren't in the library yet
+2. **YouTube search for kids songs** - One-click "Search YouTube" button for unmatched kids songs (typically YouTube videos)
+3. **Cross-library fallback for kids matching** - Kids songs not found in Kids library automatically searched across all libraries
+4. **Improved not-found guidance** - All not-found states show clear step-by-step instructions with copy actions first (Copy Song Name for songs, Copy Reference for verses)
+
+### ✅ Updates (Feb 7, 2026)
 1. **Song alias/override mapping** - Persistent mappings for songs with different names in order of service vs library
 2. **CLI alias commands** - `alias list/add/remove` for managing song mappings from the terminal
 3. **Inline library search** - Search all ProPresenter libraries from the match review step

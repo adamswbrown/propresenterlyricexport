@@ -961,12 +961,25 @@ ipcMain.handle('songs:match', async (_event, songItems: SongItemToMatch[], confi
       };
 
       // Match this single song
-      const matches = await matcher.matchSongs([songSection], presentationsToMatch);
-      const match = matches[0];
+      let matches = await matcher.matchSongs([songSection], presentationsToMatch);
+      let match = matches[0];
+
+      // Cross-library fallback: if kids/video content has no good match, try all libraries
+      if (isKids && (!match.bestMatch || match.bestMatch.confidence < 0.7)) {
+        const allPresentations = [...worshipPresentations, ...serviceContentPresentations, ...kidsPresentations];
+        const fallbackMatches = await matcher.matchSongs([songSection], allPresentations);
+        const fallbackMatch = fallbackMatches[0];
+
+        if (fallbackMatch.bestMatch && fallbackMatch.bestMatch.confidence > (match.bestMatch?.confidence || 0)) {
+          console.log(`[songs:match] Kids fallback found better match: "${fallbackMatch.bestMatch.presentation.name}" (${Math.round(fallbackMatch.bestMatch.confidence * 100)}%) from all libraries`);
+          match = fallbackMatch;
+        }
+      }
 
       results.push({
         songName: match.pdfTitle,
         praiseSlot: item.praiseSlot,
+        isKidsVideo: isKids,
         matches: match.matches.map(m => ({
           uuid: m.presentation.uuid,
           name: m.presentation.name,
@@ -996,12 +1009,10 @@ ipcMain.handle('songs:match', async (_event, songItems: SongItemToMatch[], confi
 
 ipcMain.handle('verses:fetch', async (_event, references: string[]) => {
   try {
-    // TODO: Implement Bible verse fetching
-    // This requires an API key for Bible API
-    // For now, return placeholder results
+    // Bible verse text fetch is not used - users create presentations directly in ProPresenter
     const verses = references.map(ref => ({
       reference: ref,
-      text: `Placeholder text for ${ref}`,
+      text: '',
       error: undefined
     }));
     return { success: true, verses };
