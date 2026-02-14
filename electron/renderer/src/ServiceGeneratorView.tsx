@@ -1143,8 +1143,8 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                               <>
                                 <div style={{ fontSize: '13px', color: result.matches.length === 0 ? '#f44336' : '#ffc107', marginBottom: '10px' }}>
                                   {result.matches.length === 0
-                                    ? `"${result.songName}" not found in libraries. Make sure it's been imported into ProPresenter.`
-                                    : 'Can\'t find the right match? Make sure the song has been imported into ProPresenter.'}
+                                    ? `"${result.songName}" not found — search for it using CCLI, import it into ProPresenter, then click Rescan Libraries.`
+                                    : 'Can\'t find the right match? Search for it using CCLI, import it into ProPresenter, then click Rescan Libraries.'}
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
                                   <button
@@ -1169,9 +1169,9 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                                 <div style={{ fontSize: '12px', color: 'var(--muted)', lineHeight: '1.6' }}>
                                   <strong>To add this song:</strong>
                                   <ol style={{ margin: '6px 0 0', paddingLeft: '18px' }}>
-                                    <li>Find the song on CCLI SongSelect (use the button above)</li>
+                                    <li>Click <strong>"Search CCLI"</strong> above to find the song on CCLI SongSelect</li>
                                     <li>Import it into your <strong>Worship library</strong> in ProPresenter</li>
-                                    <li>Come back here and click <strong>"Rescan Libraries"</strong> above</li>
+                                    <li>Come back here and click <strong>"Rescan Libraries"</strong> to pick it up</li>
                                   </ol>
                                 </div>
                               </>
