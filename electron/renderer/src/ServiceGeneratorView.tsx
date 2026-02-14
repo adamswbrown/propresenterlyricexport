@@ -98,6 +98,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
   const [verseResults, setVerseResults] = useState<VerseResult[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [specialServiceType, setSpecialServiceType] = useState<string | null>(null);  // Track special service type
+  const [versesSkipped, setVersesSkipped] = useState(false);  // Track if user chose to skip verse step
 
   // Library search state for manual song override
   const [librarySearchIndex, setLibrarySearchIndex] = useState<number | null>(null);
@@ -131,8 +132,10 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
         return matchResults.length > 0 && (matchedSongs + unmatchedKidsVideos) === matchResults.length;
       case 'verse':
         // Verses are complete if:
+        // - User explicitly skipped verses, OR
         // - No verses to match, OR
         // - All verses with library matches have a selection (verses with no matches = manual workflow, OK to skip)
+        if (versesSkipped) return true;
         const versesWithMatches = bibleMatches.filter(v => v.matches.length > 0);
         const versesWithSelection = versesWithMatches.filter(v => v.selectedMatch).length;
         return bibleMatches.length === 0 || versesWithSelection === versesWithMatches.length;
@@ -1090,21 +1093,29 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                               <>
                                 <div style={{ fontSize: '13px', color: '#ffc107', marginBottom: '10px' }}>
                                   {result.matches.length === 0
-                                    ? 'Not found in Kids library.'
+                                    ? `"${result.songName}" not found in Kids library.`
                                     : 'Can\'t find the right match?'}
                                 </div>
-                                <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
-                                  Import this video into your Kids library in ProPresenter, then click "Rescan Libraries" above.
+                                <div style={{ fontSize: '12px', color: 'var(--muted)', lineHeight: '1.6' }}>
+                                  <strong>To add this kids song:</strong>
+                                  <ol style={{ margin: '6px 0 0', paddingLeft: '18px' }}>
+                                    <li>Open <strong>ProPresenter</strong></li>
+                                    <li>Import or create the presentation in your <strong>Kids library</strong></li>
+                                    <li>Come back here and click <strong>"Rescan Libraries"</strong> above</li>
+                                  </ol>
+                                  <div style={{ marginTop: '8px', fontSize: '11px' }}>
+                                    You can also skip this item — it won't be added to the playlist.
+                                  </div>
                                 </div>
                               </>
                             ) : (
                               <>
                                 <div style={{ fontSize: '13px', color: result.matches.length === 0 ? '#f44336' : '#ffc107', marginBottom: '10px' }}>
                                   {result.matches.length === 0
-                                    ? 'No matches found in libraries.'
+                                    ? `"${result.songName}" not found in libraries.`
                                     : 'Can\'t find the right match?'}
                                 </div>
-                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
                                   <button
                                     className="ghost small"
                                     onClick={() => copyToClipboard(result.songName)}
@@ -1124,8 +1135,12 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                                     🔍 Search CCLI
                                   </button>
                                 </div>
-                                <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '8px' }}>
-                                  Add the song to ProPresenter, then click "Rescan Libraries" above.
+                                <div style={{ fontSize: '12px', color: 'var(--muted)', lineHeight: '1.6' }}>
+                                  <strong>To add this song:</strong>
+                                  <ol style={{ margin: '6px 0 0', paddingLeft: '18px' }}>
+                                    <li>Open <strong>ProPresenter</strong> and add the song to your <strong>Worship library</strong></li>
+                                    <li>Come back here and click <strong>"Rescan Libraries"</strong> above</li>
+                                  </ol>
                                 </div>
                               </>
                             )}
@@ -1339,18 +1354,31 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                 {/* Search Button */}
                 {bibleMatches.length === 0 && (
                   <div style={{ marginBottom: '20px' }}>
-                    <button
-                      className="primary"
-                      onClick={matchBibleVerses}
-                      disabled={isProcessing || !props.settings.serviceContentLibraryId}
-                      type="button"
-                      style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                    >
-                      {isProcessing ? 'Searching...' : '🔍 Search Service Content Library'}
-                    </button>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      <button
+                        className="primary"
+                        onClick={matchBibleVerses}
+                        disabled={isProcessing || !props.settings.serviceContentLibraryId}
+                        type="button"
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                      >
+                        {isProcessing ? 'Searching...' : '🔍 Search Service Content Library'}
+                      </button>
+                      <button
+                        className="ghost"
+                        onClick={() => {
+                          setVersesSkipped(true);
+                          setCurrentStep('build');
+                        }}
+                        type="button"
+                        style={{ color: 'var(--muted)' }}
+                      >
+                        Skip Verses →
+                      </button>
+                    </div>
                     {!props.settings.serviceContentLibraryId && (
                       <div style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '8px' }}>
-                        Configure a Service Content Library in Setup to enable automatic matching.
+                        No Service Content Library configured. You can search after configuring one in Setup, or skip this step.
                       </div>
                     )}
                   </div>
@@ -1456,7 +1484,16 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                             {(!match.selectedMatch || match.requiresReview) && (
                               <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
                                 <div style={{ fontSize: '13px', color: '#ffc107', marginBottom: '10px' }}>
-                                  {!match.selectedMatch ? 'Not the right verse? Search or add manually:' : 'Low confidence match — verify, search, or add manually:'}
+                                  {!match.selectedMatch ? 'Not the right verse?' : 'Low confidence match — verify or add manually:'}
+                                </div>
+                                <div style={{ fontSize: '12px', color: 'var(--muted)', lineHeight: '1.6', marginBottom: '10px' }}>
+                                  <strong>If the correct presentation isn't listed:</strong>
+                                  <ol style={{ margin: '4px 0 0', paddingLeft: '18px' }}>
+                                    <li>Open <strong>ProPresenter</strong> and press <kbd style={{ background: 'rgba(255,255,255,0.1)', padding: '1px 4px', borderRadius: '3px', fontSize: '10px' }}>Cmd+B</kbd> to open the Bible panel</li>
+                                    <li>Search for <strong>{verseRef}</strong> and create a presentation</li>
+                                    <li>Save it to your <strong>Service Content library</strong></li>
+                                    <li>Come back here and click <strong>"Rescan"</strong> above</li>
+                                  </ol>
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                                   <button
@@ -1495,9 +1532,6 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                                   >
                                     🎯 Focus Reading
                                   </button>
-                                </div>
-                                <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '8px' }}>
-                                  Use <kbd style={{ background: 'rgba(255,255,255,0.1)', padding: '1px 4px', borderRadius: '3px', fontSize: '10px' }}>Cmd+B</kbd> to open Bible panel in ProPresenter
                                 </div>
                               </div>
                             )}
@@ -1609,10 +1643,22 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                             )}
                           </div>
                         ) : match ? (
-                          /* No matches found - show manual workflow */
+                          /* No matches found - show manual workflow with clear instructions */
                           <div style={{ marginLeft: '30px', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
                             <div style={{ fontSize: '13px', color: '#f44336', marginBottom: '10px' }}>
-                              Not found in library. Search or add manually:
+                              "{verseRef}" not found in Service Content library.
+                            </div>
+                            <div style={{ fontSize: '12px', color: 'var(--muted)', lineHeight: '1.6', marginBottom: '12px' }}>
+                              <strong>To add this scripture:</strong>
+                              <ol style={{ margin: '6px 0 0', paddingLeft: '18px' }}>
+                                <li>Open <strong>ProPresenter</strong> and press <kbd style={{ background: 'rgba(255,255,255,0.1)', padding: '1px 4px', borderRadius: '3px', fontSize: '10px' }}>Cmd+B</kbd> to open the Bible panel</li>
+                                <li>Search for <strong>{verseRef}</strong> and create a presentation from it</li>
+                                <li>Save the presentation to your <strong>Service Content library</strong></li>
+                                <li>Come back here and click <strong>"Rescan"</strong> above to find the new presentation</li>
+                              </ol>
+                              <div style={{ marginTop: '8px', fontSize: '11px' }}>
+                                Or skip this verse — it won't be added to the playlist.
+                              </div>
                             </div>
                             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                               <button
@@ -1651,9 +1697,6 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                               >
                                 🎯 Focus Reading
                               </button>
-                            </div>
-                            <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '8px' }}>
-                              Use <kbd style={{ background: 'rgba(255,255,255,0.1)', padding: '1px 4px', borderRadius: '3px', fontSize: '10px' }}>Cmd+B</kbd> to open Bible panel in ProPresenter
                             </div>
 
                             {/* Inline verse library search */}
@@ -1789,7 +1832,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                 </div>
 
                 {/* Actions */}
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                   <button
                     className="ghost"
                     onClick={() => setCurrentStep('match')}
@@ -1797,6 +1840,20 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                   >
                     ← Back
                   </button>
+                  {!isStepComplete('verse') && !versesSkipped && (
+                    <button
+                      className="ghost"
+                      onClick={() => {
+                        setVersesSkipped(true);
+                        setBibleMatches(prev => prev.map(v => ({ ...v, selectedMatch: undefined })));
+                        setCurrentStep('build');
+                      }}
+                      type="button"
+                      style={{ color: 'var(--muted)' }}
+                    >
+                      Skip Verses →
+                    </button>
+                  )}
                   <button
                     className="primary"
                     onClick={() => setCurrentStep('build')}
@@ -1941,7 +1998,10 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <button
                     className="ghost"
-                    onClick={() => setCurrentStep('verse')}
+                    onClick={() => {
+                      setVersesSkipped(false);
+                      setCurrentStep('verse');
+                    }}
                     type="button"
                   >
                     ← Back
