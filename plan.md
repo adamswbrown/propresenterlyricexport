@@ -1,7 +1,101 @@
 # Web Proxy — Implementation Plan & Status
 
-Remote browser access to the ProPresenter Lyrics Export app, designed for
-outbound-only tunnels (Cloudflare Tunnel / Tailscale Funnel).
+Remote browser access to the ProPresenter Lyrics Export app, exposed via
+**Cloudflare Tunnel** (outbound-only — no port forwarding, no firewall changes).
+
+## Deployment Method: Cloudflare Tunnel
+
+The web proxy runs on the same machine as ProPresenter and is exposed to the
+internet through a Cloudflare Tunnel. This is the chosen approach because:
+
+- **No inbound ports** — the tunnel makes an outbound connection to Cloudflare's edge; nothing listens on the public internet
+- **Free tier** — Cloudflare Tunnels are free for personal use
+- **Custom domain** — access at something like `https://pp.yourdomain.com`
+- **Automatic HTTPS** — Cloudflare terminates TLS; Express sees plain HTTP behind `trust proxy`
+- **DDoS protection** — Cloudflare's edge absorbs attacks before they reach the machine
+
+### How It Works
+
+```
+Phone/Tablet (remote)
+    │
+    │  HTTPS
+    ▼
+Cloudflare Edge (pp.yourdomain.com)
+    │
+    │  Encrypted tunnel (outbound from your machine)
+    ▼
+cloudflared daemon ──► Express :3100 ──► ProPresenter :1025
+   (on the Mac)          (on the Mac)       (on the Mac)
+```
+
+### Setup Steps
+
+1. **Install cloudflared** on the Mac running ProPresenter:
+   ```bash
+   brew install cloudflared
+   ```
+
+2. **Authenticate with Cloudflare** (one-time):
+   ```bash
+   cloudflared tunnel login
+   ```
+
+3. **Create a tunnel** (one-time):
+   ```bash
+   cloudflared tunnel create propresenter
+   ```
+   This generates a tunnel UUID and credentials file.
+
+4. **Route DNS** — point your subdomain to the tunnel:
+   ```bash
+   cloudflared tunnel route dns propresenter pp.yourdomain.com
+   ```
+
+5. **Configure Google OAuth** (one-time):
+   - Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+   - Create OAuth 2.0 credentials
+   - Authorized redirect URI: `https://pp.yourdomain.com/auth/google/callback`
+   - Copy Client ID and Client Secret
+
+6. **Seed the first admin user**:
+   ```bash
+   npm start -- users add you@gmail.com --admin
+   ```
+
+7. **Start the server**:
+   ```bash
+   GOOGLE_CLIENT_ID=<id> \
+   GOOGLE_CLIENT_SECRET=<secret> \
+   TUNNEL_URL=https://pp.yourdomain.com \
+   npm run web:start
+   ```
+
+8. **Start the tunnel** (separate terminal or as a service):
+   ```bash
+   cloudflared tunnel run --url http://localhost:3100 propresenter
+   ```
+
+9. **Open** `https://pp.yourdomain.com` on any device — sign in with Google.
+
+### Running as a Background Service (Optional)
+
+To keep the tunnel running after logout / on boot:
+
+```bash
+# Create config file
+cat > ~/.cloudflared/config.yml << 'EOF'
+tunnel: <tunnel-uuid>
+credentials-file: ~/.cloudflared/<tunnel-uuid>.json
+ingress:
+  - hostname: pp.yourdomain.com
+    service: http://localhost:3100
+  - service: http_status:404
+EOF
+
+# Install as macOS launchd service
+cloudflared service install
+```
 
 ---
 
@@ -137,9 +231,13 @@ No ProPresenter connection required. Operates directly on `~/.propresenter-words
 ## Architecture
 
 ```
-Browser (remote)
+Browser (phone/tablet/laptop)
     │
-    │  HTTPS via tunnel
+    │  HTTPS
+    ▼
+Cloudflare Edge (pp.yourdomain.com)
+    │
+    │  cloudflared tunnel (outbound)
     ▼
 ┌──────────────────────────────────────────────────┐
 │              Express Server (:3100)               │
@@ -240,7 +338,7 @@ All stored in `~/.propresenter-words/`:
 |----------|---------|---------|
 | `WEB_PORT` | `3100` | Server listen port |
 | `WEB_HOST` | `0.0.0.0` | Server listen address |
-| `TUNNEL_URL` | — | Public URL for OAuth callback (e.g., `https://pp.yourdomain.com`) |
+| `TUNNEL_URL` | — | Cloudflare Tunnel public URL (e.g., `https://pp.yourdomain.com`) — used for OAuth callback |
 | `GOOGLE_CLIENT_ID` | — | Google OAuth client ID |
 | `GOOGLE_CLIENT_SECRET` | — | Google OAuth client secret |
 | `CORS_ORIGIN` | `*` | Comma-separated allowed origins |
@@ -262,10 +360,19 @@ npm run web:dev:ui
 # Open http://localhost:5173 in browser
 ```
 
-**Production build:**
+**Production build + Cloudflare Tunnel:**
 ```bash
+# Build
 npm run web:build         # tsc + vite build → dist-web/
-npm run web:start         # node dist/server/index.js (serves dist-web/)
+
+# Start server
+GOOGLE_CLIENT_ID=<id> \
+GOOGLE_CLIENT_SECRET=<secret> \
+TUNNEL_URL=https://pp.yourdomain.com \
+npm run web:start
+
+# Start tunnel (separate terminal)
+cloudflared tunnel run --url http://localhost:3100 propresenter
 ```
 
 ---
