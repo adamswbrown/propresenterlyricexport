@@ -27,4 +27,21 @@ export default defineConfig({
     },
   },
   plugins: [react()],
+  server: {
+    // Dev server proxy — route API and auth calls to the Express server
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3100',
+        changeOrigin: true,
+      },
+      '/auth': {
+        target: 'http://localhost:3100',
+        changeOrigin: true,
+      },
+      '/health': {
+        target: 'http://localhost:3100',
+        changeOrigin: true,
+      },
+    },
+  },
 });

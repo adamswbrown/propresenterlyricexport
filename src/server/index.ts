@@ -28,6 +28,7 @@ import { settingsRoutes } from './routes/settings';
 import { aliasRoutes } from './routes/aliases';
 import { fontRoutes } from './routes/fonts';
 import { serviceGeneratorRoutes } from './routes/service-generator';
+import { userRoutes } from './routes/users';
 import { ensureUsersFile, getAllowedEmails, getUsersFilePath } from './services/user-store';
 
 const PORT = parseInt(process.env.WEB_PORT || '3100', 10);
@@ -44,10 +45,10 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       imgSrc: ["'self'", 'data:', 'blob:', 'https://lh3.googleusercontent.com'],
       connectSrc: ["'self'"],
-      fontSrc: ["'self'"],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
     },
   },
 }));
@@ -102,6 +103,7 @@ app.use('/api', settingsRoutes);
 app.use('/api', aliasRoutes);
 app.use('/api', fontRoutes);
 app.use('/api', serviceGeneratorRoutes);
+app.use('/api', userRoutes);
 
 // Serve static React build (production)
 const staticDir = path.join(__dirname, '..', '..', 'dist-web');

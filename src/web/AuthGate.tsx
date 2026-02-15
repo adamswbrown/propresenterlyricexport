@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { checkAuth, logout } from '../gui/api-client';
 import { LoginPage } from './LoginPage';
+import { UserManagement } from './UserManagement';
 import App from '@electron/App';
 
 type AuthUser = {
@@ -8,6 +9,7 @@ type AuthUser = {
   name?: string;
   picture?: string;
   method?: string;
+  isAdmin?: boolean;
 };
 
 /**
@@ -20,6 +22,7 @@ type AuthUser = {
 export function AuthGate(): JSX.Element {
   const [checking, setChecking] = useState(true);
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [showUserMgmt, setShowUserMgmt] = useState(false);
 
   const verifyAuth = useCallback(() => {
     setChecking(true);
@@ -31,6 +34,7 @@ export function AuthGate(): JSX.Element {
             name: data.name,
             picture: data.picture,
             method: data.method,
+            isAdmin: (data as any).isAdmin,
           });
         } else {
           setUser(null);
@@ -80,12 +84,22 @@ export function AuthGate(): JSX.Element {
         <button
           className="web-logout-btn"
           type="button"
+          onClick={() => setShowUserMgmt(true)}
+        >
+          Users
+        </button>
+        <button
+          className="web-logout-btn"
+          type="button"
           onClick={handleLogout}
         >
           Sign out
         </button>
       </div>
       <App />
+      {showUserMgmt && (
+        <UserManagement onClose={() => setShowUserMgmt(false)} />
+      )}
     </>
   );
 }
