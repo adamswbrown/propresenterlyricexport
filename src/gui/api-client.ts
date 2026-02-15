@@ -16,7 +16,7 @@
 // ── Helpers ────────────────────────────────────────────────────────────
 
 const isElectron = (): boolean =>
-  typeof window !== 'undefined' && window.api !== undefined;
+  typeof window !== 'undefined' && !!(window as any).__ELECTRON_API__;
 
 /**
  * Bearer token — only needed for SSE EventSource connections
@@ -147,6 +147,71 @@ export function redirectToLogin(): void {
   window.location.href = '/auth/google';
 }
 
+// ── Export progress ───────────────────────────────────────────────────
+//
+// Electron pattern:
+//   useEffect(() => {
+//     const unsub = window.api.onExportProgress(callback);
+//     return unsub;
+//   }, []);
+//   ...
+//   await window.api.startExport(payload);
+//
+// In web mode we need to store the callback first, then when
+// startExport returns a jobId, we auto-connect SSE to pipe events.
+
+let _progressCallback: ((event: any) => void) | null = null;
+let _activeSSE: EventSource | null = null;
+
+function connectSSE(jobId: string): void {
+  // Close any previous SSE connection
+  if (_activeSSE) {
+    _activeSSE.close();
+    _activeSSE = null;
+  }
+
+  const token = getBearerToken();
+  const url = `/api/export/${jobId}/progress${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+  const source = new EventSource(url);
+
+  source.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+
+      // Map server events to the Electron progress event format
+      const mapped = {
+        playlistId: data.playlistId || jobId,
+        type: data.type || 'info',
+        message: data.message,
+        itemName: data.itemName,
+        totalSongs: data.totalSongs,
+        outputPath: data.outputPath,
+      };
+
+      // When export completes, trigger browser download
+      if (data.type === 'done' && data.downloadUrl) {
+        mapped.type = 'pptx:complete';
+        mapped.outputPath = data.downloadUrl;
+        const a = document.createElement('a');
+        a.href = data.downloadUrl;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+
+      _progressCallback?.(mapped);
+    } catch { /* ignore parse errors */ }
+  };
+
+  source.onerror = () => {
+    source.close();
+    _activeSSE = null;
+  };
+
+  _activeSSE = source;
+}
+
 // ── Web implementations ────────────────────────────────────────────────
 
 const webApi = {
@@ -159,7 +224,9 @@ const webApi = {
   fetchPlaylists: (_config?: any) => get('/api/playlists'),
   fetchLibraries: (_config?: any) => get('/api/libraries'),
 
-  // Export (async job-based)
+  // Export — matches Electron's interface:
+  //   startExport(payload) → { success, canceled, outputPath?, error? }
+  //   onExportProgress(callback) → unsubscribe
   startExport: async (payload: any) => {
     const { jobId } = await post('/api/export', {
       playlistId: payload.playlistId,
@@ -170,46 +237,28 @@ const webApi = {
       logoPath: payload.logoPath,
     });
 
-    return { canceled: false, jobId };
+    // Auto-connect SSE for progress if a callback is registered
+    if (_progressCallback && jobId) {
+      connectSSE(jobId);
+    }
+
+    // Return a shape compatible with what App.tsx expects
+    return { canceled: false, success: true, jobId };
   },
 
   /**
-   * Subscribe to export progress via SSE.
-   * Uses bearer token in query param since EventSource can't send cookies.
-   * Returns an unsubscribe function.
+   * Register a callback for export progress events.
+   * Mirrors Electron's window.api.onExportProgress(callback) → unsubscribe.
+   * The actual SSE connection is established later when startExport runs.
    */
-  onExportProgress: (callback: (event: any) => void, jobId?: string) => {
-    if (!jobId) return () => {};
-
-    // EventSource can't send cookies, so use bearer token as query param
-    const token = getBearerToken();
-    const url = `/api/export/${jobId}/progress${token ? `?token=${encodeURIComponent(token)}` : ''}`;
-    const source = new EventSource(url);
-
-    source.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-
-        // When export completes, trigger browser download
-        if (data.type === 'done' && data.downloadUrl) {
-          const a = document.createElement('a');
-          a.href = data.downloadUrl;
-          a.style.display = 'none';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-        }
-
-        callback(data);
-      } catch { /* ignore parse errors */ }
-    };
-
-    source.onerror = () => {
-      source.close();
-    };
-
+  onExportProgress: (callback: (event: any) => void) => {
+    _progressCallback = callback;
     return () => {
-      source.close();
+      _progressCallback = null;
+      if (_activeSSE) {
+        _activeSSE.close();
+        _activeSSE = null;
+      }
     };
   },
 
@@ -320,6 +369,20 @@ const webApi = {
     post('/api/service/focus-item', { playlistId, headerName }),
 };
 
+// ── window.api shim for web mode ──────────────────────────────────────
+
+/**
+ * Install webApi as window.api so existing React components
+ * (App.tsx, ServiceGeneratorView.tsx) work without modification.
+ *
+ * Call this BEFORE mounting React in the web entry point.
+ */
+export function installWebApiShim(): void {
+  if (typeof window !== 'undefined' && !(window as any).__ELECTRON_API__) {
+    (window as any).api = webApi;
+  }
+}
+
 // ── Public API ─────────────────────────────────────────────────────────
 
 /**
@@ -329,7 +392,7 @@ const webApi = {
 export const api: any = new Proxy({} as any, {
   get(_target, prop: string) {
     if (isElectron()) {
-      return (window.api as any)[prop];
+      return (window as any).api[prop];
     }
     return (webApi as any)[prop];
   },
