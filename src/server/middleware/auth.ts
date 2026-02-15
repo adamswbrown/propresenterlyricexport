@@ -17,6 +17,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import * as crypto from 'crypto';
+import { getRealIp } from './cloudflare';
 
 const CONFIG_DIR = path.join(os.homedir(), '.propresenter-words');
 const AUTH_FILE = path.join(CONFIG_DIR, 'web-auth.json');
@@ -117,10 +118,13 @@ export function getGoogleCredentials(): { clientId: string; clientSecret: string
 
 /**
  * Rate limiter for auth endpoints — 20 attempts per 15 minutes.
+ * Uses CF-Connecting-IP when behind Cloudflare so all clients
+ * aren't lumped under the tunnel's single IP.
  */
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
+  keyGenerator: (req: Request) => getRealIp(req),
   message: { error: 'Too many authentication attempts. Try again later.' },
   standardHeaders: true,
   legacyHeaders: false,

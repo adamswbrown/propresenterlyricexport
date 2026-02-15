@@ -21,6 +21,7 @@ import {
   getSessionSecret,
   getBearerToken,
 } from './middleware/auth';
+import { cloudflareMiddleware, validateTunnelConfig } from './middleware/cloudflare';
 import { authRoutes, configureGoogleStrategy } from './routes/auth';
 import { connectionRoutes } from './routes/connection';
 import { exportRoutes } from './routes/export';
@@ -63,6 +64,9 @@ app.use(cors({
   credentials: true,
 }));
 
+// Cloudflare: extract real client IP + CF headers before anything else
+app.use(cloudflareMiddleware);
+
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -86,8 +90,41 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Health check (unauthenticated — useful for tunnel monitoring)
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/health', async (req, res) => {
+  const base: Record<string, any> = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+  };
+
+  // Include tunnel info if configured
+  const tunnelUrl = process.env.TUNNEL_URL;
+  if (tunnelUrl) {
+    base.tunnel = { configured: true, url: tunnelUrl };
+  }
+
+  // Show Cloudflare presence when CF headers are present
+  if (req.cfRay) {
+    base.cloudflare = { ray: req.cfRay, country: req.cfCountry };
+  }
+
+  // Deep tunnel check — only when ?check=tunnel is requested
+  // (avoids recursive /health calls on every normal health check)
+  if (req.query.check === 'tunnel' && tunnelUrl) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      const start = Date.now();
+      const tunnelRes = await fetch(`${tunnelUrl}/health`, { signal: controller.signal });
+      clearTimeout(timeout);
+      base.tunnel.reachable = tunnelRes.ok;
+      base.tunnel.latencyMs = Date.now() - start;
+    } catch (err: any) {
+      base.tunnel.reachable = false;
+      base.tunnel.error = err.message || 'Connection failed';
+    }
+  }
+
+  res.json(base);
 });
 
 // Auth routes (unauthenticated — login/callback/status)
@@ -131,6 +168,9 @@ export function startServer(): void {
   const token = getBearerToken();
   const allowedEmails = getAllowedEmails();
 
+  // Validate tunnel config before starting
+  const tunnelWarnings = validateTunnelConfig();
+
   app.listen(PORT, HOST, () => {
     console.log('');
     console.log('  ProPresenter Lyrics Export — Web Proxy');
@@ -138,6 +178,19 @@ export function startServer(): void {
     console.log(`  Server:  http://${HOST}:${PORT}`);
     console.log(`  Health:  http://${HOST}:${PORT}/health`);
     console.log('');
+
+    // Cloudflare Tunnel status
+    if (process.env.TUNNEL_URL) {
+      console.log(`  Tunnel:  ${process.env.TUNNEL_URL}`);
+      if (tunnelWarnings.length > 0) {
+        for (const w of tunnelWarnings) {
+          console.log(`  ⚠ ${w}`);
+        }
+      } else {
+        console.log('  Tunnel config: OK');
+      }
+      console.log('');
+    }
 
     // Google OAuth status
     if (oauthConfigured) {
@@ -163,11 +216,13 @@ export function startServer(): void {
     console.log(`  Bearer token: ${token}`);
     console.log('  (fallback auth for API access / SSE)');
     console.log('');
-    console.log('  Expose via tunnel:');
-    console.log(`    cloudflared tunnel run --url http://localhost:${PORT} <tunnel-name>`);
-    console.log('    — or —');
-    console.log(`    tailscale serve --bg ${PORT}`);
-    console.log('');
+    if (!process.env.TUNNEL_URL) {
+      console.log('  Expose via tunnel:');
+      console.log(`    cloudflared tunnel run --url http://localhost:${PORT} <tunnel-name>`);
+      console.log('    — or —');
+      console.log(`    tailscale serve --bg ${PORT}`);
+      console.log('');
+    }
   });
 }
 

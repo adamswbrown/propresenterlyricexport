@@ -23,7 +23,11 @@ import {
   ensureUsersFile,
   getUsersFilePath,
 } from './server/services/user-store';
+import { checkTunnelReachable, validateTunnelConfig } from './server/middleware/cloudflare';
 import * as readline from 'readline';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 
 // Default connection settings
 const DEFAULT_HOST = process.env.PROPRESENTER_HOST || '127.0.0.1';
@@ -110,6 +114,9 @@ COMMANDS:
   users add <email>   Add an email to the allowlist
   users remove <email> Remove an email from the allowlist
   users admin <email> Toggle admin status for a user
+  tunnel              Manage Cloudflare Tunnel integration
+  tunnel status       Check tunnel configuration and reachability
+  tunnel config       Generate cloudflared config file
 
 OPTIONS:
   --host, -h <addr>   ProPresenter host (default: 127.0.0.1)
@@ -907,6 +914,130 @@ async function main(): Promise<void> {
 
     console.error(`Unknown users subcommand: "${subcommand}"`);
     console.log('Usage: npm start -- users [list|add|remove|admin]');
+    process.exit(1);
+  }
+
+  // Handle tunnel commands — no ProPresenter connection needed
+  if (options.command === 'tunnel') {
+    const subcommand = options.args[0] || 'status';
+
+    if (subcommand === 'status') {
+      console.log('\nCloudflare Tunnel Status');
+      console.log('========================\n');
+
+      const tunnelUrl = process.env.TUNNEL_URL;
+      if (!tunnelUrl) {
+        console.log('  TUNNEL_URL: not set');
+        console.log('');
+        console.log('  Set TUNNEL_URL to your Cloudflare Tunnel public URL:');
+        console.log('    export TUNNEL_URL=https://pp.yourdomain.com');
+        process.exit(0);
+      }
+
+      console.log(`  TUNNEL_URL: ${tunnelUrl}`);
+
+      // Validate config
+      const warnings = validateTunnelConfig();
+      if (warnings.length > 0) {
+        console.log('');
+        for (const w of warnings) {
+          console.log(`  Warning: ${w}`);
+        }
+      }
+
+      // Check reachability
+      console.log('\n  Checking tunnel reachability...');
+      const result = await checkTunnelReachable();
+      if (result.reachable) {
+        console.log(`  Tunnel: REACHABLE (${result.latencyMs}ms round-trip)`);
+      } else {
+        console.log(`  Tunnel: NOT REACHABLE`);
+        if (result.error) {
+          console.log(`  Error: ${result.error}`);
+        }
+        console.log('');
+        console.log('  Make sure cloudflared is running:');
+        console.log('    cloudflared tunnel run --url http://localhost:3100 <tunnel-name>');
+      }
+
+      // Check cloudflared config file
+      const cfConfigPath = path.join(os.homedir(), '.cloudflared', 'config.yml');
+      if (fs.existsSync(cfConfigPath)) {
+        console.log(`\n  Config file: ${cfConfigPath} (exists)`);
+      } else {
+        console.log(`\n  Config file: ${cfConfigPath} (not found)`);
+        console.log('  Generate one with: npm start -- tunnel config');
+      }
+
+      process.exit(0);
+    }
+
+    if (subcommand === 'config') {
+      console.log('\nCloudflare Tunnel Config Generator');
+      console.log('===================================\n');
+
+      const cfDir = path.join(os.homedir(), '.cloudflared');
+      const cfConfigPath = path.join(cfDir, 'config.yml');
+
+      if (fs.existsSync(cfConfigPath)) {
+        console.log(`  Config already exists at: ${cfConfigPath}`);
+        console.log('  Delete it first if you want to regenerate.\n');
+        process.exit(0);
+      }
+
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+
+      const ask = (prompt: string): Promise<string> =>
+        new Promise(resolve => rl.question(prompt, resolve));
+
+      const tunnelUuid = await ask('  Tunnel UUID (from "cloudflared tunnel list"): ');
+      const hostname = await ask('  Public hostname (e.g., pp.yourdomain.com): ');
+      const port = await ask('  Local server port (default: 3100): ') || '3100';
+
+      rl.close();
+
+      if (!tunnelUuid.trim()) {
+        console.error('\n  Error: Tunnel UUID is required.');
+        console.log('  Run "cloudflared tunnel list" to find it.');
+        process.exit(1);
+      }
+
+      const configContent = [
+        `tunnel: ${tunnelUuid.trim()}`,
+        `credentials-file: ${path.join(cfDir, `${tunnelUuid.trim()}.json`)}`,
+        '',
+        'ingress:',
+        `  - hostname: ${hostname.trim()}`,
+        `    service: http://localhost:${port.trim()}`,
+        '  - service: http_status:404',
+        '',
+      ].join('\n');
+
+      if (!fs.existsSync(cfDir)) {
+        fs.mkdirSync(cfDir, { recursive: true });
+      }
+      fs.writeFileSync(cfConfigPath, configContent, 'utf-8');
+
+      console.log(`\n  Config written to: ${cfConfigPath}`);
+      console.log('');
+      console.log('  Contents:');
+      for (const line of configContent.split('\n')) {
+        console.log(`    ${line}`);
+      }
+      console.log('');
+      console.log('  Next steps:');
+      console.log(`    1. Route DNS: cloudflared tunnel route dns ${tunnelUuid.trim()} ${hostname.trim()}`);
+      console.log('    2. Start tunnel: cloudflared tunnel run');
+      console.log(`    3. Start server: TUNNEL_URL=https://${hostname.trim()} npm run web:start`);
+
+      process.exit(0);
+    }
+
+    console.error(`Unknown tunnel subcommand: "${subcommand}"`);
+    console.log('Usage: npm start -- tunnel [status|config]');
     process.exit(1);
   }
 
