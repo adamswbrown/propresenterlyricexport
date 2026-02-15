@@ -2,11 +2,13 @@
  * User allowlist for the web proxy.
  *
  * Only Google accounts whose email appears in the allowlist can sign in.
+ * Admin users (in adminEmails) can manage the user list via the web UI.
  * Stored at ~/.propresenter-words/web-users.json
  *
  * Format:
  * {
  *   "allowedEmails": ["alice@gmail.com", "bob@example.com"],
+ *   "adminEmails": ["alice@gmail.com"],
  *   "sessions": {
  *     "alice@gmail.com": { "name": "Alice", "picture": "...", "lastLogin": "..." }
  *   }
@@ -29,6 +31,7 @@ export interface UserProfile {
 
 interface UsersConfig {
   allowedEmails: string[];
+  adminEmails: string[];
   sessions: Record<string, UserProfile>;
 }
 
@@ -41,16 +44,17 @@ function ensureConfigDir(): void {
 function loadUsersConfig(): UsersConfig {
   try {
     if (!fs.existsSync(USERS_FILE)) {
-      return { allowedEmails: [], sessions: {} };
+      return { allowedEmails: [], adminEmails: [], sessions: {} };
     }
     const data = fs.readFileSync(USERS_FILE, 'utf-8');
     const parsed = JSON.parse(data);
     return {
       allowedEmails: parsed.allowedEmails || [],
+      adminEmails: parsed.adminEmails || [],
       sessions: parsed.sessions || {},
     };
   } catch {
-    return { allowedEmails: [], sessions: {} };
+    return { allowedEmails: [], adminEmails: [], sessions: {} };
   }
 }
 
@@ -73,10 +77,26 @@ export function isEmailAllowed(email: string): boolean {
 }
 
 /**
+ * Check if an email is an admin.
+ */
+export function isAdmin(email: string): boolean {
+  const config = loadUsersConfig();
+  const normalizedEmail = email.toLowerCase().trim();
+  return config.adminEmails.some(e => e.toLowerCase().trim() === normalizedEmail);
+}
+
+/**
  * Get the list of allowed emails.
  */
 export function getAllowedEmails(): string[] {
   return loadUsersConfig().allowedEmails;
+}
+
+/**
+ * Get the list of admin emails.
+ */
+export function getAdminEmails(): string[] {
+  return loadUsersConfig().adminEmails;
 }
 
 /**
@@ -100,8 +120,9 @@ export function removeAllowedEmail(email: string): boolean {
   const before = config.allowedEmails.length;
   config.allowedEmails = config.allowedEmails.filter(e => e.toLowerCase().trim() !== normalizedEmail);
   if (config.allowedEmails.length !== before) {
-    // Also remove their session record
+    // Also remove their session record and admin status
     delete config.sessions[normalizedEmail];
+    config.adminEmails = config.adminEmails.filter(e => e.toLowerCase().trim() !== normalizedEmail);
     saveUsersConfig(config);
     return true;
   }
@@ -121,6 +142,49 @@ export function recordLogin(profile: UserProfile): void {
 }
 
 /**
+ * Get all user data (emails + session info + admin status) for admin display.
+ */
+export function getAllUsers(): Array<{ email: string; name?: string; picture?: string; lastLogin?: string; isAdmin: boolean }> {
+  const config = loadUsersConfig();
+  const adminSet = new Set(config.adminEmails.map(e => e.toLowerCase().trim()));
+  return config.allowedEmails.map(email => {
+    const normalized = email.toLowerCase().trim();
+    const session = config.sessions[normalized];
+    return {
+      email: normalized,
+      name: session?.name,
+      picture: session?.picture,
+      lastLogin: session?.lastLogin,
+      isAdmin: adminSet.has(normalized),
+    };
+  });
+}
+
+/**
+ * Toggle admin status for a user.
+ */
+export function setAdmin(email: string, admin: boolean): boolean {
+  const config = loadUsersConfig();
+  const normalizedEmail = email.toLowerCase().trim();
+
+  // Must be in the allowlist
+  if (!config.allowedEmails.some(e => e.toLowerCase().trim() === normalizedEmail)) {
+    return false;
+  }
+
+  const isCurrentlyAdmin = config.adminEmails.some(e => e.toLowerCase().trim() === normalizedEmail);
+
+  if (admin && !isCurrentlyAdmin) {
+    config.adminEmails.push(normalizedEmail);
+    saveUsersConfig(config);
+  } else if (!admin && isCurrentlyAdmin) {
+    config.adminEmails = config.adminEmails.filter(e => e.toLowerCase().trim() !== normalizedEmail);
+    saveUsersConfig(config);
+  }
+  return true;
+}
+
+/**
  * Get the path to the users file (for display in CLI/startup logs).
  */
 export function getUsersFilePath(): string {
@@ -133,8 +197,10 @@ export function getUsersFilePath(): string {
  */
 export function ensureUsersFile(initialEmail?: string): void {
   if (!fs.existsSync(USERS_FILE)) {
+    const normalized = initialEmail ? initialEmail.toLowerCase().trim() : '';
     const config: UsersConfig = {
-      allowedEmails: initialEmail ? [initialEmail.toLowerCase().trim()] : [],
+      allowedEmails: normalized ? [normalized] : [],
+      adminEmails: normalized ? [normalized] : [],
       sessions: {},
     };
     saveUsersConfig(config);

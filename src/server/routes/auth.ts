@@ -20,6 +20,7 @@ import {
 } from '../middleware/auth';
 import {
   isEmailAllowed,
+  isAdmin,
   recordLogin,
   getAllowedEmails,
   getUsersFilePath,
@@ -170,6 +171,7 @@ authRoutes.get('/auth/me', (req: Request, res: Response) => {
       email: user.email,
       name: user.name,
       picture: user.picture,
+      isAdmin: isAdmin(user.email),
     });
     return;
   }
@@ -185,6 +187,7 @@ authRoutes.get('/auth/me', (req: Request, res: Response) => {
         method: 'bearer_token',
         email: null,
         name: 'API User',
+        isAdmin: true, // Bearer token = server operator = admin
       });
       return;
     }

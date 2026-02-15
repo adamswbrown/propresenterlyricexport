@@ -51,14 +51,23 @@ function jsonHeaders(): Record<string, string> {
   return { 'Content-Type': 'application/json' };
 }
 
+/**
+ * Handle auth failures — in web mode, reload the page so AuthGate
+ * re-checks and shows the login screen.
+ */
+function handleAuthFailure(): never {
+  if (typeof window !== 'undefined' && !(window as any).__ELECTRON_API__) {
+    window.location.reload();
+  }
+  throw new Error('Authentication failed');
+}
+
 async function get<T = any>(path: string): Promise<T> {
   const res = await fetch(path, {
     headers: jsonHeaders(),
     credentials: 'include', // Send session cookies
   });
-  if (res.status === 401 || res.status === 403) {
-    throw new Error('Authentication failed');
-  }
+  if (res.status === 401 || res.status === 403) handleAuthFailure();
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
   return res.json();
 }
@@ -70,9 +79,7 @@ async function post<T = any>(path: string, body?: any): Promise<T> {
     credentials: 'include',
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
-  if (res.status === 401 || res.status === 403) {
-    throw new Error('Authentication failed');
-  }
+  if (res.status === 401 || res.status === 403) handleAuthFailure();
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
   return res.json();
 }
@@ -84,9 +91,7 @@ async function put<T = any>(path: string, body?: any): Promise<T> {
     credentials: 'include',
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
-  if (res.status === 401 || res.status === 403) {
-    throw new Error('Authentication failed');
-  }
+  if (res.status === 401 || res.status === 403) handleAuthFailure();
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
   return res.json();
 }
@@ -97,9 +102,7 @@ async function del<T = any>(path: string): Promise<T> {
     headers: jsonHeaders(),
     credentials: 'include',
   });
-  if (res.status === 401 || res.status === 403) {
-    throw new Error('Authentication failed');
-  }
+  if (res.status === 401 || res.status === 403) handleAuthFailure();
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
   return res.json();
 }
@@ -402,3 +405,41 @@ export const api: any = new Proxy({} as any, {
  * Whether we're running in a web browser (not Electron).
  */
 export const isWebMode = (): boolean => !isElectron();
+
+// ── User management (web-only) ───────────────────────────────────────
+
+export type UserInfo = {
+  email: string;
+  name?: string;
+  picture?: string;
+  lastLogin?: string;
+  isAdmin: boolean;
+};
+
+async function patch<T = any>(path: string, body?: any): Promise<T> {
+  const res = await fetch(path, {
+    method: 'PATCH',
+    headers: jsonHeaders(),
+    credentials: 'include',
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  if (res.status === 401 || res.status === 403) handleAuthFailure();
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+  return res.json();
+}
+
+export async function listUsers(): Promise<{ users: UserInfo[]; total: number; isAdmin: boolean }> {
+  return get('/api/users');
+}
+
+export async function addUser(email: string): Promise<{ success: boolean; message: string; users: UserInfo[]; total: number }> {
+  return post('/api/users', { email });
+}
+
+export async function removeUser(email: string): Promise<{ success: boolean; users: UserInfo[]; total: number }> {
+  return del(`/api/users/${encodeURIComponent(email)}`);
+}
+
+export async function toggleAdmin(email: string, admin: boolean): Promise<{ success: boolean; users: UserInfo[]; total: number }> {
+  return patch(`/api/users/${encodeURIComponent(email)}/admin`, { admin });
+}
