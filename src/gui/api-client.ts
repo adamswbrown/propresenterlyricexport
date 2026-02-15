@@ -7,6 +7,10 @@
  * Components import `api` from this module instead of touching window.api
  * directly. The detection is automatic: if window.api exists we're in
  * Electron, otherwise we're in a browser talking to the web proxy.
+ *
+ * Auth: In web mode, Google OAuth sessions handle auth via cookies.
+ * The bearer token is only used as a fallback (SSE EventSource
+ * can't send cookies, so it uses ?token= query param).
  */
 
 // ── Helpers ────────────────────────────────────────────────────────────
@@ -14,42 +18,45 @@
 const isElectron = (): boolean =>
   typeof window !== 'undefined' && window.api !== undefined;
 
-/** Auth token stored after login */
-let authToken: string | null = null;
+/**
+ * Bearer token — only needed for SSE EventSource connections
+ * (which can't send session cookies). For normal fetch() calls
+ * the session cookie handles auth automatically.
+ */
+let bearerToken: string | null = null;
 
-export function setAuthToken(token: string): void {
-  authToken = token;
+export function setBearerToken(token: string): void {
+  bearerToken = token;
   if (typeof localStorage !== 'undefined') {
-    localStorage.setItem('pp-web-token', token);
+    localStorage.setItem('pp-bearer-token', token);
   }
 }
 
-export function getAuthToken(): string | null {
-  if (authToken) return authToken;
+export function getBearerToken(): string | null {
+  if (bearerToken) return bearerToken;
   if (typeof localStorage !== 'undefined') {
-    authToken = localStorage.getItem('pp-web-token');
+    bearerToken = localStorage.getItem('pp-bearer-token');
   }
-  return authToken;
+  return bearerToken;
 }
 
-export function clearAuthToken(): void {
-  authToken = null;
+export function clearBearerToken(): void {
+  bearerToken = null;
   if (typeof localStorage !== 'undefined') {
-    localStorage.removeItem('pp-web-token');
+    localStorage.removeItem('pp-bearer-token');
   }
 }
 
-function headers(extra?: Record<string, string>): Record<string, string> {
-  const h: Record<string, string> = { 'Content-Type': 'application/json', ...extra };
-  const token = getAuthToken();
-  if (token) h['Authorization'] = `Bearer ${token}`;
-  return h;
+function jsonHeaders(): Record<string, string> {
+  return { 'Content-Type': 'application/json' };
 }
 
 async function get<T = any>(path: string): Promise<T> {
-  const res = await fetch(path, { headers: headers() });
+  const res = await fetch(path, {
+    headers: jsonHeaders(),
+    credentials: 'include', // Send session cookies
+  });
   if (res.status === 401 || res.status === 403) {
-    clearAuthToken();
     throw new Error('Authentication failed');
   }
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
@@ -59,11 +66,11 @@ async function get<T = any>(path: string): Promise<T> {
 async function post<T = any>(path: string, body?: any): Promise<T> {
   const res = await fetch(path, {
     method: 'POST',
-    headers: headers(),
+    headers: jsonHeaders(),
+    credentials: 'include',
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   if (res.status === 401 || res.status === 403) {
-    clearAuthToken();
     throw new Error('Authentication failed');
   }
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
@@ -73,11 +80,11 @@ async function post<T = any>(path: string, body?: any): Promise<T> {
 async function put<T = any>(path: string, body?: any): Promise<T> {
   const res = await fetch(path, {
     method: 'PUT',
-    headers: headers(),
+    headers: jsonHeaders(),
+    credentials: 'include',
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   if (res.status === 401 || res.status === 403) {
-    clearAuthToken();
     throw new Error('Authentication failed');
   }
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
@@ -85,13 +92,59 @@ async function put<T = any>(path: string, body?: any): Promise<T> {
 }
 
 async function del<T = any>(path: string): Promise<T> {
-  const res = await fetch(path, { method: 'DELETE', headers: headers() });
+  const res = await fetch(path, {
+    method: 'DELETE',
+    headers: jsonHeaders(),
+    credentials: 'include',
+  });
   if (res.status === 401 || res.status === 403) {
-    clearAuthToken();
     throw new Error('Authentication failed');
   }
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
   return res.json();
+}
+
+// ── Auth helpers ───────────────────────────────────────────────────────
+
+/**
+ * Check current auth status.
+ */
+export async function checkAuth(): Promise<{
+  authenticated: boolean;
+  method?: string;
+  email?: string;
+  name?: string;
+  picture?: string;
+  loginUrl?: string;
+}> {
+  const res = await fetch('/auth/me', { credentials: 'include' });
+  return res.json();
+}
+
+/**
+ * Check auth configuration (is Google OAuth available?).
+ */
+export async function getAuthStatus(): Promise<{
+  googleOAuth: boolean;
+  bearerTokenAvailable: boolean;
+  allowedUserCount: number;
+}> {
+  const res = await fetch('/auth/status');
+  return res.json();
+}
+
+/**
+ * Log out (destroy session).
+ */
+export async function logout(): Promise<void> {
+  await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
+}
+
+/**
+ * Redirect to Google OAuth login.
+ */
+export function redirectToLogin(): void {
+  window.location.href = '/auth/google';
 }
 
 // ── Web implementations ────────────────────────────────────────────────
@@ -117,19 +170,19 @@ const webApi = {
       logoPath: payload.logoPath,
     });
 
-    // The web version returns a jobId. The caller uses onExportProgress
-    // to subscribe to SSE events and eventually gets a download URL.
     return { canceled: false, jobId };
   },
 
   /**
    * Subscribe to export progress via SSE.
+   * Uses bearer token in query param since EventSource can't send cookies.
    * Returns an unsubscribe function.
    */
   onExportProgress: (callback: (event: any) => void, jobId?: string) => {
     if (!jobId) return () => {};
 
-    const token = getAuthToken();
+    // EventSource can't send cookies, so use bearer token as query param
+    const token = getBearerToken();
     const url = `/api/export/${jobId}/progress${token ? `?token=${encodeURIComponent(token)}` : ''}`;
     const source = new EventSource(url);
 
@@ -139,10 +192,8 @@ const webApi = {
 
         // When export completes, trigger browser download
         if (data.type === 'done' && data.downloadUrl) {
-          const downloadToken = getAuthToken();
-          const downloadUrl = `${data.downloadUrl}${downloadToken ? `?token=${encodeURIComponent(downloadToken)}` : ''}`;
           const a = document.createElement('a');
-          a.href = downloadUrl;
+          a.href = data.downloadUrl;
           a.style.display = 'none';
           document.body.appendChild(a);
           a.click();
@@ -170,8 +221,6 @@ const webApi = {
       input.accept = 'image/png,image/jpeg';
       input.onchange = () => {
         if (input.files && input.files[0]) {
-          // In web mode we can't get a filesystem path.
-          // Return the file name for display; actual upload would happen separately.
           resolve({ canceled: false, filePath: input.files[0].name });
         } else {
           resolve({ canceled: true });
@@ -218,7 +267,6 @@ const webApi = {
       input.accept = '.pdf,application/pdf';
       input.onchange = () => {
         if (input.files && input.files[0]) {
-          // Store the File object so parsePDF can access it
           (webApi as any)._pendingPDFFile = input.files[0];
           resolve({ canceled: false, filePath: input.files[0].name });
         } else {
@@ -239,13 +287,9 @@ const webApi = {
     const formData = new FormData();
     formData.append('file', file);
 
-    const token = getAuthToken();
-    const fetchHeaders: Record<string, string> = {};
-    if (token) fetchHeaders['Authorization'] = `Bearer ${token}`;
-
     const res = await fetch('/api/service/parse-pdf', {
       method: 'POST',
-      headers: fetchHeaders,
+      credentials: 'include', // Session cookie handles auth
       body: formData,
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
