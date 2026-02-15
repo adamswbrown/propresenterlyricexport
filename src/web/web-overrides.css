@@ -1,0 +1,187 @@
+/**
+ * Web-specific CSS overrides.
+ * Hides Electron-only UI (titlebar drag region) and adds
+ * styles for the auth/login layer.
+ */
+
+/* Hide Electron titlebar drag region in web mode */
+.titlebar-drag {
+  display: none;
+}
+
+/* Reduce top padding since there's no titlebar */
+.app-shell {
+  padding-top: 32px;
+}
+
+.service-generator-container {
+  padding-top: 32px;
+}
+
+/* ── User menu (top-right) ─────────────────────────────────── */
+.web-user-menu {
+  position: fixed;
+  top: 12px;
+  right: 24px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.web-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--panel-border);
+}
+
+.web-user-name {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.web-logout-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.web-logout-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+
+/* ── Login page ────────────────────────────────────────────── */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-card {
+  width: min(420px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 20px;
+  padding: 40px 32px;
+  text-align: center;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 10px 60px rgba(0, 0, 0, 0.35);
+}
+
+.login-card h1 {
+  font-size: 28px;
+  margin: 0 0 8px;
+}
+
+.login-card .eyebrow {
+  margin: 0 0 32px;
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--panel-border);
+}
+
+.login-google-btn {
+  width: 100%;
+  padding: 14px 24px;
+  border-radius: 12px;
+  border: 1px solid rgba(47, 212, 194, 0.3);
+  background: rgba(47, 212, 194, 0.12);
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.login-google-btn:hover {
+  background: rgba(47, 212, 194, 0.2);
+}
+
+.login-token-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.login-token-form label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.login-token-form input {
+  width: 100%;
+}
+
+.login-token-submit {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.login-token-submit:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.login-error {
+  color: var(--danger);
+  font-size: 13px;
+  margin: 12px 0 0;
+}
+
+.login-hint {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+
+/* ── Loading spinner ───────────────────────────────────────── */
+.loading-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--panel-border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

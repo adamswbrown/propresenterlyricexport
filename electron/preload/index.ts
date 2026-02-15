@@ -135,6 +135,7 @@ const api = {
 };
 
 contextBridge.exposeInMainWorld('api', api);
+contextBridge.exposeInMainWorld('__ELECTRON_API__', true);
 
 export type ElectronAPI = typeof api;
 
