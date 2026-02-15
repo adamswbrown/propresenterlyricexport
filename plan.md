@@ -421,7 +421,7 @@ everything needed so that `cloudflared → Express` works end-to-end.
 
 These are non-blocking polish items. The core implementation is complete.
 
-- [ ] **Logo upload endpoint** — web `chooseLogo()` captures a filename via file input, but the server needs the actual file to embed in PPTX. Would need a multer upload endpoint (similar to PDF upload) + server-side storage.
+- [x] **Logo upload endpoint** — `POST /api/logo/upload` (multer) stores to `~/.propresenter-words/uploads/logo.<ext>`, web `chooseLogo()` uploads the file and returns the server path, PPTX exporter re-enabled with `process.pkg` guard (logos work in Electron + web, safely skipped in CLI executables).
 - [ ] **`verses:fetch` implementation** — currently a stub returning empty text. Bible verses are managed as ProPresenter presentations, so this is acceptable. Could integrate a Bible API if desired.
 - [x] **Setup documentation** — comprehensive guide at `docs/guides/web-proxy-setup.md` covering Google OAuth, Cloudflare Tunnel install/create/run, environment config, user management, systemd/launchd service setup, and troubleshooting.
 - [x] **Electron build verification** — confirmed `electron-vite build` produces correct bundles; preload exposes `__ELECTRON_API__`, web build detects it correctly.
