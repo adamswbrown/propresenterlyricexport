@@ -21,6 +21,8 @@
     "web:build": "tsc && vite build --config vite.config.web.ts",
     "web:build:ui": "vite build --config vite.config.web.ts",
     "web:start": "node dist/server/index.js",
+    "web:tunnel": "cloudflared tunnel run --url http://localhost:3100",
+    "web:start:tunnel": "node dist/server/index.js & cloudflared tunnel run --url http://localhost:3100; kill %1 2>/dev/null",
     "release:bundle": "npm run build:exe && npm run build:macos && npm run build:macos:dmg && npm run electron:package"
   },
   "keywords": [

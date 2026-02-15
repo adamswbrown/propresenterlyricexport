@@ -289,7 +289,8 @@ before React mounts. `window.__ELECTRON_API__` distinguishes real Electron from 
 src/server/
 ├── index.ts                       # Express app, middleware, route mounting
 ├── middleware/
-│   └── auth.ts                    # Dual auth (OAuth + bearer), rate limiter
+│   ├── auth.ts                    # Dual auth (OAuth + bearer), rate limiter
+│   └── cloudflare.ts              # CF-Connecting-IP extraction, tunnel validation
 ├── routes/
 │   ├── auth.ts                    # /auth/* (OAuth flow, /me, logout)
 │   ├── connection.ts              # /api/status, playlists, libraries
@@ -374,6 +375,45 @@ npm run web:start
 # Start tunnel (separate terminal)
 cloudflared tunnel run --url http://localhost:3100 propresenter
 ```
+
+---
+
+### Phase 5 — Cloudflare Tunnel Integration
+
+The Express server and web UI exist but lacked the middleware and
+plumbing to work reliably behind a Cloudflare Tunnel. This phase adds
+everything needed so that `cloudflared → Express` works end-to-end.
+
+**Cloudflare-aware middleware** (`src/server/middleware/cloudflare.ts`):
+- Extracts real client IP from `CF-Connecting-IP` header (falls back to `req.ip`)
+- Attaches `req.realIp`, `req.cfRay`, `req.cfCountry` to every request
+- Logs requests with real IP + country when behind Cloudflare
+- Validates `TUNNEL_URL` configuration at startup (scheme, no trailing slash)
+
+**Rate limiter fix** (`src/server/middleware/auth.ts`):
+- `keyGenerator` now uses `CF-Connecting-IP` when present, so rate limiting
+  works correctly behind Cloudflare (instead of seeing all traffic as one IP)
+
+**SSE keepalive** (`src/server/routes/export.ts`):
+- Sends `:keepalive` comment every 30 seconds on SSE connections
+- Prevents Cloudflare's 100-second idle timeout from dropping long exports
+- Comment format (`:keepalive\n\n`) is invisible to EventSource clients
+
+**Tunnel health check** (`src/server/routes/connection.ts`):
+- `GET /health` now returns `tunnel.configured`, `tunnel.url`, and
+  `tunnel.reachable` fields
+- When `TUNNEL_URL` is set, pings `${TUNNEL_URL}/health` to verify
+  end-to-end tunnel connectivity
+- Useful for monitoring dashboards and debugging
+
+**CLI tunnel commands** (`src/cli.ts`):
+- `npm start -- tunnel config` — generates `~/.cloudflared/config.yml`
+  from interactive prompts (tunnel UUID, hostname)
+- `npm start -- tunnel status` — checks if the tunnel is reachable
+
+**npm scripts** (`package.json`):
+- `web:tunnel` — starts cloudflared tunnel pointing at `:3100`
+- `web:start:tunnel` — starts Express server + cloudflared in parallel
 
 ---
 

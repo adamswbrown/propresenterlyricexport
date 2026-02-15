@@ -152,7 +152,7 @@ exportRoutes.get('/export/:id/progress', (req: Request, res: Response) => {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
     'Connection': 'keep-alive',
-    'X-Accel-Buffering': 'no', // Disable nginx buffering
+    'X-Accel-Buffering': 'no', // Disable nginx/Cloudflare buffering
   });
 
   // Send any events that already happened (replay)
@@ -172,10 +172,22 @@ exportRoutes.get('/export/:id/progress', (req: Request, res: Response) => {
     return;
   }
 
+  // Keepalive: send a comment every 30s to prevent Cloudflare's
+  // 100-second idle timeout from dropping the connection.
+  // SSE comments (lines starting with ':') are ignored by EventSource.
+  const keepalive = setInterval(() => {
+    try {
+      res.write(':keepalive\n\n');
+    } catch {
+      clearInterval(keepalive);
+    }
+  }, 30_000);
+
   // Register as listener for future events
   job.listeners.add(res);
 
   req.on('close', () => {
+    clearInterval(keepalive);
     job.listeners.delete(res);
   });
 });
