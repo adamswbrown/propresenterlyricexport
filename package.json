@@ -16,6 +16,9 @@
     "electron:dev": "electron-vite dev",
     "electron:build": "electron-vite build",
     "electron:package": "npm run electron:build && electron-builder",
+    "web:dev": "ts-node src/server/index.ts",
+    "web:build": "tsc",
+    "web:start": "node dist/server/index.js",
     "release:bundle": "npm run build:exe && npm run build:macos && npm run build:macos:dmg && npm run electron:package"
   },
   "keywords": [
@@ -27,8 +30,13 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "cors": "^2.8.6",
     "electron-store": "^8.2.0",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
     "fuse.js": "^7.1.0",
+    "helmet": "^8.1.0",
+    "multer": "^2.0.2",
     "pdf-parse": "^2.4.5",
     "pptxgenjs": "^3.10.0",
     "react": "^18.3.1",
@@ -37,6 +45,9 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.0.0",
     "@types/node": "^25.2.0",
     "@types/pdf-parse": "^1.1.5",
     "@types/react": "^18.3.5",
