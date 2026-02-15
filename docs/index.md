@@ -30,7 +30,7 @@ Watch how easy it is to export lyrics from ProPresenter to PowerPoint:
 ## Navigation
 
 - **User Docs**: [Getting Started](./getting-started) | [User Guide](./user-guide) | [FAQ](./faq)
-- **Guides**: [PPTX Export](./guides/pptx-export) | [CLI Commands](./guides/cli-guide) | [Service Generator](./guides/service-generator) | [After Export](./guides/after-export)
+- **Guides**: [PPTX Export](./guides/pptx-export) | [CLI Commands](./guides/cli-guide) | [Service Generator](./guides/service-generator) | [After Export](./guides/after-export) | [Web Proxy Setup](./guides/web-proxy-setup)
 - **Developer**: [Setup](./developer/setup) | [Architecture](./developer/architecture) | [Building](./developer/building)
 
 ---
@@ -53,6 +53,7 @@ Watch how easy it is to export lyrics from ProPresenter to PowerPoint:
 - **[PPTX Export Guide](./guides/pptx-export)** - Customize fonts, colors, and styling
 - **[Service Generator Guide](./guides/service-generator)** - Advanced: Automate service playlists from PDFs
 - **[After Export Guide](./guides/after-export)** - Add remaining artifacts (sermons, kids content, birthdays)
+- **[Web Proxy Setup](./guides/web-proxy-setup)** - Remote access via Cloudflare Tunnel + Google OAuth
 - **[FAQ](./faq)** - Common questions and troubleshooting
 - **[Developer Guide](./developer)** - Setup, building, and contributing
 
@@ -89,3 +90,4 @@ Download standalone binaries for macOS or Windows from [Releases](https://github
 | [Getting Started](./getting-started) | [CLI Reference](./guides/cli-guide) | [Setup Guide](./developer/setup) |
 | [User Guide](./user-guide) | [PPTX Customization](./guides/pptx-export) | [Architecture](./developer/architecture) |
 | [FAQ](./faq) | [Service Generator](./guides/service-generator) | [Building & Release](./developer/building) |
+| | [Web Proxy Setup](./guides/web-proxy-setup) | |
