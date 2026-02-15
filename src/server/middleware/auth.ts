@@ -1,10 +1,14 @@
 /**
  * Authentication middleware for the web proxy.
  *
- * MVP: Shared bearer token stored at ~/.propresenter-words/web-auth.json
- * The token is auto-generated on first run and printed to the console.
+ * Supports two auth methods:
+ *   1. Google OAuth session (primary — browser users)
+ *   2. Bearer token fallback (for SSE EventSource which can't send cookies,
+ *      and for programmatic/API access)
  *
- * Future: Swap in OAuth / OpenID Connect via Passport.js.
+ * The bearer token is auto-generated on first run and stored at
+ * ~/.propresenter-words/web-auth.json. It's printed to the console
+ * on startup for the admin.
  */
 
 import { Request, Response, NextFunction } from 'express';
@@ -19,7 +23,10 @@ const AUTH_FILE = path.join(CONFIG_DIR, 'web-auth.json');
 
 interface AuthConfig {
   token: string;
+  sessionSecret: string;
   createdAt: string;
+  googleClientId?: string;
+  googleClientSecret?: string;
 }
 
 function ensureConfigDir(): void {
@@ -41,44 +48,75 @@ function loadAuthConfig(): AuthConfig | null {
 function saveAuthConfig(config: AuthConfig): void {
   ensureConfigDir();
   fs.writeFileSync(AUTH_FILE, JSON.stringify(config, null, 2), 'utf-8');
-  // Restrict permissions to owner only
   try {
     fs.chmodSync(AUTH_FILE, 0o600);
-  } catch {
-    // Windows doesn't support chmod — acceptable
-  }
+  } catch { /* Windows */ }
 }
 
 /**
- * Ensure an auth token exists. Creates one if missing.
- * Returns the current token.
+ * Ensure auth config exists with token + session secret.
+ * Returns the config.
  */
-export function ensureAuthToken(): string {
+export function ensureAuthConfig(): AuthConfig {
   let config = loadAuthConfig();
   if (!config || !config.token) {
     config = {
       token: crypto.randomUUID(),
+      sessionSecret: crypto.randomBytes(32).toString('hex'),
       createdAt: new Date().toISOString(),
+      googleClientId: process.env.GOOGLE_CLIENT_ID,
+      googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
     };
     saveAuthConfig(config);
   }
-  return config.token;
+  // Ensure sessionSecret exists (migration from older config)
+  if (!config.sessionSecret) {
+    config.sessionSecret = crypto.randomBytes(32).toString('hex');
+    saveAuthConfig(config);
+  }
+  // Allow env vars to override stored Google credentials
+  if (process.env.GOOGLE_CLIENT_ID) {
+    config.googleClientId = process.env.GOOGLE_CLIENT_ID;
+  }
+  if (process.env.GOOGLE_CLIENT_SECRET) {
+    config.googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  }
+  return config;
 }
 
 /**
- * Regenerate the auth token (for rotation).
+ * Get session secret for express-session.
  */
-export function regenerateAuthToken(): string {
-  const config: AuthConfig = {
-    token: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
-  };
-  saveAuthConfig(config);
-  return config.token;
+export function getSessionSecret(): string {
+  return ensureAuthConfig().sessionSecret;
 }
 
 /**
- * Rate limiter for auth attempts — 20 attempts per 15 minutes
+ * Get bearer token (for display / API access).
+ */
+export function getBearerToken(): string {
+  return ensureAuthConfig().token;
+}
+
+/**
+ * Check if Google OAuth is configured.
+ */
+export function isGoogleOAuthConfigured(): boolean {
+  const config = ensureAuthConfig();
+  return !!(config.googleClientId && config.googleClientSecret);
+}
+
+/**
+ * Get Google OAuth credentials.
+ */
+export function getGoogleCredentials(): { clientId: string; clientSecret: string } | null {
+  const config = ensureAuthConfig();
+  if (!config.googleClientId || !config.googleClientSecret) return null;
+  return { clientId: config.googleClientId, clientSecret: config.googleClientSecret };
+}
+
+/**
+ * Rate limiter for auth endpoints — 20 attempts per 15 minutes.
  */
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -89,20 +127,27 @@ export const authRateLimiter = rateLimit({
 });
 
 /**
- * Express middleware that validates the Bearer token.
+ * Express middleware that checks authentication.
  *
- * Token can be provided via:
- *   - Authorization: Bearer <token>
- *   - ?token=<token> query parameter (convenience for SSE EventSource)
+ * Allows access if ANY of these are true:
+ *   1. req.isAuthenticated() — valid Google OAuth session
+ *   2. Valid Bearer token in Authorization header
+ *   3. Valid token in ?token= query param (for SSE EventSource)
  */
 export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
+  // Check 1: Google OAuth session
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    next();
+    return;
+  }
+
+  // Check 2+3: Bearer token
   const config = loadAuthConfig();
   if (!config || !config.token) {
     res.status(500).json({ error: 'Server auth not configured. Restart the server.' });
     return;
   }
 
-  // Extract token from header or query
   let token: string | undefined;
 
   const authHeader = req.headers.authorization;
@@ -115,11 +160,14 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
   }
 
   if (!token) {
-    res.status(401).json({ error: 'Authentication required. Provide Authorization: Bearer <token>' });
+    res.status(401).json({
+      error: 'Authentication required',
+      loginUrl: '/auth/google',
+    });
     return;
   }
 
-  // Constant-time comparison to prevent timing attacks
+  // Constant-time comparison
   const expected = Buffer.from(config.token, 'utf-8');
   const provided = Buffer.from(token, 'utf-8');
 
