@@ -70,16 +70,19 @@ export async function exportToPowerPoint(
   pptx.subject = 'Worship Song Lyrics';
   pptx.layout = 'LAYOUT_WIDE';
 
-  // Check if logo exists (skip in bundled environments due to pkg limitations)
+  // Logo embedding: pptxgenjs addImage crashes inside pkg-bundled executables
+  // due to dynamic fs imports. Detect pkg via process.pkg and skip in that case.
+  // Electron and web server (plain Node.js) can embed logos safely.
+  const isPkgBundled = !!(process as any).pkg;
   let logoBase64: string | null = null;
   try {
-    if (options.logoPath && fs.existsSync(options.logoPath)) {
+    if (!isPkgBundled && options.logoPath && fs.existsSync(options.logoPath)) {
       const logoBuffer = fs.readFileSync(options.logoPath);
       logoBase64 = logoBuffer.toString('base64');
     }
   } catch (error) {
-    // Logo loading failed - skip it (may happen in bundled environments)
-    console.log('  (logo skipped due to bundling limitations)');
+    // Logo loading failed - skip it
+    console.log('  (logo skipped — file not readable)');
     logoBase64 = null;
   }
 
@@ -103,16 +106,15 @@ export async function exportToPowerPoint(
         valign: 'middle',
       });
 
-      // Skip image encoding to avoid bundling issues with pkg
-      // if (logoBase64) {
-      //   titleSlide.addImage({
-      //     data: `image/png;base64,${logoBase64}`,
-      //     x: LAYOUT.logoX,
-      //     y: LAYOUT.logoY,
-      //     w: LAYOUT.logoW,
-      //     h: LAYOUT.logoH,
-      //   });
-      // }
+      if (logoBase64) {
+        titleSlide.addImage({
+          data: `image/png;base64,${logoBase64}`,
+          x: LAYOUT.logoX,
+          y: LAYOUT.logoY,
+          w: LAYOUT.logoW,
+          h: LAYOUT.logoH,
+        });
+      }
     }
 
     // Add each slide from the song
@@ -141,16 +143,15 @@ export async function exportToPowerPoint(
           valign: 'middle',
         });
 
-        // Skip image encoding to avoid bundling issues with pkg
-        // if (logoBase64) {
-        //   slide.addImage({
-        //     data: `image/png;base64,${logoBase64}`,
-        //     x: LAYOUT.logoX,
-        //     y: LAYOUT.logoY,
-        //     w: LAYOUT.logoW,
-        //     h: LAYOUT.logoH,
-        //   });
-        // }
+        if (logoBase64) {
+          slide.addImage({
+            data: `image/png;base64,${logoBase64}`,
+            x: LAYOUT.logoX,
+            y: LAYOUT.logoY,
+            w: LAYOUT.logoW,
+            h: LAYOUT.logoH,
+          });
+        }
 
         // Add section name as notes (useful for presenter)
         if (section.name) {

@@ -265,15 +265,28 @@ const webApi = {
     };
   },
 
-  // Logo — web uses file input, not native dialog
+  // Logo — file input + upload to server
   chooseLogo: async () => {
     return new Promise<{ canceled: boolean; filePath?: string }>((resolve) => {
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = 'image/png,image/jpeg';
-      input.onchange = () => {
+      input.onchange = async () => {
         if (input.files && input.files[0]) {
-          resolve({ canceled: false, filePath: input.files[0].name });
+          try {
+            const formData = new FormData();
+            formData.append('file', input.files[0]);
+            const res = await fetch('/api/logo/upload', {
+              method: 'POST',
+              credentials: 'include',
+              body: formData,
+            });
+            if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+            const data = await res.json();
+            resolve({ canceled: false, filePath: data.filePath });
+          } catch {
+            resolve({ canceled: false, filePath: input.files[0].name });
+          }
         } else {
           resolve({ canceled: true });
         }

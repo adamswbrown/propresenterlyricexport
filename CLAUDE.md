@@ -182,9 +182,9 @@ git push origin vX.Y.Z
 
 ### ⚠️ pptxgenjs Bundling Issue
 - **Problem**: Versions 3.11.0+ crash when bundled with `pkg` due to dynamic `fs` imports
-- **Solution**: LOCKED at 3.10.0, image encoding DISABLED in PPTX export
-- **Impact**: PPTX files generate without logo images (acceptable trade-off for bundling)
-- **Fix Applied**: Image encoding commented out in `src/pptx-exporter.ts` lines 91-99, 129-137
+- **Solution**: LOCKED at 3.10.0, logo embedding guarded by `process.pkg` detection
+- **Impact**: CLI executables (pkg) skip logo embedding; Electron and web server embed logos normally
+- **Fix Applied**: `src/pptx-exporter.ts` checks `(process as any).pkg` — when truthy (pkg runtime), `addImage` is skipped
 - **DO NOT**: Upgrade pptxgenjs without resolving this first
 
 ### ✅ Recent Updates (Feb 14, 2026)
