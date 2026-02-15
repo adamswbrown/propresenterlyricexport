@@ -6,6 +6,7 @@ yarn.lock
 dist/
 dist-electron/
 dist-gui/
+dist-web/
 build/
 executables/
 release/
