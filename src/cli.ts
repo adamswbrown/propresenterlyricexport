@@ -12,6 +12,17 @@ import { collectPlaylistLyrics, PlaylistProgressEvent } from './services/playlis
 import { findLogoPath } from './services/logo';
 import { flattenPlaylists, formatPlaylistName } from './utils/playlist-utils';
 import { loadAliases, setAlias, removeAlias, getAliasFilePath } from './services/alias-store';
+import {
+  getAllUsers,
+  getAllowedEmails,
+  getAdminEmails,
+  addAllowedEmail,
+  removeAllowedEmail,
+  isAdmin,
+  setAdmin,
+  ensureUsersFile,
+  getUsersFilePath,
+} from './server/services/user-store';
 import * as readline from 'readline';
 
 // Default connection settings
@@ -94,6 +105,11 @@ COMMANDS:
   alias list          Show all saved song aliases
   alias add <title>   Map a song title to a ProPresenter library song
   alias remove <title> Remove a song alias
+  users               Manage web proxy user allowlist
+  users list          Show all allowed users and admins
+  users add <email>   Add an email to the allowlist
+  users remove <email> Remove an email from the allowlist
+  users admin <email> Toggle admin status for a user
 
 OPTIONS:
   --host, -h <addr>   ProPresenter host (default: 127.0.0.1)
@@ -689,6 +705,111 @@ function removeAliasCommand(songTitle: string): void {
   }
 }
 
+/**
+ * List all allowed users with admin status
+ */
+function listWebUsers(format: string): void {
+  ensureUsersFile();
+  const users = getAllUsers();
+
+  if (format === 'json') {
+    console.log(JSON.stringify({ users, total: users.length, admins: getAdminEmails() }, null, 2));
+    return;
+  }
+
+  console.log('\nWeb Proxy Users');
+  console.log('===============');
+  console.log(`  Config: ${getUsersFilePath()}\n`);
+
+  if (users.length === 0) {
+    console.log('  No users in allowlist.');
+    console.log('  Add one with: npm start -- users add alice@gmail.com');
+    return;
+  }
+
+  for (const user of users) {
+    const adminTag = user.isAdmin ? ' [ADMIN]' : '';
+    const nameTag = user.name ? ` (${user.name})` : '';
+    const loginTag = user.lastLogin ? ` — last login: ${new Date(user.lastLogin).toLocaleDateString()}` : '';
+    console.log(`  ${user.email}${nameTag}${adminTag}${loginTag}`);
+  }
+
+  console.log(`\n  ${users.length} user(s), ${getAdminEmails().length} admin(s)`);
+}
+
+/**
+ * Add an email to the web proxy allowlist
+ */
+function addWebUser(email: string, makeAdmin: boolean): void {
+  ensureUsersFile();
+  const normalized = email.toLowerCase().trim();
+
+  if (!normalized.includes('@') || !normalized.includes('.')) {
+    console.error('Error: Invalid email address');
+    process.exit(1);
+  }
+
+  const existing = getAllowedEmails();
+  if (existing.some(e => e.toLowerCase().trim() === normalized)) {
+    console.log(`\n  "${normalized}" is already in the allowlist.`);
+  } else {
+    addAllowedEmail(normalized);
+    console.log(`\n  Added "${normalized}" to the allowlist.`);
+  }
+
+  if (makeAdmin && !isAdmin(normalized)) {
+    setAdmin(normalized, true);
+    console.log(`  Granted admin privileges.`);
+  }
+
+  console.log(`  Config: ${getUsersFilePath()}`);
+}
+
+/**
+ * Remove an email from the web proxy allowlist
+ */
+function removeWebUser(email: string): void {
+  ensureUsersFile();
+  const removed = removeAllowedEmail(email);
+
+  if (removed) {
+    console.log(`\n  Removed "${email}" from the allowlist.`);
+  } else {
+    console.log(`\n  "${email}" was not found in the allowlist.`);
+
+    const users = getAllowedEmails();
+    if (users.length > 0) {
+      console.log('\n  Current users:');
+      for (const u of users) {
+        console.log(`    - ${u}`);
+      }
+    }
+  }
+}
+
+/**
+ * Toggle admin status for a user
+ */
+function toggleWebAdmin(email: string): void {
+  ensureUsersFile();
+  const normalized = email.toLowerCase().trim();
+  const currentlyAdmin = isAdmin(normalized);
+  const newStatus = !currentlyAdmin;
+
+  const success = setAdmin(normalized, newStatus);
+  if (!success) {
+    console.error(`\n  "${normalized}" is not in the allowlist. Add them first:`);
+    console.log(`  npm start -- users add ${normalized}`);
+    process.exit(1);
+  }
+
+  if (newStatus) {
+    console.log(`\n  "${normalized}" is now an admin.`);
+  } else {
+    console.log(`\n  "${normalized}" is no longer an admin.`);
+  }
+}
+
 async function main(): Promise<void> {
   const options = parseArgs(process.argv);
 
@@ -737,6 +858,55 @@ async function main(): Promise<void> {
 
     console.error(`Unknown alias subcommand: "${subcommand}"`);
     console.log('Usage: npm start -- alias [list|add|remove]');
+    process.exit(1);
+  }
+
+  // Handle users commands — no ProPresenter connection needed
+  if (options.command === 'users') {
+    const subcommand = options.args[0] || 'list';
+
+    if (subcommand === 'list') {
+      listWebUsers(options.format);
+      process.exit(0);
+    }
+
+    if (subcommand === 'add') {
+      const email = options.args[1];
+      if (!email) {
+        console.error('Error: users add requires an email address');
+        console.log('Usage: npm start -- users add alice@gmail.com');
+        process.exit(1);
+      }
+      // Check for --admin flag
+      const makeAdmin = options.args.includes('--admin');
+      addWebUser(email, makeAdmin);
+      process.exit(0);
+    }
+
+    if (subcommand === 'remove') {
+      const email = options.args[1];
+      if (!email) {
+        console.error('Error: users remove requires an email address');
+        console.log('Usage: npm start -- users remove alice@gmail.com');
+        process.exit(1);
+      }
+      removeWebUser(email);
+      process.exit(0);
+    }
+
+    if (subcommand === 'admin') {
+      const email = options.args[1];
+      if (!email) {
+        console.error('Error: users admin requires an email address');
+        console.log('Usage: npm start -- users admin alice@gmail.com');
+        process.exit(1);
+      }
+      toggleWebAdmin(email);
+      process.exit(0);
+    }
+
+    console.error(`Unknown users subcommand: "${subcommand}"`);
+    console.log('Usage: npm start -- users [list|add|remove|admin]');
     process.exit(1);
   }
 
