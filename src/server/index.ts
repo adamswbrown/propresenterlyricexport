@@ -12,8 +12,10 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import session from 'express-session';
+import FileStoreFactory from 'session-file-store';
 import passport from 'passport';
 import path from 'path';
+import os from 'os';
 
 import {
   authMiddleware,
@@ -31,6 +33,7 @@ import { fontRoutes } from './routes/fonts';
 import { serviceGeneratorRoutes } from './routes/service-generator';
 import { userRoutes } from './routes/users';
 import { ensureUsersFile, getAllowedEmails, getUsersFilePath } from './services/user-store';
+import { log, pruneOldLogs } from './services/logger';
 
 const PORT = parseInt(process.env.WEB_PORT || '3100', 10);
 const HOST = process.env.WEB_HOST || '0.0.0.0';
@@ -71,8 +74,20 @@ app.use(cloudflareMiddleware);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Sessions (required for Passport OAuth)
+// Sessions — file-backed store so sessions survive server restarts.
+// Session files are stored in ~/.propresenter-words/sessions/ and
+// automatically pruned when they expire.
+const FileStore = FileStoreFactory(session);
+const SESSION_DIR = path.join(os.homedir(), '.propresenter-words', 'sessions');
+
 app.use(session({
+  store: new FileStore({
+    path: SESSION_DIR,
+    ttl: 6 * 60 * 60,           // 6 hours (seconds)
+    retries: 0,                   // Don't retry on read failure
+    reapInterval: 30 * 60,       // Clean expired sessions every 30 min
+    logFn: () => {},             // Silence session-file-store internal logs
+  }),
   secret: getSessionSecret(),
   resave: false,
   saveUninitialized: false,
@@ -127,6 +142,21 @@ app.get('/health', async (req, res) => {
   res.json(base);
 });
 
+// Request logging — log method, path, status, and duration for every request
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const ms = Date.now() - start;
+    const level = res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info';
+    log[level](`${req.method} ${req.path}`, {
+      status: res.statusCode,
+      ms,
+      ip: req.ip,
+    });
+  });
+  next();
+});
+
 // Auth routes (unauthenticated — login/callback/status)
 app.use(authRoutes);
 
@@ -160,6 +190,9 @@ export function startServer(): void {
   // Ensure config files exist
   ensureAuthConfig();
   ensureUsersFile();
+
+  // Prune old log files on startup
+  pruneOldLogs();
 
   // Determine the callback base URL for Google OAuth
   const tunnelUrl = process.env.TUNNEL_URL || `http://localhost:${PORT}`;
@@ -216,6 +249,9 @@ export function startServer(): void {
     console.log(`  Bearer token: ${token}`);
     console.log('  (fallback auth for API access / SSE)');
     console.log('');
+    console.log(`  Sessions:  ${SESSION_DIR}`);
+    console.log(`  Logs:      ${log.dir}`);
+    console.log('');
     if (!process.env.TUNNEL_URL) {
       console.log('  Expose via tunnel:');
       console.log(`    cloudflared tunnel run --url http://localhost:${PORT} <tunnel-name>`);
@@ -223,6 +259,8 @@ export function startServer(): void {
       console.log(`    tailscale serve --bg ${PORT}`);
       console.log('');
     }
+
+    log.info('Server started', { host: HOST, port: PORT, tunnel: process.env.TUNNEL_URL || null });
   });
 }
 
