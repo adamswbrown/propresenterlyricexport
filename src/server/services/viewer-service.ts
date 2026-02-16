@@ -7,7 +7,8 @@
 
 import { EventEmitter } from 'events';
 import http from 'http';
-import { getConnectionConfig } from './settings-store';
+
+export type ConnectionConfigProvider = () => { host: string; port: number };
 
 interface SlideStatus {
   presentationUuid: string | null;
@@ -16,13 +17,19 @@ interface SlideStatus {
   nextText: string;
 }
 
-class ViewerService extends EventEmitter {
+export class ViewerService extends EventEmitter {
+  private configProvider: ConnectionConfigProvider;
   private pollInterval: NodeJS.Timeout | null = null;
   private currentPresentationUuid: string | null = null;
   private currentSlideIndex: number = -1;
   private currentText: string = '';
   private connected: boolean = false;
   private version: string | null = null;
+
+  constructor(configProvider: ConnectionConfigProvider) {
+    super();
+    this.configProvider = configProvider;
+  }
 
   /** Start polling ProPresenter for slide changes. */
   start(): void {
@@ -61,7 +68,7 @@ class ViewerService extends EventEmitter {
   }
 
   private getBaseUrl(): string | null {
-    const { host, port } = getConnectionConfig();
+    const { host, port } = this.configProvider();
     if (!host) return null;
     return `http://${host}:${port}`;
   }
@@ -139,4 +146,3 @@ class ViewerService extends EventEmitter {
   }
 }
 
-export const viewerService = new ViewerService();

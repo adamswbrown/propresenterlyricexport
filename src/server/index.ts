@@ -34,8 +34,9 @@ import { serviceGeneratorRoutes } from './routes/service-generator';
 import { userRoutes } from './routes/users';
 import { ensureUsersFile, getAllowedEmails, getUsersFilePath } from './services/user-store';
 import { log, pruneOldLogs } from './services/logger';
-import { viewerRoutes } from './routes/viewer';
-import { viewerService } from './services/viewer-service';
+import { createViewerRoutes } from './routes/viewer';
+import { viewerService } from './services/viewer-instance';
+import { getConnectionConfig } from './services/settings-store';
 
 const PORT = parseInt(process.env.WEB_PORT || '3100', 10);
 const HOST = process.env.WEB_HOST || '0.0.0.0';
@@ -164,7 +165,7 @@ app.use((req, res, next) => {
 });
 
 // Viewer routes — public, no auth required
-app.use(viewerRoutes);
+app.use(createViewerRoutes(viewerService, getConnectionConfig));
 
 // Auth routes (unauthenticated — login/callback/status)
 app.use(authRoutes);

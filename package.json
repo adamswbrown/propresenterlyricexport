@@ -24,7 +24,13 @@
     "web:tunnel": "cloudflared tunnel run --url http://localhost:3100",
     "web:start:tunnel": "node dist/server/index.js & cloudflared tunnel run --url http://localhost:3100; kill %1 2>/dev/null",
     "build:web-exe": "npm run build && npm run web:build:ui && mkdir -p executables && pkg --config package.json dist/server/web-server.js --output executables/pp-web-server --targets node18-macos-arm64 --options max-old-space-size=4096",
-    "release:bundle": "npm run build:exe && npm run build:macos && npm run build:macos:dmg && npm run electron:package"
+    "release:bundle": "npm run build:exe && npm run build:macos && npm run build:macos:dmg && npm run electron:package",
+    "viewer:dev": "electron-vite dev --config viewer-app/electron-vite.config.ts",
+    "viewer:build": "electron-vite build --config viewer-app/electron-vite.config.ts",
+    "viewer:package": "npm run viewer:build && electron-builder --config viewer-app/electron-builder.config.js",
+    "proxy:dev": "electron-vite dev --config proxy-app/electron-vite.config.ts",
+    "proxy:build": "electron-vite build --config proxy-app/electron-vite.config.ts",
+    "proxy:package": "npm run build:web-exe && npm run proxy:build && electron-builder --config proxy-app/electron-builder.config.js"
   },
   "keywords": [
     "propresenter",
