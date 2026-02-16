@@ -119,6 +119,40 @@ $env:PROPRESENTER_HOST='192.168.1.100'
 $env:PROPRESENTER_PORT='1025'
 ```
 
+### 🌐 Web Proxy App (Remote Access)
+
+A menu bar app that lets remote users access ProPresenter Lyrics Export from any browser, anywhere in the world — secured with Google OAuth and Cloudflare Tunnel.
+
+**Download:**
+- Go to [GitHub Releases](https://github.com/adamswbrown/propresenterlyricexport/releases)
+- Download the **Web Proxy** for your platform:
+  - **macOS**: `ProPresenter-WebProxy-vX.Y.Z-mac.zip`
+
+**macOS Installation:**
+```bash
+# 1. Unzip
+unzip ProPresenter-WebProxy-vX.Y.Z-mac.zip
+
+# 2. Fix Gatekeeper (one-time)
+xattr -cr "ProPresenter Web Proxy.app"
+
+# 3. Move to Applications
+mv "ProPresenter Web Proxy.app" /Applications/
+
+# 4. Launch — appears in menu bar (no dock icon)
+open "/Applications/ProPresenter Web Proxy.app"
+```
+
+**First Run:**
+1. Click the broadcast icon in the menu bar → **Settings...**
+2. Enter your ProPresenter **host** (`127.0.0.1`) and **port** (`1025`)
+3. Optionally configure Google OAuth and Cloudflare Tunnel URL
+4. Click **Save**, then **Start Server**
+
+See the full [Web Proxy Guide](./guides/proxy-app) for Google OAuth setup, Cloudflare Tunnel configuration, and troubleshooting.
+
+---
+
 ### 📺 Live Viewer App (Congregation Devices)
 
 A separate companion app that streams live slides to phones, tablets, and laptops on your network.
@@ -164,6 +198,7 @@ See the full [Viewer Guide](./guides/viewer) for detailed setup and usage.
 ### Start Exporting Lyrics
 
 - **Desktop App Users**: See the [User Guide](./user-guide) for how to export lyrics to PowerPoint
+- **Web Proxy Users**: See the [Web Proxy Guide](./guides/proxy-app) for remote access setup
 - **CLI Users**: See the [CLI Guide](./guides/cli-guide) for command reference
 - **Viewer Users**: See the [Viewer Guide](./guides/viewer) for setup and sharing
 - **Customize your exports**: Check the [PPTX Export Guide](./guides/pptx-export) for styling options
@@ -197,6 +232,7 @@ See the full [Viewer Guide](./guides/viewer) for detailed setup and usage.
 ## What's Next?
 
 - **Ready to export?** See the [User Guide](./user-guide) for desktop app and CLI workflows
+- **Want remote access?** See the [Web Proxy Guide](./guides/proxy-app) for setup
 - **Want live slides for your congregation?** See the [Viewer Guide](./guides/viewer)
 - **Want to customize?** Check the [PPTX Export Guide](./guides/pptx-export) for styling options
 - **Need help?** Browse the [FAQ](./faq) for common questions

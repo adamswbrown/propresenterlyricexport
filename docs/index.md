@@ -6,9 +6,10 @@ A modern desktop + CLI toolkit for worship leaders and production teams who need
 
 **Choose your path:**
 - 🖥️ **Desktop App** (Recommended) - Full UI, no terminal required
+- 🌐 **Web Proxy App** - Access ProPresenter remotely from any device
 - 💻 **CLI** - Command-line power users
 
-Both paths support rich PPTX exports, text/JSON dumps, and run on macOS and Windows.
+All paths support rich PPTX exports and run on macOS and Windows. The Web Proxy adds secure remote access via Cloudflare Tunnel.
 
 ---
 
@@ -30,7 +31,7 @@ Watch how easy it is to export lyrics from ProPresenter to PowerPoint:
 ## Navigation
 
 - **User Docs**: [Getting Started](./getting-started) | [User Guide](./user-guide) | [FAQ](./faq)
-- **Guides**: [Viewer](./guides/viewer) | [PPTX Export](./guides/pptx-export) | [CLI Commands](./guides/cli-guide) | [Service Generator](./guides/service-generator) | [After Export](./guides/after-export)
+- **Guides**: [Web Proxy](./guides/proxy-app) | [Viewer](./guides/viewer) | [PPTX Export](./guides/pptx-export) | [CLI Commands](./guides/cli-guide) | [Service Generator](./guides/service-generator) | [After Export](./guides/after-export)
 - **Developer**: [Setup](./developer/setup) | [Architecture](./developer/architecture) | [Building](./developer/building)
 
 ---
@@ -38,6 +39,7 @@ Watch how easy it is to export lyrics from ProPresenter to PowerPoint:
 ## ✨ Key Features
 
 - 📤 **Lyrics Export** - Extract lyrics from ProPresenter playlists to PowerPoint, Text, or JSON
+- 🌐 **Web Proxy** - Secure remote access to ProPresenter from any browser, anywhere
 - 📺 **Live Viewer** - Real-time slide viewer for congregation phones, tablets, and laptops
 - 🎯 **Interactive Playlist Selection** - Browse and select playlists easily
 - 🎨 **PowerPoint Export** - Beautifully formatted slides with customizable fonts, colors, and styling
@@ -51,6 +53,7 @@ Watch how easy it is to export lyrics from ProPresenter to PowerPoint:
 
 - **[Getting Started](./getting-started)** - Install and run in 5 minutes
 - **[User Guide](./user-guide)** - Export lyrics from playlists to PowerPoint
+- **[Web Proxy Guide](./guides/proxy-app)** - Access ProPresenter remotely from any device
 - **[Viewer Guide](./guides/viewer)** - Real-time slide viewer for congregation devices
 - **[PPTX Export Guide](./guides/pptx-export)** - Customize fonts, colors, and styling
 - **[Service Generator Guide](./guides/service-generator)** - Advanced: Automate service playlists from PDFs
@@ -68,6 +71,9 @@ Watch how easy it is to export lyrics from ProPresenter to PowerPoint:
 
 ### Desktop App (Recommended)
 Download the latest version from [GitHub Releases](https://github.com/adamswbrown/propresenterlyricexport/releases) and follow the [Getting Started guide](./getting-started).
+
+### Web Proxy App (Remote Access)
+Access ProPresenter from any device, anywhere. Download **ProPresenter Web Proxy** from [Releases](https://github.com/adamswbrown/propresenterlyricexport/releases) and follow the [Web Proxy Guide](./guides/proxy-app).
 
 ### CLI Executables
 Download standalone binaries for macOS or Windows from [Releases](https://github.com/adamswbrown/propresenterlyricexport/releases) or follow the [Developer Guide](./developer) to build from source.
@@ -88,7 +94,8 @@ Download standalone binaries for macOS or Windows from [Releases](https://github
 
 | **New Users** | **Experienced Users** | **Developers** |
 |---|---|---|
-| [Getting Started](./getting-started) | [Viewer Guide](./guides/viewer) | [Setup Guide](./developer/setup) |
-| [User Guide](./user-guide) | [CLI Reference](./guides/cli-guide) | [Architecture](./developer/architecture) |
-| [FAQ](./faq) | [PPTX Customization](./guides/pptx-export) | [Building & Release](./developer/building) |
+| [Getting Started](./getting-started) | [Web Proxy App](./guides/proxy-app) | [Setup Guide](./developer/setup) |
+| [User Guide](./user-guide) | [Viewer Guide](./guides/viewer) | [Architecture](./developer/architecture) |
+| [FAQ](./faq) | [CLI Reference](./guides/cli-guide) | [Building & Release](./developer/building) |
+| | [PPTX Customization](./guides/pptx-export) | |
 | | [Service Generator](./guides/service-generator) | |

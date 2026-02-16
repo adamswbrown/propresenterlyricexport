@@ -19,6 +19,8 @@ nav_links:
     url: /getting-started
   - title: User Guide
     url: /user-guide
+  - title: Web Proxy
+    url: /guides/proxy-app
   - title: Developer
     url: /developer
   - title: FAQ

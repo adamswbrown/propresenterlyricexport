@@ -1,8 +1,10 @@
-# Web Proxy Setup Guide
+# Web Proxy Setup Guide (Manual)
 
-[← Back to Home](../index.md) | [User Guide](../user-guide)
+[← Back to Home](../index.md) | [User Guide](../user-guide) | [Proxy App Guide (GUI)](./proxy-app)
 
 ---
+
+> **Prefer a GUI?** The [Web Proxy App](./proxy-app) is a macOS menu bar application that manages the web server and tunnel for you — no terminal required. This guide covers the manual, terminal-based setup.
 
 Access ProPresenter Lyrics Export from any device — phone, tablet, or remote computer — through a secure web interface exposed via Cloudflare Tunnel.
 
