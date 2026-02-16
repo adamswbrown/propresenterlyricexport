@@ -36,7 +36,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic reconnection when no heartbeat received within 25 seconds
   - Page visibility detection — auto-refreshes when returning from backgrounded tab or locked screen
 
-- **GitHub Actions** — Release workflow now builds and publishes both the main app and the Viewer app for macOS and Windows
+- **ProPresenter Web Proxy App (v1.0.0)** — Standalone menu bar/tray app for secure remote access
+  - Access your ProPresenter installation from any device, anywhere — phone, tablet, or remote computer
+  - Runs as a lightweight macOS menu bar or Windows system tray application
+  - Manages the web server and Cloudflare Tunnel as child processes with auto-restart on crash
+  - Google OAuth sign-in with email allowlist — only approved users can access
+  - Bearer token fallback for API and SSE access
+  - Full React web UI mirroring the desktop app: playlist browsing, PPTX export, Service Generator, font management
+  - PPTX export progress streaming via Server-Sent Events (SSE)
+  - User management — add/remove allowed emails, grant admin roles (CLI or web UI)
+  - File-based sessions that persist across server restarts (6-hour TTL)
+  - Structured request logging with automatic rotation (14-day retention)
+  - No port-forwarding or firewall changes required — outbound-only Cloudflare Tunnel
+  - Compact settings window for configuring ProPresenter connection, OAuth credentials, and tunnel URL
+  - Test Connection button validates ProPresenter is reachable
+  - Start/Stop controls for both web server and tunnel from the tray menu
+  - Health polling with ProPresenter connection status and version display
+  - Activity log showing server events, tunnel status, and errors
+  - Bundled as a separate download alongside the main desktop app
+
+- **GitHub Actions** — Release workflow now builds and publishes all three apps (Desktop, Viewer, Web Proxy) for macOS and Windows
 
 ## [2.4.2] - 2026-02-14
 
