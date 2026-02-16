@@ -30,7 +30,7 @@ Watch how easy it is to export lyrics from ProPresenter to PowerPoint:
 ## Navigation
 
 - **User Docs**: [Getting Started](./getting-started) | [User Guide](./user-guide) | [FAQ](./faq)
-- **Guides**: [PPTX Export](./guides/pptx-export) | [CLI Commands](./guides/cli-guide) | [Service Generator](./guides/service-generator) | [After Export](./guides/after-export) | [Web Proxy Setup](./guides/web-proxy-setup)
+- **Guides**: [Viewer](./guides/viewer) | [PPTX Export](./guides/pptx-export) | [CLI Commands](./guides/cli-guide) | [Service Generator](./guides/service-generator) | [After Export](./guides/after-export)
 - **Developer**: [Setup](./developer/setup) | [Architecture](./developer/architecture) | [Building](./developer/building)
 
 ---
@@ -38,6 +38,7 @@ Watch how easy it is to export lyrics from ProPresenter to PowerPoint:
 ## ✨ Key Features
 
 - 📤 **Lyrics Export** - Extract lyrics from ProPresenter playlists to PowerPoint, Text, or JSON
+- 📺 **Live Viewer** - Real-time slide viewer for congregation phones, tablets, and laptops
 - 🎯 **Interactive Playlist Selection** - Browse and select playlists easily
 - 🎨 **PowerPoint Export** - Beautifully formatted slides with customizable fonts, colors, and styling
 - 🔤 **Font Detection** - 25+ curated presentation-ready fonts with installation status
@@ -50,10 +51,10 @@ Watch how easy it is to export lyrics from ProPresenter to PowerPoint:
 
 - **[Getting Started](./getting-started)** - Install and run in 5 minutes
 - **[User Guide](./user-guide)** - Export lyrics from playlists to PowerPoint
+- **[Viewer Guide](./guides/viewer)** - Real-time slide viewer for congregation devices
 - **[PPTX Export Guide](./guides/pptx-export)** - Customize fonts, colors, and styling
 - **[Service Generator Guide](./guides/service-generator)** - Advanced: Automate service playlists from PDFs
 - **[After Export Guide](./guides/after-export)** - Add remaining artifacts (sermons, kids content, birthdays)
-- **[Web Proxy Setup](./guides/web-proxy-setup)** - Remote access via Cloudflare Tunnel + Google OAuth
 - **[FAQ](./faq)** - Common questions and troubleshooting
 - **[Developer Guide](./developer)** - Setup, building, and contributing
 
@@ -87,7 +88,7 @@ Download standalone binaries for macOS or Windows from [Releases](https://github
 
 | **New Users** | **Experienced Users** | **Developers** |
 |---|---|---|
-| [Getting Started](./getting-started) | [CLI Reference](./guides/cli-guide) | [Setup Guide](./developer/setup) |
-| [User Guide](./user-guide) | [PPTX Customization](./guides/pptx-export) | [Architecture](./developer/architecture) |
-| [FAQ](./faq) | [Service Generator](./guides/service-generator) | [Building & Release](./developer/building) |
-| | [Web Proxy Setup](./guides/web-proxy-setup) | |
+| [Getting Started](./getting-started) | [Viewer Guide](./guides/viewer) | [Setup Guide](./developer/setup) |
+| [User Guide](./user-guide) | [CLI Reference](./guides/cli-guide) | [Architecture](./developer/architecture) |
+| [FAQ](./faq) | [PPTX Customization](./guides/pptx-export) | [Building & Release](./developer/building) |
+| | [Service Generator](./guides/service-generator) | |

@@ -36,7 +36,7 @@ const store = new Store<ViewerSettings>({
   name: 'propresenter-viewer',
   defaults: {
     ppHost: '127.0.0.1',
-    ppPort: 1025,
+    ppPort: 61659,
     serverPort: 3100,
   },
 });
@@ -315,8 +315,12 @@ function showSettingsWindow(): void {
 }
 
 function notifyRenderer(channel: string, data: any): void {
-  if (settingsWindow && !settingsWindow.isDestroyed()) {
-    settingsWindow.webContents.send(channel, data);
+  try {
+    if (settingsWindow && !settingsWindow.isDestroyed() && settingsWindow.webContents) {
+      settingsWindow.webContents.send(channel, data);
+    }
+  } catch {
+    // Window frame not ready (hidden/loading) — safe to ignore
   }
 }
 
@@ -354,31 +358,37 @@ ipcMain.handle('status:get', () => ({
 }));
 
 ipcMain.handle('connection:test', async (_event, host: string, port: number) => {
-  return new Promise<{ success: boolean; version?: string; error?: string }>((resolve) => {
-    const url = `http://${host}:${port}/v1/version`;
-    const req = http.get(url, { timeout: 5000 }, (res) => {
-      let data = '';
-      res.on('data', (chunk: string) => { data += chunk; });
-      res.on('end', () => {
-        try {
-          const ver = JSON.parse(data);
-          resolve({
-            success: true,
-            version: `${ver.major || '7'}.${ver.minor || '0'}.${ver.patch || '0'}`,
-          });
-        } catch {
-          resolve({ success: false, error: 'Invalid response from ProPresenter' });
-        }
+  const tryGet = (urlPath: string) =>
+    new Promise<{ status: number; body: string }>((resolve, reject) => {
+      const req = http.get(`http://${host}:${port}${urlPath}`, { timeout: 5000 }, (res) => {
+        let data = '';
+        res.on('data', (chunk: string) => { data += chunk; });
+        res.on('end', () => resolve({ status: res.statusCode || 0, body: data }));
       });
+      req.on('error', reject);
+      req.on('timeout', () => { req.destroy(); reject(new Error('Connection timed out')); });
     });
-    req.on('error', (err) => {
-      resolve({ success: false, error: err.message });
-    });
-    req.on('timeout', () => {
-      req.destroy();
-      resolve({ success: false, error: 'Connection timed out' });
-    });
-  });
+
+  try {
+    // Try /v1/version first
+    const verRes = await tryGet('/v1/version');
+    if (verRes.status === 200) {
+      try {
+        const ver = JSON.parse(verRes.body);
+        return { success: true, version: `${ver.major || '7'}.${ver.minor || '0'}.${ver.patch || '0'}` };
+      } catch { /* fall through */ }
+    }
+
+    // Fallback: try /v1/status/slide (works on all PP7 versions)
+    const slideRes = await tryGet('/v1/status/slide');
+    if (slideRes.status === 200) {
+      return { success: true, version: '7.x' };
+    }
+
+    return { success: false, error: `ProPresenter returned status ${slideRes.status}` };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
 });
 
 ipcMain.handle('url:copy', () => {
@@ -403,6 +413,9 @@ app.whenReady().then(() => {
 
   createTray();
   startExpressServer();
+
+  // Show settings window on first launch so user can configure
+  showSettingsWindow();
 
   // Periodically update tray and renderer with connection status
   setInterval(() => {

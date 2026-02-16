@@ -127,6 +127,18 @@ export function createViewerRoutes(
     });
   });
 
+  // SSE heartbeat — keeps connections alive and lets clients detect stale links
+  const HEARTBEAT_INTERVAL = 15_000;
+  setInterval(() => {
+    for (const client of sseClients) {
+      try {
+        client.write(`: heartbeat\n\n`);
+      } catch {
+        sseClients.delete(client);
+      }
+    }
+  }, HEARTBEAT_INTERVAL);
+
   // SSE endpoint
   router.get('/viewer/events', (req: Request, res: Response) => {
     res.setHeader('Content-Type', 'text/event-stream');
@@ -143,7 +155,7 @@ export function createViewerRoutes(
 
     // If already connected with a slide, send current state immediately
     const slide = svc.getCurrentSlide();
-    if (slide.presentationUuid && slide.slideIndex >= 0) {
+    if (status.connected && slide.presentationUuid && slide.slideIndex >= 0) {
       const thumbUrl = `/viewer/api/thumbnail/${slide.presentationUuid}/${slide.slideIndex}?t=${Date.now()}`;
       res.write(`data: ${JSON.stringify({
         type: 'slideChange',

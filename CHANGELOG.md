@@ -5,6 +5,39 @@ All notable changes to ProPresenter Lyrics Export will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-02-16
+
+### Added
+- **ProPresenter Viewer App (v1.0.0)** — Standalone menu bar/tray app for real-time slide viewing
+  - Runs as a lightweight macOS menu bar or Windows system tray application
+  - Serves a web-based viewer page that congregation members can access on phones, tablets, or any browser
+  - Real-time slide thumbnails and lyrics text via Server-Sent Events (SSE)
+  - Compact settings window for configuring ProPresenter host/port and server port
+  - Test Connection button validates ProPresenter is reachable
+  - Displays viewer URL with one-click Copy and Open buttons
+  - Connection status with live ProPresenter version display
+  - Auto-detects local IP address for the viewer URL
+  - No dock icon on macOS (menu bar only) — stays out of the way
+  - Bundled as a separate download alongside the main desktop app
+
+- **Web Viewer UI** — iPad-first responsive viewer for following along during services
+  - Full-screen slide thumbnail display with automatic scaling
+  - Lyrics text shown below the slide image
+  - LIVE badge indicator when content is actively being presented
+  - Connection status bar with ProPresenter version
+  - Fullscreen mode via button or double-tap on slide
+  - Responsive design: optimized for iPad, phones (portrait and landscape), and desktop browsers
+  - Automatic reconnection with visual overlay when connection is lost
+  - Fetches current slide state on page load so it's never blank
+  - Thumbnail preloading with retry logic for reliable image display
+  - Clears stale content when ProPresenter disconnects
+  - Manual refresh button to force re-fetch current slide and reconnect SSE
+  - Server-side SSE heartbeat every 15 seconds for stale connection detection
+  - Automatic reconnection when no heartbeat received within 25 seconds
+  - Page visibility detection — auto-refreshes when returning from backgrounded tab or locked screen
+
+- **GitHub Actions** — Release workflow now builds and publishes both the main app and the Viewer app for macOS and Windows
+
 ## [2.4.2] - 2026-02-14
 
 ### Added

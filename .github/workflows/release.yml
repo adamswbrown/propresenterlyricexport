@@ -14,7 +14,7 @@ env:
 
 jobs:
   macos:
-    name: macOS App
+    name: macOS Apps
     runs-on: macos-latest
     steps:
       - name: Checkout
@@ -29,34 +29,60 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build renderer & main bundles
+      # ── Main App ──
+      - name: Build main app bundles
         run: npm run electron:build
 
-      - name: Package macOS zip
+      - name: Package main app (macOS zip)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx electron-builder --mac zip --publish=never --config electron-builder.config.js
 
-      - name: Prepare macOS artifact
+      # ── Viewer App ──
+      - name: Build viewer app bundles
+        run: npm run viewer:build
+
+      - name: Package viewer app (macOS zip)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: npx electron-builder --mac zip --publish=never --config viewer-app/electron-builder.config.js
+
+      # ── Collect artifacts ──
+      - name: Prepare macOS artifacts
         run: |
-          SOURCE=$(find release -maxdepth 1 -name 'ProPresenter-Lyrics-*-mac.zip' | head -n 1)
-          TARGET="ProPresenter-Lyrics-${{ github.ref_name }}-mac.zip"
-          if [ -z "$SOURCE" ] || [ ! -f "$SOURCE" ]; then
-            echo "Built macOS zip not found in release/."
+          mkdir -p artifacts
+
+          # Main app — versioned from package.json (e.g. ProPresenter-Lyrics-3.0.0-mac.zip)
+          MAIN=$(find release -maxdepth 1 -name 'ProPresenter-Lyrics-*-mac.zip' | head -n 1)
+          if [ -z "$MAIN" ] || [ ! -f "$MAIN" ]; then
+            echo "::error::Main app macOS zip not found in release/"
             ls -R release || true
             exit 1
           fi
-          cp "$SOURCE" "$TARGET"
+          cp "$MAIN" artifacts/
 
-      - name: Upload macOS artifact
+          # Viewer app — own version (e.g. ProPresenter-Viewer-1.0.0-mac.zip)
+          VIEWER=$(find release-viewer -maxdepth 1 -name 'ProPresenter-Viewer-*-mac.zip' | head -n 1)
+          if [ -z "$VIEWER" ] || [ ! -f "$VIEWER" ]; then
+            echo "::error::Viewer app macOS zip not found in release-viewer/"
+            ls -R release-viewer || true
+            exit 1
+          fi
+          cp "$VIEWER" artifacts/
+
+          echo "macOS artifacts:"
+          ls -lh artifacts/
+
+      - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: macos-app
-          path: ProPresenter-Lyrics-${{ github.ref_name }}-mac.zip
+          name: macos-apps
+          path: artifacts/*
           retention-days: 7
 
   windows:
-    name: Windows EXE
+    name: Windows Apps
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -71,27 +97,48 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build renderer & main bundles
+      # ── Main App ──
+      - name: Build main app bundles
         run: npm run electron:build
 
-      - name: Package Windows executable
+      - name: Package main app (Windows exe)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx electron-builder --win nsis --publish=never --config electron-builder.config.js
 
-      - name: Collect EXE artifact
+      # ── Viewer App ──
+      - name: Build viewer app bundles
+        run: npm run viewer:build
+
+      - name: Package viewer app (Windows exe)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --win nsis --publish=never --config viewer-app/electron-builder.config.js
+
+      # ── Collect artifacts ──
+      - name: Prepare Windows artifacts
         shell: pwsh
         run: |
-          $exe = Get-ChildItem -Path release -Filter 'ProPresenter-Lyrics-*-win.exe' | Select-Object -First 1
-          if (-not $exe) { throw 'Installer not found in release directory.' }
-          $target = "ProPresenter-Lyrics-${{ github.ref_name }}-win.exe"
-          Copy-Item $exe.FullName $target -Force
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
 
-      - name: Upload Windows artifact
+          # Main app
+          $main = Get-ChildItem -Path release -Filter 'ProPresenter-Lyrics-*-win.exe' | Select-Object -First 1
+          if (-not $main) { throw 'Main app installer not found in release/' }
+          Copy-Item $main.FullName "artifacts/$($main.Name)" -Force
+
+          # Viewer app
+          $viewer = Get-ChildItem -Path release-viewer -Filter 'ProPresenter-Viewer-*-win.exe' | Select-Object -First 1
+          if (-not $viewer) { throw 'Viewer app installer not found in release-viewer/' }
+          Copy-Item $viewer.FullName "artifacts/$($viewer.Name)" -Force
+
+          Write-Host "Windows artifacts:"
+          Get-ChildItem artifacts/
+
+      - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: windows-exe
-          path: ProPresenter-Lyrics-${{ github.ref_name }}-win.exe
+          name: windows-apps
+          path: artifacts/*
           retention-days: 7
 
   publish:
@@ -101,23 +148,28 @@ jobs:
       - macos
       - windows
     steps:
-      - name: Download macOS artifact
+      - name: Download macOS artifacts
         uses: actions/download-artifact@v4
         with:
-          name: macos-app
+          name: macos-apps
           path: dist
 
-      - name: Download Windows artifact
+      - name: Download Windows artifacts
         uses: actions/download-artifact@v4
         with:
-          name: windows-exe
+          name: windows-apps
           path: dist
+
+      - name: List release assets
+        run: ls -lh dist/
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/ProPresenter-Lyrics-${{ github.ref_name }}-mac.zip
-            dist/ProPresenter-Lyrics-${{ github.ref_name }}-win.exe
+            dist/ProPresenter-Lyrics-*-mac.zip
+            dist/ProPresenter-Lyrics-*-win.exe
+            dist/ProPresenter-Viewer-*-mac.zip
+            dist/ProPresenter-Viewer-*-win.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

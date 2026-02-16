@@ -18,6 +18,8 @@ import {
 import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
 import http from 'http';
+import fs from 'fs';
+import os from 'os';
 import Store from 'electron-store';
 
 // ── Settings ──
@@ -78,7 +80,18 @@ function getWebServerPath(): string {
 }
 
 function getCloudflaredPath(): string {
-  // Expect cloudflared to be installed via brew or in PATH
+  // macOS GUI apps don't inherit full shell PATH, check common locations
+  const candidates = [
+    '/opt/homebrew/bin/cloudflared',   // Homebrew (Apple Silicon)
+    '/usr/local/bin/cloudflared',      // Homebrew (Intel) or manual install
+    '/usr/bin/cloudflared',
+    'cloudflared',                     // fallback to PATH
+  ];
+  for (const candidate of candidates) {
+    try {
+      if (require('fs').existsSync(candidate)) return candidate;
+    } catch { /* skip */ }
+  }
   return 'cloudflared';
 }
 
@@ -93,8 +106,8 @@ function getWebServerEnv(): NodeJS.ProcessEnv {
   const tunnelUrl = store.get('tunnelUrl');
   if (tunnelUrl) env.TUNNEL_URL = tunnelUrl;
 
-  const clientId = store.get('googleClientId');
-  const clientSecret = store.get('googleClientSecret');
+  const clientId = store.get('googleClientId')?.trim();
+  const clientSecret = store.get('googleClientSecret')?.trim();
   if (clientId) env.GOOGLE_CLIENT_ID = clientId;
   if (clientSecret) env.GOOGLE_CLIENT_SECRET = clientSecret;
 
@@ -230,6 +243,18 @@ function startTunnel(): void {
       }
     });
 
+    tunnelProcess.on('error', (err: NodeJS.ErrnoException) => {
+      tunnelProcess = null;
+      tunnelConnected = false;
+      if (err.code === 'ENOENT') {
+        addLog('cloudflared not found — install with: brew install cloudflared', 'error');
+      } else {
+        addLog(`Tunnel error: ${err.message}`, 'error');
+      }
+      updateTrayMenu();
+      notifyRenderer('status:update', getStatus());
+    });
+
     tunnelProcess.on('exit', (code) => {
       tunnelProcess = null;
       tunnelConnected = false;
@@ -300,7 +325,7 @@ function checkWebServerHealth(): void {
 function checkProPresenterStatus(): void {
   const host = store.get('ppHost');
   const port = store.get('ppPort');
-  const url = `http://${host}:${port}/v1/version`;
+  const url = `http://${host}:${port}/version`;
 
   const req = http.get(url, { timeout: 3000 }, (res) => {
     let data = '';
@@ -309,7 +334,7 @@ function checkProPresenterStatus(): void {
       try {
         const ver = JSON.parse(data);
         ppConnected = true;
-        ppVersion = `${ver.major || '7'}.${ver.minor || '0'}.${ver.patch || '0'}`;
+        ppVersion = ver.host_description || 'ProPresenter';
       } catch {
         ppConnected = false;
         ppVersion = null;
@@ -361,7 +386,9 @@ function getWebUrl(): string {
 // ── Tray ──
 
 function createTray(): void {
-  const iconPath = path.join(__dirname, '..', '..', 'assets', 'tray-iconTemplate.png');
+  const iconPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'tray-iconTemplate.png')
+    : path.join(__dirname, '..', '..', 'proxy-app', 'assets', 'tray-iconTemplate.png');
   let icon: Electron.NativeImage;
   try {
     icon = nativeImage.createFromPath(iconPath);
@@ -546,12 +573,12 @@ ipcMain.handle('settings:save', async (_event, data: Partial<ProxySettings>) => 
     data.googleClientSecret !== undefined && data.googleClientSecret !== store.get('googleClientSecret') ||
     data.tunnelUrl !== undefined && data.tunnelUrl !== store.get('tunnelUrl');
 
-  if (data.ppHost !== undefined) store.set('ppHost', data.ppHost);
+  if (data.ppHost !== undefined) store.set('ppHost', data.ppHost.trim());
   if (data.ppPort !== undefined) store.set('ppPort', data.ppPort);
   if (data.webPort !== undefined) store.set('webPort', data.webPort);
-  if (data.tunnelUrl !== undefined) store.set('tunnelUrl', data.tunnelUrl);
-  if (data.googleClientId !== undefined) store.set('googleClientId', data.googleClientId);
-  if (data.googleClientSecret !== undefined) store.set('googleClientSecret', data.googleClientSecret);
+  if (data.tunnelUrl !== undefined) store.set('tunnelUrl', data.tunnelUrl.trim().replace(/\/+$/, ''));
+  if (data.googleClientId !== undefined) store.set('googleClientId', data.googleClientId.trim());
+  if (data.googleClientSecret !== undefined) store.set('googleClientSecret', data.googleClientSecret.trim());
   if (data.autoStart !== undefined) store.set('autoStart', data.autoStart);
 
   if (needsRestart && webServerProcess) {
@@ -574,7 +601,7 @@ ipcMain.handle('status:get', () => getStatus());
 
 ipcMain.handle('connection:test', async (_event, host: string, port: number) => {
   return new Promise<{ success: boolean; version?: string; error?: string }>((resolve) => {
-    const url = `http://${host}:${port}/v1/version`;
+    const url = `http://${host}:${port}/version`;
     const req = http.get(url, { timeout: 5000 }, (res) => {
       let data = '';
       res.on('data', (chunk: string) => { data += chunk; });
@@ -583,7 +610,7 @@ ipcMain.handle('connection:test', async (_event, host: string, port: number) => 
           const ver = JSON.parse(data);
           resolve({
             success: true,
-            version: `${ver.major || '7'}.${ver.minor || '0'}.${ver.patch || '0'}`,
+            version: ver.host_description || 'ProPresenter',
           });
         } catch {
           resolve({ success: false, error: 'Invalid response' });
@@ -608,6 +635,31 @@ ipcMain.handle('url:open', () => {
 ipcMain.handle('url:copy', () => {
   clipboard.writeText(getWebUrl());
   return { success: true };
+});
+
+ipcMain.handle('token:get', () => {
+  try {
+    const authFile = path.join(os.homedir(), '.propresenter-words', 'web-auth.json');
+    if (fs.existsSync(authFile)) {
+      const data = JSON.parse(fs.readFileSync(authFile, 'utf-8'));
+      return { token: data.token || null };
+    }
+  } catch { /* ignore */ }
+  return { token: null };
+});
+
+ipcMain.handle('token:copy', () => {
+  try {
+    const authFile = path.join(os.homedir(), '.propresenter-words', 'web-auth.json');
+    if (fs.existsSync(authFile)) {
+      const data = JSON.parse(fs.readFileSync(authFile, 'utf-8'));
+      if (data.token) {
+        clipboard.writeText(data.token);
+        return { success: true };
+      }
+    }
+  } catch { /* ignore */ }
+  return { success: false };
 });
 
 // ── App Lifecycle ──

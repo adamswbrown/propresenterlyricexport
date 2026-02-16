@@ -13,6 +13,8 @@ declare global {
       stopTunnel: () => Promise<void>;
       openUrl: () => Promise<{ success: boolean }>;
       copyUrl: () => Promise<{ success: boolean }>;
+      getToken: () => Promise<{ token: string | null }>;
+      copyToken: () => Promise<{ success: boolean }>;
       onStatusUpdate: (cb: (data: any) => void) => () => void;
       onLogEntry: (cb: (entry: any) => void) => () => void;
       onServerError: (cb: (data: any) => void) => () => void;
@@ -48,6 +50,8 @@ export default function ProxyApp() {
   const [testResult, setTestResult] = useState<string | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const logRef = useRef<HTMLDivElement>(null);
+  const [bearerToken, setBearerToken] = useState<string | null>(null);
+  const [tokenCopied, setTokenCopied] = useState(false);
 
   // Load initial settings and status
   useEffect(() => {
@@ -69,11 +73,17 @@ export default function ProxyApp() {
       if (s.logs) setLogs(s.logs);
     });
 
+    window.api.getToken().then((t) => setBearerToken(t.token));
+
     const unsub1 = window.api.onStatusUpdate((data) => {
       setWebServerRunning(data.webServerRunning);
       setTunnelConnected(data.tunnelConnected);
       setPpConnected(data.ppConnected);
       setPpVersion(data.ppVersion);
+      // Refresh token when server starts (token file gets created)
+      if (data.webServerRunning) {
+        window.api.getToken().then((t) => setBearerToken(t.token));
+      }
     });
 
     const unsub2 = window.api.onLogEntry((entry) => {
@@ -162,6 +172,28 @@ export default function ProxyApp() {
           )}
         </div>
       </div>
+
+      {/* Bearer Token */}
+      {bearerToken && (
+        <div className="section">
+          <div className="section-header">API Token</div>
+          <div className="token-row">
+            <code className="token-value">{bearerToken}</code>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => {
+                window.api.copyToken().then(() => {
+                  setTokenCopied(true);
+                  setTimeout(() => setTokenCopied(false), 2000);
+                });
+              }}
+            >
+              {tokenCopied ? 'Copied' : 'Copy'}
+            </button>
+          </div>
+          <div className="token-hint">Share this token for API access without Google login</div>
+        </div>
+      )}
 
       {/* Connection */}
       <div className="section">

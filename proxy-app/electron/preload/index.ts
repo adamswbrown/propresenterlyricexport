@@ -20,6 +20,10 @@ const api = {
   openUrl: () => ipcRenderer.invoke('url:open'),
   copyUrl: () => ipcRenderer.invoke('url:copy'),
 
+  // Bearer token
+  getToken: () => ipcRenderer.invoke('token:get'),
+  copyToken: () => ipcRenderer.invoke('token:copy'),
+
   // Events from main process
   onStatusUpdate: (callback: (data: any) => void) => {
     const handler = (_event: any, data: any) => callback(data);

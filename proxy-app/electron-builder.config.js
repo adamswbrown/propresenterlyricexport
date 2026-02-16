@@ -17,6 +17,14 @@ module.exports = {
       from: 'executables/pp-web-server',
       to: 'pp-web-server',
     },
+    {
+      from: 'proxy-app/assets/tray-iconTemplate.png',
+      to: 'tray-iconTemplate.png',
+    },
+    {
+      from: 'proxy-app/assets/tray-iconTemplate@2x.png',
+      to: 'tray-iconTemplate@2x.png',
+    },
   ],
   mac: {
     icon: 'assets/icon.icns',

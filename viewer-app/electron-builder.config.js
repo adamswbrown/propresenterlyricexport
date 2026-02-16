@@ -7,6 +7,7 @@ module.exports = {
   },
   extraMetadata: {
     main: 'dist-viewer/main/index.js',
+    version: '1.0.0',
   },
   files: [
     'dist-viewer/**/*',

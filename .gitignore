@@ -7,9 +7,13 @@ dist/
 dist-electron/
 dist-gui/
 dist-web/
+dist-proxy/
+dist-viewer/
 build/
 executables/
 release/
+release-proxy/
+release-viewer/
 artifacts/
 *.tsbuildinfo
 

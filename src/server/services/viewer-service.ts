@@ -140,6 +140,9 @@ export class ViewerService extends EventEmitter {
     } catch {
       if (this.connected) {
         this.connected = false;
+        this.currentPresentationUuid = null;
+        this.currentSlideIndex = -1;
+        this.currentText = '';
         this.emit('disconnected');
       }
     }

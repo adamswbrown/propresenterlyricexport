@@ -214,3 +214,32 @@ body {
 }
 
 .toggle.active::after { transform: translateX(16px); }
+
+.token-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.token-value {
+  flex: 1;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--surface);
+  padding: 5px 8px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.btn-sm { flex: 0; white-space: nowrap; padding: 5px 10px; font-size: 11px; }
+
+.token-hint {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}

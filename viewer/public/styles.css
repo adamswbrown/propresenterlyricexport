@@ -148,6 +148,11 @@ body {
   transform: scale(0.95);
 }
 
+.btn-icon.spinning {
+  animation: spin 0.6s ease;
+  pointer-events: none;
+}
+
 /* ── Main Layout ── */
 
 .viewer-wrap {
@@ -162,8 +167,8 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 24px;
-  gap: 28px;
+  padding: 16px;
+  gap: 16px;
   overflow: hidden;
 }
 
@@ -171,14 +176,14 @@ body {
 
 .slide-frame {
   width: 100%;
-  max-width: 840px;
-  aspect-ratio: 16 / 9;
+  max-width: 1200px;
+  flex: 1;
+  min-height: 0;
   background: #0a0a0a;
   border-radius: var(--radius);
   overflow: hidden;
   position: relative;
   border: 1px solid var(--border);
-  flex-shrink: 0;
 }
 
 .slide-img {
@@ -255,27 +260,6 @@ body {
   opacity: 0.3;
   font-style: italic;
   font-size: clamp(16px, 3vw, 24px);
-}
-
-.next-bar {
-  margin-top: 20px;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.next-bar.visible { opacity: 1; }
-
-.next-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-}
-
-.next-title {
-  font-size: 15px;
-  color: var(--text-muted);
 }
 
 /* ── Idle / Between Items ── */
@@ -355,7 +339,7 @@ body {
 @media (max-width: 768px) {
   .status-bar { padding: 10px 16px; padding-top: calc(10px + env(safe-area-inset-top, 0px)); height: calc(48px + env(safe-area-inset-top, 0px)); }
   .logo { font-size: 15px; }
-  .viewer-main { padding: 16px; gap: 16px; }
+  .viewer-main { padding: 10px; gap: 10px; }
 
   .slide-frame {
     max-width: 100%;
@@ -363,7 +347,7 @@ body {
   }
 
   .lyrics {
-    font-size: clamp(20px, 6vw, 32px);
+    font-size: clamp(18px, 5vw, 28px);
   }
 }
 
@@ -396,6 +380,6 @@ body {
 /* ── Responsive — Large iPad / landscape ── */
 
 @media (min-width: 1024px) {
-  .slide-frame { max-width: 960px; }
-  .text-area { max-width: 960px; }
+  .slide-frame { max-width: 1200px; }
+  .text-area { max-width: 1200px; }
 }

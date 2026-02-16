@@ -119,12 +119,53 @@ $env:PROPRESENTER_HOST='192.168.1.100'
 $env:PROPRESENTER_PORT='1025'
 ```
 
+### 📺 Live Viewer App (Congregation Devices)
+
+A separate companion app that streams live slides to phones, tablets, and laptops on your network.
+
+**Download:**
+- Go to [GitHub Releases](https://github.com/adamswbrown/propresenterlyricexport/releases)
+- Download the **Viewer** for your platform:
+  - **macOS**: `ProPresenter-Viewer-1.0.0-mac.zip`
+  - **Windows**: `ProPresenter-Viewer-1.0.0-win.exe`
+
+**macOS Installation:**
+```bash
+# 1. Unzip
+unzip ProPresenter-Viewer-1.0.0-mac.zip
+
+# 2. Fix Gatekeeper (one-time)
+xattr -cr "ProPresenter Viewer.app"
+
+# 3. Move to Applications
+mv "ProPresenter Viewer.app" /Applications/
+
+# 4. Launch — appears in menu bar (no dock icon)
+open "/Applications/ProPresenter Viewer.app"
+```
+
+**Windows Installation:**
+1. Run the installer (`.exe`)
+2. Launch "ProPresenter Viewer" from the Start menu
+3. The app appears in the system tray (bottom-right)
+
+**First Run:**
+1. Configure ProPresenter host and port in the settings window
+2. Click **Test Connection** to verify
+3. Click **Save** — the viewer URL is displayed
+4. Share the URL with your congregation (or display a QR code)
+
+See the full [Viewer Guide](./guides/viewer) for detailed setup and usage.
+
+---
+
 ## Next Steps
 
 ### Start Exporting Lyrics
 
 - **Desktop App Users**: See the [User Guide](./user-guide) for how to export lyrics to PowerPoint
 - **CLI Users**: See the [CLI Guide](./guides/cli-guide) for command reference
+- **Viewer Users**: See the [Viewer Guide](./guides/viewer) for setup and sharing
 - **Customize your exports**: Check the [PPTX Export Guide](./guides/pptx-export) for styling options
 
 ### Advanced Features (Optional)
@@ -156,5 +197,6 @@ $env:PROPRESENTER_PORT='1025'
 ## What's Next?
 
 - **Ready to export?** See the [User Guide](./user-guide) for desktop app and CLI workflows
+- **Want live slides for your congregation?** See the [Viewer Guide](./guides/viewer)
 - **Want to customize?** Check the [PPTX Export Guide](./guides/pptx-export) for styling options
 - **Need help?** Browse the [FAQ](./faq) for common questions
