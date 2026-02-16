@@ -298,13 +298,13 @@ Only emails in the allowlist can sign in. Add the first user (yourself) via CLI:
 
 ```bash
 # Add yourself as an admin
-npm start -- web user add you@gmail.com --admin
+npm start -- users add you@gmail.com --admin
 
 # Add other users
-npm start -- web user add colleague@gmail.com
+npm start -- users add colleague@gmail.com
 
 # List all users
-npm start -- web user list
+npm start -- users list
 ```
 
 Once signed in as an admin, you can also manage users from the web UI via the **Users** button.

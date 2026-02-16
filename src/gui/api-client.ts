@@ -48,7 +48,12 @@ export function clearBearerToken(): void {
 }
 
 function jsonHeaders(): Record<string, string> {
-  return { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const token = getBearerToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
 }
 
 /**
@@ -120,7 +125,12 @@ export async function checkAuth(): Promise<{
   picture?: string;
   loginUrl?: string;
 }> {
-  const res = await fetch('/auth/me', { credentials: 'include' });
+  const headers: Record<string, string> = {};
+  const token = getBearerToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  const res = await fetch('/auth/me', { credentials: 'include', headers });
   return res.json();
 }
 
@@ -195,12 +205,26 @@ function connectSSE(jobId: string): void {
       if (data.type === 'done' && data.downloadUrl) {
         mapped.type = 'pptx:complete';
         mapped.outputPath = data.downloadUrl;
-        const a = document.createElement('a');
-        a.href = data.downloadUrl;
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        // Use fetch so the bearer token is included in the request
+        fetch(data.downloadUrl, { headers: jsonHeaders(), credentials: 'include' })
+          .then(r => {
+            const disposition = r.headers.get('content-disposition') || '';
+            const match = disposition.match(/filename="?([^"]+)"?/);
+            const fileName = match ? match[1] : 'export.pptx';
+            return r.blob().then(blob => ({ blob, fileName }));
+          })
+          .then(({ blob, fileName }) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          })
+          .catch(() => { /* download fallback handled by UI */ });
       }
 
       _progressCallback?.(mapped);

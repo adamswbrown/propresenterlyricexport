@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>Setup - ProPresenter Viewer</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+  <div class="status-bar">
+    <div class="status-bar-left">
+      <a href="/" style="text-decoration:none;color:inherit" class="logo">ProPresenter Viewer</a>
+    </div>
+    <div class="status-bar-right">
+      <span class="status-dot" id="statusDot"></span>
+      <span class="status-text" id="statusText">Not configured</span>
+    </div>
+  </div>
+
+  <div class="setup-container">
+    <div class="setup-header">
+      <h1>Connection Setup</h1>
+      <p>Enter your ProPresenter network API details to connect.</p>
+    </div>
+
+    <div class="setup-card">
+      <div id="alert" style="display:none"></div>
+
+      <form id="configForm">
+        <div class="form-group">
+          <label for="host">ProPresenter Host</label>
+          <input type="text" id="host" placeholder="192.168.1.100 or hostname" required autocomplete="off" autofocus>
+          <div class="form-hint">The IP address or hostname of the computer running ProPresenter</div>
+        </div>
+
+        <div class="form-group">
+          <label for="port">API Port</label>
+          <input type="number" id="port" value="61166" min="1" max="65535">
+          <div class="form-hint">Default is 61166. Check ProPresenter &rarr; Preferences &rarr; Network</div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="testBtn">Test Connection</button>
+          <button type="submit" class="btn btn-primary" id="saveBtn">Save &amp; Connect</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/setup.js"></script>
+</body>
+</html>

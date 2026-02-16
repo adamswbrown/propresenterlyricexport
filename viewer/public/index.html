@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#000000">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Service Viewer</title>
+  <link rel="apple-touch-icon" href="/viewer/apple-touch-icon.png">
+  <link rel="icon" type="image/svg+xml" href="/viewer/icon.svg">
+  <link rel="stylesheet" href="/viewer/styles.css">
+</head>
+<body>
+
+  <!-- Status Bar -->
+  <div class="status-bar" id="statusBar">
+    <div class="status-left">
+      <span class="logo">Service Viewer</span>
+      <div class="live-badge" id="liveBadge">
+        <span class="live-dot"></span>
+        LIVE
+      </div>
+    </div>
+    <div class="status-right">
+      <div class="conn-status">
+        <span class="conn-dot" id="connDot"></span>
+        <span id="connText">Connecting</span>
+      </div>
+      <button class="btn-icon" id="btnFullscreen" title="Fullscreen">&#x26F6;</button>
+    </div>
+  </div>
+
+  <!-- Main viewer -->
+  <div class="viewer-wrap">
+    <div class="viewer-main" id="viewerMain">
+
+      <!-- Slide thumbnail -->
+      <div class="slide-frame" id="slideFrame">
+        <div class="slide-empty" id="slideEmpty">
+          <div class="slide-empty-icon">&#9654;</div>
+          <div class="slide-empty-text">Waiting for service to begin...</div>
+        </div>
+        <img class="slide-img" id="slideImg" alt="">
+        <div class="slide-badge" id="slideBadge"></div>
+      </div>
+
+      <!-- Lyrics text -->
+      <div class="text-area" id="textArea">
+        <div class="lyrics" id="lyrics"></div>
+        <div class="next-bar" id="nextBar">
+          <div class="next-label">Up next</div>
+          <div class="next-title" id="nextTitle"></div>
+        </div>
+      </div>
+
+      <!-- Idle state (between items) -->
+      <div class="idle-notice" id="idleNotice">
+        <div class="idle-icon">&#9835;</div>
+        <div class="idle-title">Service in progress</div>
+        <div class="idle-sub">Next lyrics will appear automatically</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Disconnected overlay -->
+  <div class="overlay" id="overlay">
+    <div class="spinner"></div>
+    <h2>Reconnecting...</h2>
+    <p id="overlayMsg">Connection to service lost</p>
+  </div>
+
+  <script src="/viewer/viewer.js"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#16213e"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="180" height="180" rx="40" fill="url(#bg)"/>
+  <!-- Screen frame -->
+  <rect x="30" y="38" width="120" height="80" rx="8" fill="none" stroke="#4a9eff" stroke-width="3"/>
+  <!-- Screen stand -->
+  <line x1="90" y1="118" x2="90" y2="132" stroke="#4a9eff" stroke-width="3" stroke-linecap="round"/>
+  <line x1="65" y1="132" x2="115" y2="132" stroke="#4a9eff" stroke-width="3" stroke-linecap="round"/>
+  <!-- Text lines (lyrics) -->
+  <rect x="48" y="54" width="84" height="4" rx="2" fill="#ffffff" opacity="0.9"/>
+  <rect x="55" y="65" width="70" height="4" rx="2" fill="#ffffff" opacity="0.7"/>
+  <rect x="50" y="76" width="80" height="4" rx="2" fill="#ffffff" opacity="0.5"/>
+  <rect x="58" y="87" width="64" height="4" rx="2" fill="#ffffff" opacity="0.35"/>
+  <!-- Live dot -->
+  <circle cx="145" cy="148" r="10" fill="#e74c3c" opacity="0.9"/>
+  <circle cx="145" cy="148" r="5" fill="#ff6b6b"/>
+</svg>

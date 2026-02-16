@@ -34,6 +34,8 @@ import { serviceGeneratorRoutes } from './routes/service-generator';
 import { userRoutes } from './routes/users';
 import { ensureUsersFile, getAllowedEmails, getUsersFilePath } from './services/user-store';
 import { log, pruneOldLogs } from './services/logger';
+import { viewerRoutes } from './routes/viewer';
+import { viewerService } from './services/viewer-service';
 
 const PORT = parseInt(process.env.WEB_PORT || '3100', 10);
 const HOST = process.env.WEB_HOST || '0.0.0.0';
@@ -44,17 +46,21 @@ const app = express();
 app.set('trust proxy', 1);
 
 // Security headers
+const isBehindTunnel = !!process.env.TUNNEL_URL && process.env.NODE_ENV === 'production';
+const cspDirectives: Record<string, any> = {
+  defaultSrc: ["'self'"],
+  scriptSrc: ["'self'"],
+  styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+  imgSrc: ["'self'", 'data:', 'blob:', 'https://lh3.googleusercontent.com'],
+  connectSrc: ["'self'"],
+  fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+};
+if (isBehindTunnel) {
+  cspDirectives.upgradeInsecureRequests = [];
+}
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-      imgSrc: ["'self'", 'data:', 'blob:', 'https://lh3.googleusercontent.com'],
-      connectSrc: ["'self'"],
-      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-    },
-  },
+  contentSecurityPolicy: { useDefaults: false, directives: cspDirectives },
+  strictTransportSecurity: isBehindTunnel,
 }));
 
 // CORS — in tunnel mode the origin is the tunnel domain
@@ -157,6 +163,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Viewer routes — public, no auth required
+app.use(viewerRoutes);
+
 // Auth routes (unauthenticated — login/callback/status)
 app.use(authRoutes);
 
@@ -177,7 +186,7 @@ const staticDir = path.join(__dirname, '..', '..', 'dist-web');
 app.use(express.static(staticDir));
 
 // SPA fallback — serve index.html for non-API routes
-app.get('*', (_req, res) => {
+app.get('/{*splat}', (_req, res) => {
   const indexPath = path.join(staticDir, 'index.html');
   res.sendFile(indexPath, (err) => {
     if (err) {
@@ -259,6 +268,11 @@ export function startServer(): void {
       console.log(`    tailscale serve --bg ${PORT}`);
       console.log('');
     }
+
+    // Start the viewer service (polls ProPresenter for slide changes)
+    viewerService.start();
+    console.log(`  Viewer:   http://${HOST}:${PORT}/viewer`);
+    console.log('');
 
     log.info('Server started', { host: HOST, port: PORT, tunnel: process.env.TUNNEL_URL || null });
   });
