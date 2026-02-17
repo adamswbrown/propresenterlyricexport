@@ -323,6 +323,10 @@ const webApi = {
   createPlaylistFromTemplate: (_config: any, templateId: string, playlistName: string) =>
     post('/api/service/create-playlist', { templateId, playlistName }),
 
+  // Launch ProPresenter on the host machine (web-only)
+  launchProPresenter: () => post('/api/propresenter/launch'),
+  isProPresenterRunning: () => get('/api/propresenter/running'),
+
   // Shell — in web mode, just open in new tab
   openExternal: async (url: string) => {
     window.open(url, '_blank');

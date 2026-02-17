@@ -349,6 +349,34 @@ button.icon-button {
 .error-text {
   color: var(--danger);
   margin: 0;
+  white-space: pre-line;
+}
+
+.error-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.launch-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid rgba(245, 193, 86, 0.4);
+  background: rgba(245, 193, 86, 0.12);
+  color: var(--warning);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.launch-btn:hover:not(:disabled) {
+  background: rgba(245, 193, 86, 0.22);
+}
+
+.launch-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .progress-text {

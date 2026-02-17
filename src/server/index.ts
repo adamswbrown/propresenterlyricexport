@@ -32,6 +32,7 @@ import { aliasRoutes } from './routes/aliases';
 import { fontRoutes } from './routes/fonts';
 import { serviceGeneratorRoutes } from './routes/service-generator';
 import { userRoutes } from './routes/users';
+import { launchRoutes } from './routes/launch';
 import { ensureUsersFile, getAllowedEmails, getUsersFilePath } from './services/user-store';
 import { log, pruneOldLogs } from './services/logger';
 import { createViewerRoutes } from './routes/viewer';
@@ -181,6 +182,7 @@ app.use('/api', aliasRoutes);
 app.use('/api', fontRoutes);
 app.use('/api', serviceGeneratorRoutes);
 app.use('/api', userRoutes);
+app.use('/api', launchRoutes);
 
 // Serve static React build (production)
 const staticDir = path.join(__dirname, '..', '..', 'dist-web');
