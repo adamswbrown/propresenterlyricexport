@@ -177,6 +177,7 @@ function App(): JSX.Element {
   const [fontList, setFontList] = useState<FontStatus[]>([]);
   const [fontsLoading, setFontsLoading] = useState(false);
   const [selectedFontStatus, setSelectedFontStatus] = useState<FontStatus | null>(null);
+  const [launching, setLaunching] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -383,6 +384,38 @@ function App(): JSX.Element {
     });
     return groups;
   }, [fontList]);
+
+  async function handleLaunchProPresenter(): Promise<void> {
+    if (!window.api.launchProPresenter) return;
+    setLaunching(true);
+    setErrorMessage(null);
+    setStatusNote('Launching ProPresenter...');
+    try {
+      const result = await window.api.launchProPresenter();
+      if (result.success && result.ready) {
+        setStatusNote('ProPresenter is running — connecting...');
+        // Automatically try to connect now
+        setLaunching(false);
+        await handleConnect();
+        return;
+      }
+      // Launched but API not ready yet
+      if (result.launched && !result.ready) {
+        setStatusNote('ProPresenter launched — waiting for API...');
+        setErrorMessage(
+          result.error || 'ProPresenter was launched but the API is not responding yet. Try connecting in a few seconds.',
+        );
+      } else {
+        setErrorMessage(result.error || 'Could not launch ProPresenter');
+        setStatusNote('Launch failed');
+      }
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to launch ProPresenter');
+      setStatusNote('Launch failed');
+    } finally {
+      setLaunching(false);
+    }
+  }
 
   async function handleConnect(): Promise<void> {
     const host = settings.host.trim() || DEFAULT_HOST;
@@ -717,7 +750,21 @@ function App(): JSX.Element {
           <button className="accent" onClick={handleConnect} disabled={connectionState === 'testing'}>
             {connectionState === 'testing' ? 'Connecting…' : 'Connect & Load Playlists'}
           </button>
-          {errorMessage && <p className="error-text">{errorMessage}</p>}
+          {errorMessage && (
+            <div className="error-block">
+              <p className="error-text">{errorMessage}</p>
+              {connectionState === 'error' && window.api.launchProPresenter && (
+                <button
+                  className="launch-btn"
+                  type="button"
+                  onClick={handleLaunchProPresenter}
+                  disabled={launching}
+                >
+                  {launching ? 'Launching...' : 'Launch ProPresenter'}
+                </button>
+              )}
+            </div>
+          )}
           <p className="hint">Leave library blank to include every presentation in the playlist.</p>
           {hasLibrarySuggestions && (
             <p className="hint">Start typing to pick from {librarySuggestions.length} detected libraries.</p>
