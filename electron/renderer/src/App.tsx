@@ -179,6 +179,14 @@ function App(): JSX.Element {
   const [selectedFontStatus, setSelectedFontStatus] = useState<FontStatus | null>(null);
   const [launching, setLaunching] = useState(false);
 
+  // Auto-updater state
+  const [updateAvailable, setUpdateAvailable] = useState<{ version: string } | null>(null);
+  const [updateDownloading, setUpdateDownloading] = useState(false);
+  const [updateDownloadPercent, setUpdateDownloadPercent] = useState(0);
+  const [updateReady, setUpdateReady] = useState(false);
+  const [updateDismissed, setUpdateDismissed] = useState(false);
+  const [appVersion, setAppVersion] = useState('');
+
   useEffect(() => {
     (async () => {
       const saved = await window.api.loadSettings();
@@ -206,6 +214,32 @@ function App(): JSX.Element {
         setSelectedId(saved.lastPlaylistId);
       }
     })();
+  }, []);
+
+  // Auto-updater listeners
+  useEffect(() => {
+    window.api.getVersion().then(v => setAppVersion(v));
+
+    const unsubs = [
+      window.api.onUpdateAvailable((info) => {
+        setUpdateAvailable({ version: info.version });
+      }),
+      window.api.onUpdateNotAvailable(() => {
+        // No update — nothing to show
+      }),
+      window.api.onUpdateDownloadProgress((progress) => {
+        setUpdateDownloadPercent(Math.round(progress.percent));
+      }),
+      window.api.onUpdateDownloaded(() => {
+        setUpdateDownloading(false);
+        setUpdateReady(true);
+      }),
+      window.api.onUpdateError(() => {
+        setUpdateDownloading(false);
+      }),
+    ];
+
+    return () => unsubs.forEach(fn => fn());
   }, []);
 
   // Load font list when settings modal opens
@@ -681,6 +715,49 @@ function App(): JSX.Element {
   return (
     <div className="app-shell">
       <div className="titlebar-drag" />
+
+      {/* Auto-update banner */}
+      {updateReady && !updateDismissed && (
+        <div className="update-banner update-ready">
+          <span>Version {updateAvailable?.version} is ready to install.</span>
+          <div className="update-actions">
+            <button className="update-btn accent" onClick={() => window.api.installUpdate()}>
+              Restart &amp; Update
+            </button>
+            <button className="update-btn dismiss" onClick={() => setUpdateDismissed(true)}>
+              Later
+            </button>
+          </div>
+        </div>
+      )}
+      {updateDownloading && !updateDismissed && (
+        <div className="update-banner">
+          <span>Downloading update… {updateDownloadPercent}%</span>
+          <div className="update-progress-track">
+            <div className="update-progress-bar" style={{ width: `${updateDownloadPercent}%` }} />
+          </div>
+        </div>
+      )}
+      {updateAvailable && !updateDownloading && !updateReady && !updateDismissed && (
+        <div className="update-banner">
+          <span>Version {updateAvailable.version} is available.</span>
+          <div className="update-actions">
+            <button
+              className="update-btn accent"
+              onClick={() => {
+                setUpdateDownloading(true);
+                window.api.downloadUpdate();
+              }}
+            >
+              Download Update
+            </button>
+            <button className="update-btn dismiss" onClick={() => setUpdateDismissed(true)}>
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       <header className="app-header">
         <div>
           <h1>ProPresenter Lyrics</h1>
@@ -975,6 +1052,30 @@ function App(): JSX.Element {
                   Enable Service Generator
                 </label>
                 <span className="hint">Automated service playlist creation from PDF service orders</span>
+              </div>
+
+              <div className="settings-section">
+                <h3>About</h3>
+                <div className="about-row">
+                  <span className="muted">Version {appVersion || '...'}</span>
+                  <button
+                    className="ghost small"
+                    type="button"
+                    onClick={async () => {
+                      const result = await window.api.checkForUpdates();
+                      if (result.success && result.version) {
+                        setUpdateAvailable({ version: result.version });
+                        setUpdateDismissed(false);
+                      } else if (result.success) {
+                        setErrorMessage(null);
+                        setStatusNote('You are on the latest version');
+                        setTimeout(() => setStatusNote(connectionState === 'connected' ? 'Connected' : 'Not connected'), 3000);
+                      }
+                    }}
+                  >
+                    Check for Updates
+                  </button>
+                </div>
               </div>
 
               <div className="modal-footer">

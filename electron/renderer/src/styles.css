@@ -766,3 +766,78 @@ select option {
     flex-wrap: wrap;
   }
 }
+
+/* ── Auto-update banner ──────────────────────────────────── */
+.update-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  background: rgba(47, 212, 194, 0.12);
+  border: 1px solid rgba(47, 212, 194, 0.3);
+  font-size: 0.85rem;
+  -webkit-app-region: no-drag;
+}
+
+.update-banner.update-ready {
+  background: rgba(110, 230, 168, 0.15);
+  border-color: rgba(110, 230, 168, 0.4);
+}
+
+.update-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.update-btn {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+}
+
+.update-btn.accent {
+  background: var(--accent);
+  color: #050913;
+}
+
+.update-btn.accent:hover {
+  background: var(--accent-dark);
+}
+
+.update-btn.dismiss {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--panel-border);
+}
+
+.update-btn.dismiss:hover {
+  color: var(--text);
+}
+
+.update-progress-track {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.update-progress-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.about-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}

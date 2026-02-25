@@ -1,6 +1,11 @@
 module.exports = {
   appId: 'com.adamswbrown.propresenterwords',
   productName: 'ProPresenter Lyrics',
+  publish: {
+    provider: 'github',
+    owner: 'adamswbrown',
+    repo: 'propresenterlyricexport',
+  },
   directories: {
     output: 'release',
     buildResources: 'build',

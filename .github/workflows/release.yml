@@ -79,6 +79,11 @@ jobs:
           fi
           cp "$MAIN" artifacts/
 
+          # Copy auto-update metadata for macOS (electron-updater needs this)
+          if [ -f "release/latest-mac.yml" ]; then
+            cp release/latest-mac.yml artifacts/
+          fi
+
           # Viewer app — own version (e.g. ProPresenter-Viewer-1.0.0-mac.zip)
           VIEWER=$(find release-viewer -maxdepth 1 -name 'ProPresenter-Viewer-*-mac.zip' | head -n 1)
           if [ -z "$VIEWER" ] || [ ! -f "$VIEWER" ]; then
@@ -169,6 +174,11 @@ jobs:
           if (-not $main) { throw 'Main app installer not found in release/' }
           Copy-Item $main.FullName "artifacts/$($main.Name)" -Force
 
+          # Copy auto-update metadata for Windows (electron-updater needs this)
+          if (Test-Path "release/latest.yml") {
+            Copy-Item "release/latest.yml" "artifacts/latest.yml" -Force
+          }
+
           # Viewer app
           $viewer = Get-ChildItem -Path release-viewer -Filter 'ProPresenter-Viewer-*-win.exe' | Select-Object -First 1
           if (-not $viewer) { throw 'Viewer app installer not found in release-viewer/' }
@@ -225,5 +235,7 @@ jobs:
             dist/ProPresenter-Viewer-*-win.exe
             dist/ProPresenter-WebProxy-*-mac.zip
             dist/ProPresenter-WebProxy-*-win.exe
+            dist/latest.yml
+            dist/latest-mac.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

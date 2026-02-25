@@ -132,6 +132,38 @@ const api = {
     ipcRenderer.invoke('playlist:build-service', config, playlistId, items),
   focusPlaylistItem: (config: ConnectionConfig, playlistId: string, headerName: string): Promise<{ success: boolean; error?: string; index?: number }> =>
     ipcRenderer.invoke('playlist:focus-item', config, playlistId, headerName),
+  // Auto-updater
+  getVersion: (): Promise<string> => ipcRenderer.invoke('updater:get-version'),
+  checkForUpdates: (): Promise<{ success: boolean; version?: string; error?: string }> =>
+    ipcRenderer.invoke('updater:check'),
+  downloadUpdate: (): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('updater:download'),
+  installUpdate: (): Promise<void> => ipcRenderer.invoke('updater:install'),
+  onUpdateAvailable: (callback: (info: { version: string; releaseNotes?: string }) => void) => {
+    const handler = (_event: IpcRendererEvent, data: { version: string; releaseNotes?: string }) => callback(data);
+    ipcRenderer.on('updater:update-available', handler);
+    return () => { ipcRenderer.removeListener('updater:update-available', handler); };
+  },
+  onUpdateNotAvailable: (callback: () => void) => {
+    const handler = () => callback();
+    ipcRenderer.on('updater:update-not-available', handler);
+    return () => { ipcRenderer.removeListener('updater:update-not-available', handler); };
+  },
+  onUpdateDownloadProgress: (callback: (progress: { percent: number; bytesPerSecond: number; transferred: number; total: number }) => void) => {
+    const handler = (_event: IpcRendererEvent, data: { percent: number; bytesPerSecond: number; transferred: number; total: number }) => callback(data);
+    ipcRenderer.on('updater:download-progress', handler);
+    return () => { ipcRenderer.removeListener('updater:download-progress', handler); };
+  },
+  onUpdateDownloaded: (callback: () => void) => {
+    const handler = () => callback();
+    ipcRenderer.on('updater:update-downloaded', handler);
+    return () => { ipcRenderer.removeListener('updater:update-downloaded', handler); };
+  },
+  onUpdateError: (callback: (error: string) => void) => {
+    const handler = (_event: IpcRendererEvent, data: string) => callback(data);
+    ipcRenderer.on('updater:error', handler);
+    return () => { ipcRenderer.removeListener('updater:error', handler); };
+  },
 };
 
 contextBridge.exposeInMainWorld('api', api);
