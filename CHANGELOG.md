@@ -5,6 +5,16 @@ All notable changes to ProPresenter Lyrics Export will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-02-25
+
+### Added
+- **App version display** — Lyrics app now shows the current version (v3.1.0) in the header eyebrow text
+- **Web Proxy version display** — Web Proxy app now shows the current version (v1.1.0) in the title bar
+
+### Changed
+- Bumped Lyrics app version from 3.0.1 to 3.1.0
+- Bumped Web Proxy version from 1.0.0 to 1.1.0
+
 ## [3.0.1] - 2026-02-25
 
 ### Fixed

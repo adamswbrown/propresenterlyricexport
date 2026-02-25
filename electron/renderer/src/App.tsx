@@ -2,6 +2,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ServiceGeneratorView } from './ServiceGeneratorView';
 
+const APP_VERSION = '3.1.0';
+
 type AppMode = 'export' | 'serviceGen';
 
 type SettingsState = {
@@ -684,7 +686,7 @@ function App(): JSX.Element {
       <header className="app-header">
         <div>
           <h1>ProPresenter Lyrics</h1>
-          <p className="eyebrow">All-playlist PPTX exporter</p>
+          <p className="eyebrow">All-playlist PPTX exporter &middot; v{APP_VERSION}</p>
         </div>
         <div className="header-actions">
           {settings.enableServiceGenerator && (
