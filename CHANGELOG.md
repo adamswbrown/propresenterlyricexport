@@ -5,6 +5,13 @@ All notable changes to ProPresenter Lyrics Export will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1] - 2026-02-25
+
+### Fixed
+- **Slash songs splitting** — Songs with " / " in the title (e.g., "Song A / Song B") are now split into separate entries during PDF parsing, so each song gets matched independently
+- **Unfinished playlist support** — Match step no longer requires all songs to be matched before continuing; users can proceed with partial matches and add remaining songs manually in ProPresenter
+- Build step now shows a "Skipped — Add Manually" section listing unmatched songs with their praise slots
+
 ## [3.0.0] - 2026-02-16
 
 ### Added
