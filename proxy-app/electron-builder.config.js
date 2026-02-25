@@ -7,7 +7,7 @@ module.exports = {
   },
   extraMetadata: {
     main: 'dist-proxy/main/index.js',
-    version: '1.0.0',
+    version: '1.1.0',
   },
   files: [
     'dist-proxy/**/*',

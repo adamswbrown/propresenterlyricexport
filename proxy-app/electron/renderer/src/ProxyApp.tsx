@@ -28,6 +28,8 @@ interface LogEntry {
   level: string;
 }
 
+const APP_VERSION = '1.1.0';
+
 export default function ProxyApp() {
   // Settings
   const [ppHost, setPpHost] = useState('127.0.0.1');
@@ -120,7 +122,7 @@ export default function ProxyApp() {
   return (
     <div className="proxy-app">
       <div className="title-bar">
-        <div className="title-text">ProPresenter Web Proxy</div>
+        <div className="title-text">ProPresenter Web Proxy <span className="version-label">v{APP_VERSION}</span></div>
       </div>
 
       {/* Status */}

@@ -45,6 +45,11 @@ body {
   letter-spacing: 0.3px;
 }
 
+.version-label {
+  font-weight: 400;
+  opacity: 0.6;
+}
+
 .section {
   padding: 10px 16px;
   border-bottom: 1px solid var(--border);
