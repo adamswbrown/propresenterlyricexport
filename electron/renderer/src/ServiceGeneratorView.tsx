@@ -125,11 +125,9 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
       case 'parse':
         return parsedItems.length > 0;
       case 'match':
-        // All songs must have a selected match; kids videos without matches can be skipped (imported manually)
-        const songsToMatch = matchResults.filter(r => !r.isKidsVideo || r.matches.length > 0).length;
+        // At least one song must be matched to proceed (allows partial/unfinished playlists)
         const matchedSongs = matchResults.filter(r => r.selectedMatch).length;
-        const unmatchedKidsVideos = matchResults.filter(r => r.isKidsVideo && r.matches.length === 0).length;
-        return matchResults.length > 0 && (matchedSongs + unmatchedKidsVideos) === matchResults.length;
+        return matchResults.length > 0 && matchedSongs > 0;
       case 'verse':
         // Verses are complete if:
         // - User explicitly skipped verses, OR
@@ -1236,7 +1234,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                 )}
 
                 {/* Actions */}
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                   <button
                     className="ghost"
                     onClick={() => setCurrentStep('parse')}
@@ -1244,18 +1242,41 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                   >
                     ← Back
                   </button>
-                  <button
-                    className="primary"
-                    onClick={() => setCurrentStep('verse')}
-                    disabled={!isStepComplete('match')}
-                    type="button"
-                  >
-                    {isStepComplete('match')
-                      ? `Continue to Bible (${matchResults.filter(r => r.selectedMatch).length} songs matched) →`
-                      : `Match all songs first (${matchResults.filter(r => r.selectedMatch).length}/${matchResults.length})`
-                    }
-                  </button>
+                  {(() => {
+                    const matched = matchResults.filter(r => r.selectedMatch).length;
+                    const total = matchResults.length;
+                    const allMatched = matched === total;
+                    const someMatched = matched > 0;
+                    return (
+                      <button
+                        className="primary"
+                        onClick={() => setCurrentStep('verse')}
+                        disabled={!someMatched}
+                        type="button"
+                      >
+                        {allMatched
+                          ? `Continue to Bible (${matched} songs matched) →`
+                          : someMatched
+                            ? `Continue with ${matched}/${total} songs →`
+                            : `Match at least one song first`
+                        }
+                      </button>
+                    );
+                  })()}
                 </div>
+                {/* Warning about unmatched songs */}
+                {(() => {
+                  const matched = matchResults.filter(r => r.selectedMatch).length;
+                  const unmatched = matchResults.filter(r => !r.selectedMatch).length;
+                  if (unmatched > 0 && matched > 0) {
+                    return (
+                      <div style={{ marginTop: '12px', padding: '10px 14px', background: 'rgba(255, 193, 7, 0.1)', borderRadius: '8px', border: '1px solid rgba(255, 193, 7, 0.2)', fontSize: '13px', color: 'rgba(255, 193, 7, 0.8)' }}>
+                        {unmatched} unmatched song{unmatched !== 1 ? 's' : ''} will be skipped — you can add {unmatched !== 1 ? 'them' : 'it'} manually in ProPresenter afterwards.
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             )}
           </div>
@@ -1912,6 +1933,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
 
       case 'build':
         const selectedSongs = matchResults.filter(r => r.selectedMatch);
+        const skippedSongs = matchResults.filter(r => !r.selectedMatch);
         const songsGroupedBySlot = {
           praise1: selectedSongs.filter(s => s.praiseSlot === 'praise1'),
           praise2: selectedSongs.filter(s => s.praiseSlot === 'praise2'),
@@ -2028,6 +2050,29 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                       <div key={idx} style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span>📖</span>
                         <span>{verse.selectedMatch?.name || verse.reference}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Skipped Songs (unmatched) */}
+                {skippedSongs.length > 0 && (
+                  <div style={{ marginBottom: '24px', padding: '16px', background: 'rgba(255, 193, 7, 0.05)', borderRadius: '12px', border: '1px solid rgba(255, 193, 7, 0.2)' }}>
+                    <h3 style={{ fontSize: '16px', marginBottom: '8px', color: 'rgba(255, 193, 7, 0.8)' }}>
+                      Skipped — Add Manually ({skippedSongs.length})
+                    </h3>
+                    <p style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '12px' }}>
+                      These songs weren't matched and will need to be added in ProPresenter:
+                    </p>
+                    {skippedSongs.map((song, idx) => (
+                      <div key={idx} style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ opacity: 0.5 }}>⏭</span>
+                        <span style={{ color: 'var(--muted)' }}>{song.songName}</span>
+                        {song.praiseSlot && (
+                          <span style={{ fontSize: '11px', padding: '2px 6px', background: 'rgba(255, 193, 7, 0.15)', borderRadius: '4px', color: 'rgba(255, 193, 7, 0.8)' }}>
+                            {formatPraiseSlot(song.praiseSlot)}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>

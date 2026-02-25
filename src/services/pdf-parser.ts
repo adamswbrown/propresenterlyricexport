@@ -266,7 +266,12 @@ export class PDFParser {
           song.isKidsVideo = this.hasChildrenLeavingContext(lines, i);
         }
         song.praiseSlot = song.isKidsVideo ? 'kids' : currentPraiseSlot;
-        sections.push(song);
+
+        // Split songs with " / " into separate entries (e.g., "Song A / Song B" → two songs)
+        const splitSongs = this.splitSlashSongs(song);
+        for (const s of splitSongs) {
+          sections.push(s);
+        }
         continue;
       }
 
@@ -274,7 +279,10 @@ export class PDFParser {
       if (line.match(/^COMMUNITY SINGING:/i)) {
         const song = this.extractCommunitySinging(line, position++);
         song.praiseSlot = currentPraiseSlot;
-        sections.push(song);
+        const splitSongs = this.splitSlashSongs(song);
+        for (const s of splitSongs) {
+          sections.push(s);
+        }
         continue;
       }
 
@@ -285,7 +293,10 @@ export class PDFParser {
           song.isKidsVideo = this.hasChildrenLeavingContext(lines, i);
         }
         song.praiseSlot = song.isKidsVideo ? 'kids' : currentPraiseSlot;
-        sections.push(song);
+        const splitSongs = this.splitSlashSongs(song);
+        for (const s of splitSongs) {
+          sections.push(s);
+        }
         continue;
       }
 
@@ -316,6 +327,29 @@ export class PDFParser {
     }
 
     return sections;
+  }
+
+  /**
+   * Split songs containing " / " in the title into separate entries.
+   * e.g., "Song A / Song B" becomes two ServiceSection items.
+   * If no slash is found, returns the original song in an array.
+   */
+  private splitSlashSongs(song: ServiceSection): ServiceSection[] {
+    // Only split non-video songs — videos with slashes are typically a single title
+    if (song.isVideo || !song.title.includes(' / ')) {
+      return [song];
+    }
+
+    const parts = song.title.split(' / ').map(t => t.trim()).filter(t => t.length > 0);
+    if (parts.length <= 1) {
+      return [song];
+    }
+
+    return parts.map((title, idx) => ({
+      ...song,
+      title,
+      position: song.position + idx,
+    }));
   }
 
   /**
