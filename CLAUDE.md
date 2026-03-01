@@ -1,414 +1,440 @@
 # ProPresenter Lyrics Export - Claude Project Guide
 
-## Project Status: ✅ Production Ready
+## Project Status: Production Ready (v3.1.0)
 
-A modern desktop + CLI toolkit for extracting and exporting lyrics from ProPresenter 7 presentations. Available as an Electron desktop app (recommended) or standalone CLI executables. Cross-platform support for macOS and Windows.
+A multi-app platform for extracting, exporting, and remotely accessing worship song lyrics from ProPresenter 7. Ships as three separate Electron apps plus standalone CLI executables. Cross-platform support for macOS and Windows.
 
 ## Quick Facts
 
-- **Language**: TypeScript/Node.js + React (Electron GUI)
-- **Distribution**:
-  - **Desktop App** (Electron): macOS .zip, Windows .exe installer
-  - **CLI Executables**: macOS (ARM64/Intel), Windows standalone binaries
-- **Entry Points**:
-  - Desktop App Dev: `npm run electron:dev`
-  - CLI Dev: `npm start` or `npm run dev`
-  - Production Builds: GitHub Actions automated releases
-- **Main Files**:
-  - CLI: `src/cli.ts`, `src/propresenter-client.ts`, `src/lyrics-extractor.ts`, `src/pptx-exporter.ts`
-  - Electron: `electron/main.ts`, `src/gui/` (React components)
-- **Current Version**: 2.2.1
-- **Documentation**: All user and developer guides consolidated at `docs/` → GitHub Pages at https://adamswbrown.github.io/propresenterlyricexport/
+- **Language**: TypeScript/Node.js + React (Electron GUIs) + vanilla JS (Viewer client)
+- **Current Version**: 3.1.0 (Lyrics app), 1.0.0 (Viewer app), 1.1.0 (Web Proxy app)
+- **Node Version**: 18+ (runtime), 20 (CI)
 - **Key Dependencies**:
   - pptxgenjs@3.10.0 (LOCKED - see Known Issues)
-  - electron@31.2.0
-  - react@18.3.1
+  - electron@31.2.0, electron-vite@2.3.0, electron-builder@24.13.3
+  - express@5.2.1, passport@0.7.0, passport-google-oauth20@2.0.0
+  - react@18.3.1, fuse.js@7.1.0
+- **Documentation**: GitHub Pages at https://adamswbrown.github.io/propresenterlyricexport/
+
+## Three Apps
+
+### 1. ProPresenter Lyrics (Main Desktop App)
+Full desktop application for playlist browsing, lyrics export, PPTX generation, and service planning.
+- Entry: `electron/main/index.ts` (Electron main), `electron/renderer/src/App.tsx` (React UI)
+- Dev: `npm run electron:dev`
+- Build: `npm run electron:build && npm run electron:package`
+- Config: `electron.vite.config.ts`, `electron-builder.config.js`
+- Output: `release/ProPresenter-Lyrics-{version}-mac.zip`, `release/ProPresenter-Lyrics-{version}-win.exe`
+
+### 2. ProPresenter Viewer (Tray App)
+Lightweight menu bar/tray app serving a real-time slide viewer for congregation devices (phones, tablets, browsers).
+- Entry: `viewer-app/electron/main/index.ts`
+- Dev: `npm run viewer:dev`
+- Build: `npm run viewer:build && npm run viewer:package`
+- Config: `viewer-app/electron-vite.config.ts`, `viewer-app/electron-builder.config.js`
+- Output: `release-viewer/ProPresenter-Viewer-{version}-mac.zip`, `release-viewer/ProPresenter-Viewer-{version}-win.exe`
+- Static viewer files: `viewer/public/` (viewer.js, index.html)
+- Uses SSE for real-time slide updates, auto-reconnect on connection loss
+
+### 3. ProPresenter Web Proxy (Tray App)
+Menu bar/tray app providing secure remote access via Cloudflare Tunnel with Google OAuth.
+- Entry: `proxy-app/electron/main/index.ts` (manages child processes: `pp-web-server` + `cloudflared`)
+- Dev: `npm run proxy:dev`
+- Build: `npm run proxy:package` (builds web server executable first, then packages tray app)
+- Config: `proxy-app/electron-vite.config.ts`, `proxy-app/electron-builder.config.js`
+- Output: `release-proxy/ProPresenter-WebProxy-{version}-mac.zip`, `release-proxy/ProPresenter-WebProxy-{version}-win.exe`
+- Embeds `pp-web-server` standalone executable as an extra resource
+
+### CLI (Standalone Executables)
+Interactive command-line tool for status checks, exports, and alias management.
+- Entry: `src/cli.ts`
+- Dev: `npm start -- status` or `npm start -- pptx`
+- Build: `npm run build:exe` (uses `pkg`)
+- Output: `executables/propresenter-lyrics-{platform}`
 
 ## Architecture
 
-**Core Engine (Shared):**
 ```
-ProPresenterClient (API wrapper)
-    ↓
-LyricsExtractor (parse lyrics from API)
-    ↓
-PptxExporter (generate PowerPoint)
+Core Engine (shared by all apps):
+  ProPresenterClient (src/propresenter-client.ts) - API wrapper
+  LyricsExtractor (src/lyrics-extractor.ts)       - Parse lyrics from slides
+  PptxExporter (src/pptx-exporter.ts)             - Generate PowerPoint files
+
+Shared Services (src/services/):
+  alias-store.ts       - Song alias persistence (~/.propresenter-words/aliases.json)
+  song-matcher.ts      - Fuzzy matching with Fuse.js + alias support
+  pdf-parser.ts        - Parse order-of-service PDFs
+  playlist-builder.ts  - Build playlists from matched songs
+  playlist-exporter.ts - Export lyrics from playlists
+  bible-fetcher.ts     - Fetch Bible verses
+  logo.ts              - Logo handling for PPTX
+
+Web Server (src/server/):
+  index.ts             - Express app definition (startServer)
+  web-server.ts        - pkg executable entry point
+  middleware/
+    auth.ts            - Google OAuth + bearer token middleware
+    cloudflare.ts      - Cloudflare Tunnel header extraction
+  routes/
+    auth.ts            - /auth/* (login, callback, logout, status)
+    connection.ts      - /api/connection/* (status, test)
+    export.ts          - /api/export/pptx (SSE progress streaming)
+    settings.ts        - /api/settings (connection config)
+    aliases.ts         - /api/aliases (song mapping CRUD)
+    fonts.ts           - /api/fonts (font list with install status)
+    service-generator.ts - /api/service/* (service builder endpoints)
+    users.ts           - /api/users (manage allowed emails)
+    launch.ts          - /api/launch/propresenter (remote launch on Windows)
+    viewer.ts          - /viewer (static files + SSE slide updates)
+  services/
+    logger.ts          - Structured logging with 14-day file rotation
+    user-store.ts      - Email allowlist (~/.propresenter-words/users.json)
+    settings-store.ts  - Connection config persistence
+    viewer-service.ts  - Polls ProPresenter for slide changes, emits events
+    viewer-instance.ts - Singleton viewer service instance
+
+Web UI (src/web/) - Browser-based SPA served by the Express server:
+  main.tsx             - Entry point, shims window.api with fetch-based client
+  AuthGate.tsx         - OAuth/bearer token gate
+  LoginPage.tsx        - Google sign-in page
+  UserManagement.tsx   - Admin email allowlist management
+  Built with: vite.config.web.ts -> dist-web/
+
+Types (src/types/):
+  bible.ts, playlist.ts, service-order.ts, song-match.ts
 ```
 
-**Distribution Paths:**
+### Distribution Flow
+
 ```
-Path 1: Desktop App (Recommended)
-  Electron Main Process → React GUI → Core Engine → PPTX Export
+Path 1: Desktop App (Electron)
+  electron/main/index.ts -> electron/renderer/src/App.tsx -> Core Engine
   Built with: electron-vite + electron-builder
-  Output: .zip (macOS), .exe (Windows)
 
-Path 2: CLI Executables
-  CLI Interactive Mode → Core Engine → Text/JSON/PPTX Export
-  Built with: TypeScript + pkg
-  Output: Standalone binaries (macOS ARM64, Intel, Windows)
+Path 2: Viewer App (Electron Tray)
+  viewer-app/electron/main/index.ts -> Express server -> viewer/public/*
+  Built with: electron-vite + electron-builder
+
+Path 3: Web Proxy App (Electron Tray)
+  proxy-app/electron/main/index.ts -> spawns pp-web-server + cloudflared
+  Built with: electron-vite + electron-builder + pkg (for pp-web-server)
+
+Path 4: CLI Executables
+  src/cli.ts -> Core Engine -> Text/JSON/PPTX
+  Built with: tsc + pkg
 ```
-
-**Automated Releases:**
-- GitHub Actions workflow on version tags
-- Builds both Electron apps and CLI executables
-- Publishes to GitHub Releases automatically
 
 ## Building
 
-**Development:**
+### Development
+
 ```bash
-# Run Electron desktop app (dev mode with hot reload)
+# Desktop app with hot reload
 npm run electron:dev
 
-# Run CLI from source
-npm start -- status
+# Viewer tray app
+npm run viewer:dev
+
+# Web proxy tray app
+npm run proxy:dev
+
+# Web server (Express) + Web UI (Vite) separately
+npm run web:dev:server   # Express on port 3100
+npm run web:dev:ui       # Vite dev server with proxy to 3100
+
+# CLI from source
+npm start -- status --host 192.168.68.58 --port 61166
 npm start -- pptx
 ```
 
-**Production Builds:**
+### Production Builds
+
 ```bash
-# Build Electron app (uses electron-builder)
-npm run electron:build      # Compile TypeScript + React
-npm run electron:package    # Package into distributable
+# Desktop app
+npm run electron:build && npm run electron:package
 
-# Build standalone CLI executables (uses pkg)
-npm run build:exe          # macOS ARM64, Intel, Windows
+# Viewer app
+npm run viewer:build && npm run viewer:package
 
-# Build macOS app bundle + DMG (legacy, optional)
-npm run build:macos
-npm run build:macos:dmg
+# Web proxy app (builds web server exe first)
+npm run proxy:package
 
-# Build everything (automated via GitHub Actions)
-npm run release:bundle
+# CLI executables (macOS ARM64, Intel, Windows)
+npm run build:exe
+
+# Web server executable only
+npm run build:web-exe
+
+# Web UI only
+npm run web:build:ui
 ```
 
-**GitHub Actions Automated Release:**
-- Trigger: Push version tag (e.g., `v1.0.2`)
-- Builds: macOS Electron .zip + Windows Electron .exe
-- Publishes: GitHub Releases with all artifacts
-- See: `.github/workflows/release.yml`
+### Automated Releases (GitHub Actions)
+
+- Trigger: Push version tag (e.g., `v3.1.0`) or manual workflow_dispatch
+- Workflow: `.github/workflows/release.yml`
+- Builds all three apps for macOS + Windows in parallel
+- Release notes: reads from `release-notes.md`
+- Publishes 6 artifacts to GitHub Releases:
+  - `ProPresenter-Lyrics-{version}-mac.zip` / `-win.exe`
+  - `ProPresenter-Viewer-{version}-mac.zip` / `-win.exe`
+  - `ProPresenter-WebProxy-{version}-mac.zip` / `-win.exe`
+
+## Build Outputs (Generated Directories)
+
+```
+dist/              - Compiled CLI/server TypeScript (tsc)
+dist-electron/     - Main app Electron bundles (main, preload, renderer)
+dist-web/          - Compiled web React UI (Vite)
+dist-viewer/       - Viewer app Electron bundles
+dist-proxy/        - Proxy app Electron bundles
+executables/       - Standalone binaries (CLI, pp-web-server)
+release/           - Main app packages (.zip, .dmg, .exe)
+release-viewer/    - Viewer app packages
+release-proxy/     - Proxy app packages
+```
 
 ## Release Process (Major.Minor.Hotfix)
 
-**⚠️ CRITICAL: Always complete ALL steps in order to avoid incomplete releases**
+**CRITICAL: Always complete ALL steps in order to avoid incomplete releases.**
 
-### Versioning Scheme
-- **MAJOR**: Breaking changes (e.g., `2.0.0`)
-- **MINOR**: New features, significant improvements (e.g., `2.2.0`)
-- **HOTFIX**: Bug fixes, small improvements (e.g., `2.2.1`)
+### Versioning
+- **MAJOR**: Breaking changes (e.g., `3.0.0`)
+- **MINOR**: New features (e.g., `3.1.0`)
+- **HOTFIX**: Bug fixes (e.g., `3.0.1`)
 
-### Release Checklist (DO NOT SKIP STEPS)
+Note: Each app has its own version in its `electron-builder.config.js` (`extraMetadata.version`). The main app version lives in `package.json`.
 
-**Step 1: Ensure all code changes are committed**
-```bash
-# Check git status - must be clean
-git status
+### Release Checklist
 
-# If there are uncommitted changes:
-git add <files>
-git commit -m "Description of changes"
-```
-
-**Step 2: Update version numbers**
-```bash
-# Update BOTH files:
-# 1. package.json: "version": "X.Y.Z"
-# 2. CHANGELOG.md: Add new [X.Y.Z] - YYYY-MM-DD section with changes
-```
-
-**Step 3: Commit version changes**
-```bash
-git add package.json CHANGELOG.md
-git commit -m "v X.Y.Z: Release notes summary
-
-- Key change 1
-- Key change 2"
-```
-
-**Step 4: Create and push tag**
-```bash
-# Tag current commit
-git tag vX.Y.Z
-
-# Push main branch first
-git push origin main
-
-# Push the tag (this triggers GitHub Actions)
-git push origin vX.Y.Z
-```
-
-### Common Mistakes to Avoid
-
-❌ **DO NOT** tag without committing all code changes first
-```bash
-# WRONG - forgot to commit code changes
-git tag v2.2.1
-git push origin v2.2.1
-```
-
-✅ **CORRECT** - commit everything, then tag
-```bash
-# RIGHT - all changes committed first
-git add src/App.tsx  # Your code changes
-git commit -m "Implement feature"
-git add CHANGELOG.md package.json
-git commit -m "v2.2.1: release notes"
-git tag v2.2.1
-git push origin main
-git push origin v2.2.1
-```
+1. Ensure all code changes are committed (`git status` must be clean)
+2. Update version in `package.json` (and app-specific configs if needed)
+3. Update `CHANGELOG.md` with new section
+4. Update `release-notes.md` with user-facing release notes
+5. Commit version changes: `git commit -m "vX.Y.Z: Release notes summary"`
+6. Tag: `git tag vX.Y.Z`
+7. Push main branch: `git push origin main`
+8. Push tag (triggers CI): `git push origin vX.Y.Z`
 
 ### Fixing a Bad Release
 
-If you accidentally tagged without committing code changes:
 ```bash
-# 1. Delete local tag
-git tag -d vX.Y.Z
-
-# 2. Delete remote tag
-git push origin :vX.Y.Z
-
-# 3. Commit the missing changes
-git add <files>
-git commit -m "Include missing code from release"
-
-# 4. Re-create and push the tag
-git tag vX.Y.Z
-git push origin main
-git push origin vX.Y.Z
-```
-
-## Known Issues & Solutions
-
-### ⚠️ pptxgenjs Bundling Issue
-- **Problem**: Versions 3.11.0+ crash when bundled with `pkg` due to dynamic `fs` imports
-- **Solution**: LOCKED at 3.10.0, logo embedding guarded by `process.pkg` detection
-- **Impact**: CLI executables (pkg) skip logo embedding; Electron and web server embed logos normally
-- **Fix Applied**: `src/pptx-exporter.ts` checks `(process as any).pkg` — when truthy (pkg runtime), `addImage` is skipped
-- **DO NOT**: Upgrade pptxgenjs without resolving this first
-
-### ✅ Recent Updates (Feb 14, 2026)
-1. **Skip Verses button** - Verse step can now be explicitly skipped when Bible presentations aren't in the library yet
-2. **YouTube search for kids songs** - One-click "Search YouTube" button for unmatched kids songs (typically YouTube videos)
-3. **Cross-library fallback for kids matching** - Kids songs not found in Kids library automatically searched across all libraries
-4. **Improved not-found guidance** - All not-found states show clear step-by-step instructions with copy actions first (Copy Song Name for songs, Copy Reference for verses)
-
-### ✅ Updates (Feb 7, 2026)
-1. **Song alias/override mapping** - Persistent mappings for songs with different names in order of service vs library
-2. **CLI alias commands** - `alias list/add/remove` for managing song mappings from the terminal
-3. **Inline library search** - Search all ProPresenter libraries from the match review step
-4. **Save as Alias button** - One-click persistent override from Service Generator
-
-### ✅ Updates (Feb 3, 2026)
-1. **Font detection & curated dropdown** - Smart font selection with installation status and download links
-2. **Cross-platform font checking** - Detects installed fonts on macOS, Windows, and Linux
-3. **25+ curated presentation fonts** - Organized by category (sans-serif, serif, display)
-4. **One-click font downloads** - Opens Google Fonts for missing fonts
-
-### ✅ Updates (Feb 2, 2026)
-1. **Electron GUI added** - Full desktop app with React UI for playlist management
-2. **App icons created** - Professional .icns (macOS) and .ico (Windows) icons
-3. **GitHub Actions workflow** - Automated releases on version tags
-4. **Documentation reorganized** - All docs moved to `docs/` folder
-5. **package-lock.json added** - Fixed `npm ci` errors in CI/CD
-6. **CLI still available** - Standalone executables maintained alongside Electron
-
-## Development Workflow
-
-### Making Changes
-1. Edit TypeScript files in `src/`
-2. Run `npm run build` to compile
-3. Test with `npm start -- [command]`
-4. When ready: `npm run build:exe` to rebuild all platform executables
-
-### Testing
-```bash
-# Test CLI directly
-npm start -- status --host 192.168.68.58 --port 61166
-
-# Test interactive mode
-npm start -- pptx
-
-# Test built executable
-./executables/propresenter-lyrics-macos-arm64 pptx 3 output.pptx
-```
-
-### Common Commands
-```bash
-# Check connection
-propresenter-lyrics status
-
-# Export playlist to text
-propresenter-lyrics export 3
-
-# Export playlist to PowerPoint (interactive)
-propresenter-lyrics pptx
-
-# Export specific playlist directly
-propresenter-lyrics pptx 3 my-service
+git tag -d vX.Y.Z                # Delete local tag
+git push origin :vX.Y.Z          # Delete remote tag
+# Fix and commit changes
+git tag vX.Y.Z                   # Re-create tag
+git push origin main && git push origin vX.Y.Z
 ```
 
 ## Environment Variables
 
-```bash
-export PROPRESENTER_HOST=192.168.68.58
-export PROPRESENTER_PORT=61166
-```
+### ProPresenter Connection
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PROPRESENTER_HOST` | `127.0.0.1` | ProPresenter API host |
+| `PROPRESENTER_PORT` | `61166` (CLI) / `1025` (proxy) | ProPresenter API port |
 
-These can be set in shell profile or passed per-command:
-```bash
-propresenter-lyrics status --host 192.168.68.58 --port 61166
-```
+### Web Server
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `WEB_PORT` | `3100` | Web server port |
+| `WEB_HOST` | `0.0.0.0` | Web server bind address |
+| `NODE_ENV` | - | Set to `production` for secure cookies |
 
-## Git Workflow
+### Authentication
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GOOGLE_CLIENT_ID` | - | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | - | Google OAuth client secret |
+| `TUNNEL_URL` | - | Cloudflare Tunnel public URL |
+| `CORS_ORIGIN` | - | Comma-separated allowed CORS origins |
 
-All recent work has been committed with proper messages. Key commits:
-- Clean up Electron and GUI code
-- Fix PPTX export bundling issues
-- Disable image encoding to avoid dynamic import crashes
+### PPTX Export
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PPTX_FONT_FACE` | - | Font family for PPTX |
+| `PPTX_FONT_SIZE` | - | Font size for PPTX |
+| `PPTX_TITLE_FONT_SIZE` | - | Title font size |
+| `PPTX_FONT_BOLD` | - | Bold text flag |
+| `PPTX_FONT_ITALIC` | - | Italic text flag |
+| `PPTX_TEXT_COLOR` | - | Text color |
 
-Always commit meaningful changes with context about WHY, not just WHAT.
+## Persistent Data
+
+All stored in `~/.propresenter-words/`:
+- `aliases.json` - Song alias/override mappings
+- `users.json` - Email allowlist for web proxy
+- `web-auth.json` - Bearer token and session secret
+- `sessions/` - File-based session store (6-hour TTL, auto-pruned)
+- `logs/` - Structured request logs (14-day rotation)
+
+Electron settings (via `electron-store`):
+- `propresenter-viewer` - Viewer app settings (host, port)
+- `propresenter-proxy` - Proxy app settings (host, port, OAuth, tunnel)
+
+## Known Issues & Constraints
+
+### pptxgenjs Bundling Issue
+- **Problem**: Versions 3.11.0+ crash when bundled with `pkg` due to dynamic `fs` imports
+- **Solution**: LOCKED at 3.10.0, logo embedding guarded by `process.pkg` detection
+- **Impact**: CLI executables (pkg) skip logo embedding; Electron and web server embed logos normally
+- **Fix**: `src/pptx-exporter.ts` checks `(process as any).pkg` - when truthy, `addImage` is skipped
+- **DO NOT** upgrade pptxgenjs without resolving this
+
+### Dynamic Imports in pkg
+- `pkg` does not support dynamic `require()` or `import()` at runtime
+- All static assets must be declared in `package.json` `pkg.assets`
+- Current assets: `dist-web/**/*`, `viewer/public/**/*`
+
+### Tray Apps on macOS
+- Both tray apps use `LSUIElement: true` to hide from dock
+- Icon paths differ between packaged and dev modes (`process.resourcesPath` vs relative paths)
+- macOS GUI apps don't inherit shell PATH; `cloudflared` path is searched explicitly
 
 ## File Structure
 
 ```
 src/
-├── cli.ts                    # CLI entry point, command handling
-├── propresenter-client.ts    # ProPresenter API wrapper (shared)
-├── lyrics-extractor.ts       # Parse lyrics from slides (shared)
-├── pptx-exporter.ts          # Generate PowerPoint files (shared)
-├── services/
-│   ├── alias-store.ts        # Song alias persistence (~/.propresenter-words/aliases.json)
-│   ├── song-matcher.ts       # Fuzzy song matching with alias support
-│   ├── pdf-parser.ts         # Parse order-of-service PDFs
-│   ├── playlist-builder.ts   # Build playlists from matched songs
-│   ├── playlist-exporter.ts  # Export lyrics from playlists
-│   └── bible-fetcher.ts      # Fetch Bible verses
-└── gui/                      # Electron React components
-    ├── App.tsx               # Main Electron UI
-    ├── components/           # React components
-    └── styles/               # CSS modules
+  cli.ts                          # CLI entry point
+  index.ts                        # CLI exports
+  propresenter-client.ts          # ProPresenter API wrapper (CORE)
+  lyrics-extractor.ts             # Parse lyrics from slides (CORE)
+  pptx-exporter.ts                # Generate PowerPoint (CORE)
+  services/                       # Shared business logic
+    alias-store.ts, song-matcher.ts, pdf-parser.ts,
+    playlist-builder.ts, playlist-exporter.ts,
+    bible-fetcher.ts, logo.ts
+  types/                          # TypeScript type definitions
+    bible.ts, playlist.ts, service-order.ts, song-match.ts
+  utils/
+    playlist-utils.ts
+  server/                         # Express web server
+    index.ts, web-server.ts
+    middleware/  (auth.ts, cloudflare.ts)
+    routes/     (auth, connection, export, settings, aliases,
+                 fonts, service-generator, users, launch, viewer)
+    services/   (logger, user-store, settings-store,
+                 viewer-service, viewer-instance)
+  web/                            # Browser-based SPA
+    main.tsx, index.html, AuthGate.tsx, LoginPage.tsx,
+    UserManagement.tsx
+  gui/
+    api-client.ts                 # Electron IPC client
+  test-*.ts                       # Ad-hoc test scripts (no test framework)
 
-electron/
-├── main.ts                   # Electron main process
-├── preload.ts                # Electron preload script
-└── renderer.ts               # Electron renderer entry
+electron/                         # Main desktop app
+  main/index.ts                   # Electron main process
+  preload/index.ts                # IPC bridge
+  renderer/
+    src/App.tsx                   # Main React UI
+    src/ServiceGeneratorView.tsx  # Service Generator component
+    index.html
 
-dist/                         # Compiled CLI TypeScript (generated)
-dist-electron/                # Compiled Electron bundles (generated)
-executables/                  # CLI executables (generated)
-release/                      # Electron packages (generated)
+viewer-app/                       # Viewer tray app
+  electron-vite.config.ts
+  electron-builder.config.js      # v1.0.0
+  electron/
+    main/index.ts                 # Tray app + Express server
+    preload/index.ts
+    renderer/src/TrayApp.tsx      # Settings UI
+
+proxy-app/                        # Web proxy tray app
+  electron-vite.config.ts
+  electron-builder.config.js      # v1.1.0
+  electron/
+    main/index.ts                 # Manages pp-web-server + cloudflared
+    preload/index.ts
+    renderer/src/ProxyApp.tsx     # Settings UI
+
+viewer/                           # Static viewer files
+  public/
+    index.html, viewer.js, setup.html, setup.js, styles.css
+  config.json
 
 assets/
-├── icon.icns                 # macOS app icon
-├── icon.ico                  # Windows app icon
-└── icon.png                  # 512x512 source image
+  icon.icns, icon.ico, icon.png   # App icons
 
 .github/workflows/
-└── release.yml               # Automated release workflow
+  release.yml                     # Multi-app release workflow
 
 scripts/
-├── generate-icons.sh         # Create app icons from logo.png
-├── setup-mac.sh             # Interactive macOS setup
-└── setup-windows.ps1        # Interactive Windows setup (PowerShell)
+  generate-icons.sh, setup-mac.sh, setup-windows.ps1,
+  build-macos-app.sh, create-dmg.sh
 
-docs/                         # All documentation
-├── DEVELOPING.md            # Development guide
-├── DISTRIBUTION.md          # Distribution guide
-├── QUICK_START.md           # Quick start guide
-├── RELEASING.md             # Release creation guide
-└── SETUP.md                 # Setup instructions
+docs/                             # GitHub Pages documentation
+  index.md, getting-started.md, user-guide.md, faq.md
+  guides/   (service-generator, cli-guide, pptx-export,
+             viewer, proxy-app, web-proxy-setup)
+  developer/ (index, setup, architecture, building,
+              contributing, release-process)
+  _config.yml
+```
 
-Configuration/
-├── electron-builder.config.js  # Electron packaging config
-├── electron.vite.config.ts    # Electron build config
-├── package.json               # Dependencies and scripts
-└── tsconfig.json              # TypeScript config
+## Authentication Architecture (Web Proxy)
+
+The web server supports two auth methods:
+1. **Google OAuth** (primary) - Passport strategy with email allowlist
+2. **Bearer token** (fallback) - Auto-generated token stored in `~/.propresenter-words/web-auth.json`
+
+Routes:
+- `/health` - Unauthenticated health check
+- `/auth/*` - Login/callback/logout/status (unauthenticated)
+- `/viewer` - Public (no auth required)
+- `/api/*` - All protected by `authMiddleware`
+
+Sessions: File-based (`session-file-store`), 6-hour TTL, stored in `~/.propresenter-words/sessions/`.
+
+## Real-Time Updates
+
+- **Viewer**: `ViewerService` polls ProPresenter `/v1/status/slide` for changes, broadcasts via SSE to connected viewers with 15-second heartbeat
+- **PPTX Export**: Progress streamed via SSE from `/api/export/pptx`
+- **Auto-reconnect**: Viewers detect stale connections (no heartbeat in 25s) and auto-reconnect; page visibility API triggers refresh on return from background
+
+## Git Workflow
+
+- Always commit with context about WHY, not just WHAT
+- Follow conventional commit style: `v3.1.0: Display app version in Lyrics and Web Proxy UIs`
+- Keep `release-notes.md` updated for CI to use in GitHub Releases
+
+## Testing
+
+No formal test framework (no Jest/Vitest configuration). Ad-hoc test scripts exist:
+- `src/test-pdf-parser.ts` - PDF parsing tests
+- `src/test-song-matcher.ts` - Fuzzy matching tests
+- `src/test-end-to-end.ts` - Integration test
+
+Run manually: `npx ts-node src/test-pdf-parser.ts`
+
+## Common Development Tasks
+
+```bash
+# Check ProPresenter connection
+npm start -- status --host 192.168.68.58 --port 61166
+
+# Export playlist interactively
+npm start -- pptx
+
+# Manage song aliases
+npm start -- alias list
+npm start -- alias add "PDF Name" "Library Name"
+npm start -- alias remove "PDF Name"
+
+# Run web server locally
+npm run build && npm run web:build:ui && npm run web:start
+
+# Run with Cloudflare tunnel
+TUNNEL_URL=https://pp.example.com npm run web:start:tunnel
 ```
 
 ## Future Enhancements
 
 **Reasonable to Consider:**
-- Connection retry logic with exponential backoff
-- Cache ProPresenter version info to reduce API calls
+- Formal test suite (Vitest)
 - Electron auto-updater integration (electron-updater)
 - Code signing for macOS and Windows (requires certificates)
-- DMG background images for macOS installer
-- Real-time playlist updates in Electron GUI
-
-**Already Implemented:**
-- ✅ Electron desktop app with React UI
-- ✅ Automated GitHub Actions releases
-- ✅ Professional app icons
-- ✅ Settings persistence (electron-store)
-- ✅ Connection validation before operations
-- ✅ Font detection with curated dropdown (25+ fonts)
-- ✅ One-click font download links (Google Fonts)
-- ✅ Song alias/override mapping (CLI + GUI)
-- ✅ Inline library search in Service Generator match review
+- Connection retry logic with exponential backoff
 
 **Not Recommended:**
 - Upgrading pptxgenjs beyond 3.10.0 (causes crashes in CLI executables)
 - Adding logo support to CLI bundled executables (would require different PPTX library)
 - Dynamic imports in pkg-bundled code (incompatible)
-
-## Contact Points
-
-- ProPresenter API: `renewedvision-propresenter@7.7.2`
-- PPTX Generation: `pptxgenjs@3.10.0` (LOCKED VERSION)
-- Bundling: `pkg@5.8.1`
-- Build/Runtime: Node 18+
-
-## Documentation
-
-All documentation has been consolidated and migrated to **GitHub Pages** for professional delivery:
-
-**GitHub Pages Site:** https://adamswbrown.github.io/propresenterlyricexport/
-
-### Documentation Structure
-
-```
-docs/
-├── index.md                           # Homepage
-├── getting-started.md                 # Installation (consolidated from 5 docs)
-├── user-guide.md                      # Desktop + CLI usage
-├── faq.md                             # Q&A and troubleshooting
-│
-├── guides/                            # Specialized guides
-│   ├── service-generator.md           # Service Generator feature
-│   ├── cli-guide.md                   # All CLI commands
-│   └── pptx-export.md                 # PPTX customization
-│
-├── developer/                         # Developer documentation
-│   ├── index.md                       # Overview
-│   ├── setup.md                       # Development environment
-│   ├── architecture.md                # Codebase structure
-│   ├── building.md                    # Build and distribution
-│   ├── contributing.md                # Code style and PR process
-│   └── release-process.md             # Release procedures
-│
-└── _config.yml                        # Jekyll configuration
-```
-
-### Documentation Consolidation
-
-The following files have been **consolidated into docs/**:
-- ✅ `README.md` - Simplified to point to GitHub Pages
-- ✅ `QUICK_START.md` → `docs/getting-started.md`
-- ✅ `SETUP.md` → `docs/getting-started.md`
-- ✅ `PRO PRESENTER SETUP.md` → `docs/getting-started.md`
-- ✅ `DEVELOPING.md` → `docs/developer/setup.md`
-- ✅ `DISTRIBUTION.md` → Integrated into multiple guides
-
-**Benefits:**
-- Single source of truth for all documentation
-- 70% reduction in duplication
-- Professional presentation via GitHub Pages
-- Easy to maintain and update
-- Mobile-friendly and searchable
-
-**Current Documentation Pages:**
-- 8 user-facing guides (3,500+ words each)
-- 6 developer guides (2,000+ words each)
-- 1 comprehensive FAQ (50+ Q&As)
-- Internal `docs/CONSOLIDATION_PLAN.md` documents the strategy
