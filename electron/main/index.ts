@@ -35,6 +35,13 @@ interface AppSettings {
   kidsLibraryId?: string | null;
   serviceContentLibraryId?: string | null;
   templatePlaylistId?: string | null;
+  // Birthday Bucket
+  enableBirthdayBucket?: boolean;
+  churchSuiteAccount?: string | null;
+  churchSuiteApiKey?: string | null;
+  churchSuiteAppName?: string | null;
+  birthdayChurchName?: string | null;
+  birthdayBackgroundImagePath?: string | null;
 }
 
 interface ConnectionConfig {
@@ -1371,4 +1378,101 @@ ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig
     console.error('Playlist build error:', error);
     return { success: false, error: error.message || 'Failed to build playlist' };
   }
+});
+
+// Birthday Bucket IPC handlers
+// In-memory cache for synced birthday data
+let birthdayCache: { people: any[]; syncedAt: string } | null = null;
+
+ipcMain.handle('churchsuite:sync', async (_event, config: { account: string; apiKey: string; appName: string }) => {
+  try {
+    const { fetchContacts } = await import('../../src/services/churchsuite-contacts');
+    const { fetchChildren } = await import('../../src/services/churchsuite-children');
+
+    const [contacts, children] = await Promise.all([
+      fetchContacts(config),
+      fetchChildren(config),
+    ]);
+
+    const syncedAt = new Date().toISOString();
+    birthdayCache = {
+      people: [...contacts, ...children],
+      syncedAt,
+    };
+
+    return {
+      success: true,
+      contacts: contacts.length,
+      children: children.length,
+      syncedAt,
+    };
+  } catch (error: any) {
+    console.error('ChurchSuite sync error:', error);
+    return { success: false, contacts: 0, children: 0, syncedAt: '', error: error.message || 'Sync failed' };
+  }
+});
+
+ipcMain.handle('churchsuite:getBirthdays', async (_event, weekOffset: number) => {
+  try {
+    if (!birthdayCache) {
+      return { success: false, entries: [], range: { start: '', end: '' } };
+    }
+
+    const { getWeekBirthdays, getWeekRange } = await import('../../src/services/birthday');
+    const entries = getWeekBirthdays(birthdayCache.people, weekOffset);
+    const range = getWeekRange(weekOffset);
+
+    return { success: true, entries, range };
+  } catch (error: any) {
+    console.error('Birthday fetch error:', error);
+    return { success: false, entries: [], range: { start: '', end: '' } };
+  }
+});
+
+ipcMain.handle('churchsuite:exportPptx', async (_event, weekOffset: number) => {
+  try {
+    if (!birthdayCache) {
+      return { success: false, filename: '', error: 'No data synced yet. Please sync with ChurchSuite first.' };
+    }
+
+    const { getWeekBirthdays, getWeekRange } = await import('../../src/services/birthday');
+    const { generateBirthdayPptx } = await import('../../src/services/birthday-pptx');
+
+    const entries = getWeekBirthdays(birthdayCache.people, weekOffset);
+    const range = getWeekRange(weekOffset);
+    const weekLabel = `${range.start} – ${range.end}`;
+
+    const outputDir = app.getPath('documents');
+    const filepath = await generateBirthdayPptx(entries, weekLabel, outputDir, {
+      churchName: settings.get('birthdayChurchName') || undefined,
+      backgroundImagePath: settings.get('birthdayBackgroundImagePath') || undefined,
+    });
+    const filename = path.basename(filepath);
+
+    return { success: true, filename };
+  } catch (error: any) {
+    console.error('Birthday PPTX export error:', error);
+    return { success: false, filename: '', error: error.message || 'Export failed' };
+  }
+});
+
+ipcMain.handle('birthday:chooseBackground', async () => {
+  const result = await dialog.showOpenDialog({
+    title: 'Select Birthday Slide Background Image',
+    properties: ['openFile'],
+    filters: [
+      { name: 'Images', extensions: ['png', 'jpg', 'jpeg'] },
+    ],
+  });
+
+  if (result.canceled || !result.filePaths[0]) {
+    return { canceled: true, filePath: undefined };
+  }
+
+  return { canceled: false, filePath: result.filePaths[0] };
+});
+
+ipcMain.handle('churchsuite:openOutput', async () => {
+  const outputDir = app.getPath('documents');
+  await shell.openPath(outputDir);
 });

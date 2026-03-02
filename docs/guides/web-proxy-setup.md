@@ -191,7 +191,7 @@ Note the **tunnel UUID** printed (e.g., `6ff42ae2-765d-4adf-8112-31c55c1551ef`).
 ### 3c. Route DNS
 
 ```bash
-cloudflared tunnel route dns propresenter-web pp.example.com
+cloudflared tunnel route dns propresenter-web pp.standrewsbangor.church
 ```
 
 Replace `pp.example.com` with your desired hostname. This creates a CNAME record in Cloudflare DNS.

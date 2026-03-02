@@ -1,10 +1,11 @@
 /// <reference path="./env.d.ts" />
 import React, { useEffect, useMemo, useState } from 'react';
 import { ServiceGeneratorView } from './ServiceGeneratorView';
+import { BirthdayBucketView } from './BirthdayBucketView';
 
-const APP_VERSION = '3.1.0';
+const APP_VERSION = '3.2.0';
 
-type AppMode = 'export' | 'serviceGen';
+type AppMode = 'export' | 'serviceGen' | 'birthdayBucket';
 
 type SettingsState = {
   host: string;
@@ -25,6 +26,13 @@ type SettingsState = {
   kidsLibraryId: string;
   serviceContentLibraryId: string;
   templatePlaylistId: string;
+  // Birthday Bucket
+  enableBirthdayBucket: boolean;
+  churchSuiteAccount: string;
+  churchSuiteApiKey: string;
+  churchSuiteAppName: string;
+  birthdayChurchName: string;
+  birthdayBackgroundImagePath: string;
 };
 
 type PlaylistNode = {
@@ -162,6 +170,12 @@ function App(): JSX.Element {
     kidsLibraryId: '',
     serviceContentLibraryId: '',
     templatePlaylistId: '',
+    enableBirthdayBucket: false,
+    churchSuiteAccount: '',
+    churchSuiteApiKey: '',
+    churchSuiteAppName: '',
+    birthdayChurchName: '',
+    birthdayBackgroundImagePath: '',
   });
   const [mode, setMode] = useState<AppMode>('export');
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle');
@@ -203,6 +217,12 @@ function App(): JSX.Element {
         kidsLibraryId: saved.kidsLibraryId ?? '',
         serviceContentLibraryId: saved.serviceContentLibraryId ?? '',
         templatePlaylistId: saved.templatePlaylistId ?? '',
+        enableBirthdayBucket: saved.enableBirthdayBucket ?? false,
+        churchSuiteAccount: saved.churchSuiteAccount ?? '',
+        churchSuiteApiKey: saved.churchSuiteApiKey ?? '',
+        churchSuiteAppName: saved.churchSuiteAppName ?? '',
+        birthdayChurchName: saved.birthdayChurchName ?? '',
+        birthdayBackgroundImagePath: saved.birthdayBackgroundImagePath ?? '',
       }));
       if (saved.lastPlaylistId) {
         setSelectedId(saved.lastPlaylistId);
@@ -562,6 +582,12 @@ function App(): JSX.Element {
       kidsLibraryId: settings.kidsLibraryId || null,
       serviceContentLibraryId: settings.serviceContentLibraryId || null,
       templatePlaylistId: settings.templatePlaylistId || null,
+      enableBirthdayBucket: settings.enableBirthdayBucket,
+      churchSuiteAccount: settings.churchSuiteAccount || null,
+      churchSuiteApiKey: settings.churchSuiteApiKey || null,
+      churchSuiteAppName: settings.churchSuiteAppName || null,
+      birthdayChurchName: settings.birthdayChurchName || null,
+      birthdayBackgroundImagePath: settings.birthdayBackgroundImagePath || null,
     };
     await window.api.saveSettings(payload);
     setStatusNote('Settings saved');
@@ -679,6 +705,24 @@ function App(): JSX.Element {
     );
   }
 
+  // Birthday Bucket mode
+  if (mode === 'birthdayBucket') {
+    return (
+      <BirthdayBucketView
+        churchSuiteConfig={{
+          account: settings.churchSuiteAccount,
+          apiKey: settings.churchSuiteApiKey,
+          appName: settings.churchSuiteAppName || 'birthday-bucket',
+        }}
+        churchName={settings.birthdayChurchName}
+        backgroundImagePath={settings.birthdayBackgroundImagePath}
+        onConfigChange={(updates) => setSettings(prev => ({ ...prev, ...updates as any }))}
+        onSaveSettings={handleSaveSettings}
+        onBack={() => setMode('export')}
+      />
+    );
+  }
+
   // Export mode (default)
   return (
     <div className="app-shell">
@@ -698,6 +742,17 @@ function App(): JSX.Element {
               title="Service Generator"
             >
               📖
+            </button>
+          )}
+          {settings.enableBirthdayBucket && (
+            <button
+              className="icon-button"
+              type="button"
+              aria-label="Birthday Bucket"
+              onClick={() => setMode('birthdayBucket')}
+              title="Birthday Bucket"
+            >
+              🎂
             </button>
           )}
           <button
@@ -977,6 +1032,16 @@ function App(): JSX.Element {
                   Enable Service Generator
                 </label>
                 <span className="hint">Automated service playlist creation from PDF service orders</span>
+                <label className="checkbox" style={{ marginTop: '12px' }}>
+                  <input
+                    type="checkbox"
+                    name="enableBirthdayBucket"
+                    checked={settings.enableBirthdayBucket}
+                    onChange={handleCheckboxChange}
+                  />
+                  Enable Birthday Bucket
+                </label>
+                <span className="hint">ChurchSuite birthday list and PPTX export</span>
               </div>
 
               <div className="modal-footer">
