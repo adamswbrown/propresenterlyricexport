@@ -1,0 +1,439 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap');
+
+:root {
+  color-scheme: light dark;
+  --bg: linear-gradient(135deg, #04070f 0%, #0f1a2b 40%, #15303f 100%);
+  --panel: rgba(7, 12, 21, 0.76);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --text: #f2f7ff;
+  --muted: rgba(242, 247, 255, 0.6);
+  --accent: #2fd4c2;
+  --accent-dark: #169e8d;
+  --danger: #ff5f5f;
+  --warning: #f5c156;
+  --success: #6ee6a8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+/* ── Titlebar ─────────────────────────────────────────────── */
+.titlebar-drag {
+  -webkit-app-region: drag;
+  height: 28px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.titlebar-drag button,
+.titlebar-drag a,
+.titlebar-drag input {
+  -webkit-app-region: no-drag;
+}
+
+/* ── App Shell ────────────────────────────────────────────── */
+.app-shell {
+  padding: 60px 40px 48px;
+  min-height: 100vh;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+h1 {
+  font-size: 32px;
+  margin: 0;
+}
+
+.eyebrow {
+  margin: 6px 0 0;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ── Status Pill ──────────────────────────────────────────── */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 14px;
+}
+
+.status-pill .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--warning);
+}
+
+.status-pill.status-synced .dot {
+  background: var(--success);
+}
+
+.status-pill.status-error .dot {
+  background: var(--danger);
+}
+
+/* ── Content Grid ─────────────────────────────────────────── */
+.content-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+}
+
+.left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Panel ────────────────────────────────────────────────── */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 18px;
+  padding: 24px;
+  backdrop-filter: blur(16px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+.panel-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.panel-heading h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ── Forms ────────────────────────────────────────────────── */
+label {
+  font-size: 13px;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+input {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+input:disabled {
+  opacity: 0.6;
+}
+
+/* ── Buttons ──────────────────────────────────────────────── */
+button {
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: none;
+  color: #041218;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.primary {
+  background: var(--accent);
+  color: #041218;
+}
+
+button.primary:hover:not(:disabled) {
+  background: var(--accent-dark);
+}
+
+button.accent {
+  background: rgba(47, 212, 194, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(47, 212, 194, 0.3);
+}
+
+button.accent:hover:not(:disabled) {
+  background: rgba(47, 212, 194, 0.25);
+}
+
+button.ghost {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--muted);
+}
+
+button.ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+/* ── Week Toggle ──────────────────────────────────────────── */
+.week-toggle {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.week-toggle button {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.week-toggle button.active {
+  background: rgba(47, 212, 194, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(47, 212, 194, 0.3);
+}
+
+/* ── Birthday List ────────────────────────────────────────── */
+.birthday-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.birthday-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.03);
+  transition: background 0.2s ease;
+}
+
+.birthday-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.birthday-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.birthday-name {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.birthday-date {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.birthday-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.birthday-age {
+  font-size: 14px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-child {
+  background: rgba(245, 193, 86, 0.15);
+  color: var(--warning);
+  border: 1px solid rgba(245, 193, 86, 0.3);
+}
+
+.badge-contact {
+  background: rgba(47, 212, 194, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(47, 212, 194, 0.3);
+}
+
+/* ── Sync Stats ───────────────────────────────────────────── */
+.sync-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.stat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 6px rgba(110, 230, 168, 0.4);
+}
+
+.stat-label {
+  color: var(--muted);
+}
+
+/* ── Summary ──────────────────────────────────────────────── */
+.summary-text {
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  padding: 12px 0;
+}
+
+/* ── Empty State ──────────────────────────────────────────── */
+.empty-state {
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+/* ── Notification ─────────────────────────────────────────── */
+.notification {
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 24px;
+  border: 1px solid transparent;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.notification-success {
+  background: rgba(110, 230, 168, 0.1);
+  border-color: rgba(110, 230, 168, 0.3);
+  color: var(--success);
+}
+
+.notification-error {
+  background: rgba(255, 95, 95, 0.1);
+  border-color: rgba(255, 95, 95, 0.3);
+  color: var(--danger);
+}
+
+.notification-info {
+  background: rgba(47, 212, 194, 0.1);
+  border-color: rgba(47, 212, 194, 0.3);
+  color: var(--accent);
+}
+
+/* ── Output Path ──────────────────────────────────────────── */
+.output-path {
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  font-size: 12px;
+  color: var(--accent);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px 12px;
+  border-radius: 8px;
+  word-break: break-all;
+  cursor: pointer;
+}
+
+.output-path:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Loading Spinner ──────────────────────────────────────── */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--panel-border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}

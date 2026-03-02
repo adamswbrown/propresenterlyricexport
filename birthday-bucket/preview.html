@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Birthday Bucket — UI Preview</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: linear-gradient(135deg, #04070f 0%, #0f1a2b 40%, #15303f 100%);
+      --panel: rgba(7, 12, 21, 0.76);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --text: #f2f7ff;
+      --muted: rgba(242, 247, 255, 0.6);
+      --accent: #2fd4c2;
+      --accent-dark: #169e8d;
+      --danger: #ff5f5f;
+      --warning: #f5c156;
+      --success: #6ee6a8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    button, input { font-family: inherit; }
+
+    .titlebar-drag {
+      height: 28px;
+      background: rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+    }
+
+    .titlebar-dots {
+      display: flex;
+      gap: 8px;
+    }
+
+    .titlebar-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .titlebar-dot.red { background: #ff5f5f; }
+    .titlebar-dot.yellow { background: #f5c156; }
+    .titlebar-dot.green { background: #6ee6a8; }
+
+    .app-shell {
+      padding: 32px 40px 48px;
+      min-height: calc(100vh - 28px);
+    }
+
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h1 { font-size: 32px; margin: 0; }
+
+    .eyebrow {
+      margin: 6px 0 0;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      font-size: 14px;
+    }
+
+    .status-pill .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 6px rgba(110, 230, 168, 0.4);
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+    }
+
+    .left-column {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 18px;
+      padding: 24px;
+      backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 0;
+    }
+
+    .panel-heading {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .panel-heading h2 { margin: 0; font-size: 20px; }
+
+    .hint { color: var(--muted); font-size: 13px; }
+
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    input {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--panel-border);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    input:focus { outline: none; border-color: var(--accent); }
+
+    button {
+      padding: 14px 18px;
+      border-radius: 12px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+      font-size: 14px;
+    }
+
+    button.primary {
+      background: var(--accent);
+      color: #041218;
+    }
+
+    button.accent {
+      background: rgba(47, 212, 194, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(47, 212, 194, 0.3);
+    }
+
+    .week-toggle {
+      display: flex;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 4px;
+    }
+
+    .week-toggle button {
+      flex: 1;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .week-toggle button.active {
+      background: rgba(47, 212, 194, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(47, 212, 194, 0.3);
+    }
+
+    .birthday-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 420px;
+      overflow-y: auto;
+    }
+
+    .birthday-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-radius: 14px;
+      border: 1px solid var(--panel-border);
+      background: rgba(255, 255, 255, 0.03);
+      transition: background 0.2s ease;
+    }
+
+    .birthday-card:hover { background: rgba(255, 255, 255, 0.06); }
+
+    .birthday-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .birthday-name { font-size: 16px; font-weight: 600; }
+
+    .birthday-date { font-size: 13px; color: var(--muted); }
+
+    .birthday-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .birthday-age {
+      font-size: 14px;
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-child {
+      background: rgba(245, 193, 86, 0.15);
+      color: var(--warning);
+      border: 1px solid rgba(245, 193, 86, 0.3);
+    }
+
+    .badge-contact {
+      background: rgba(47, 212, 194, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(47, 212, 194, 0.3);
+    }
+
+    .sync-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .stat-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .stat-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 6px rgba(110, 230, 168, 0.4);
+    }
+
+    .stat-label { color: var(--muted); }
+
+    .summary-text {
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 12px 0;
+      margin: 0;
+    }
+
+    .output-path {
+      font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+      font-size: 12px;
+      color: var(--accent);
+      background: rgba(255, 255, 255, 0.03);
+      padding: 8px 12px;
+      border-radius: 8px;
+      word-break: break-all;
+      cursor: pointer;
+    }
+
+    @media (max-width: 900px) {
+      .content-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Titlebar -->
+  <div class="titlebar-drag">
+    <div class="titlebar-dots">
+      <div class="titlebar-dot red"></div>
+      <div class="titlebar-dot yellow"></div>
+      <div class="titlebar-dot green"></div>
+    </div>
+  </div>
+
+  <div class="app-shell">
+    <!-- Header -->
+    <div class="app-header">
+      <div>
+        <h1>Birthday Bucket</h1>
+        <p class="eyebrow">ChurchSuite Birthday Manager</p>
+      </div>
+      <div class="header-actions">
+        <div class="status-pill">
+          <span class="dot"></span>
+          Synced
+        </div>
+      </div>
+    </div>
+
+    <!-- Content Grid -->
+    <div class="content-grid">
+      <!-- Left Column -->
+      <div class="left-column">
+        <!-- Connection Panel -->
+        <div class="panel">
+          <div class="panel-heading">
+            <h2>Connection</h2>
+            <span class="hint">ChurchSuite API credentials</span>
+          </div>
+          <label>
+            Account
+            <input type="text" value="gracechurch" />
+          </label>
+          <label>
+            API Key
+            <input type="password" value="sk-1234567890abcdef" />
+          </label>
+          <label>
+            App Name
+            <input type="text" value="birthday-bucket" />
+          </label>
+          <button class="primary">Sync Now</button>
+          <div class="sync-stats">
+            <div class="stat-row">
+              <span class="stat-dot"></span>
+              <span>142 contacts</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-dot"></span>
+              <span>38 children</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-label">Last sync: 10m ago</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Export Panel -->
+        <div class="panel">
+          <div class="panel-heading">
+            <h2>Export</h2>
+            <span class="hint">Generate PowerPoint for service display</span>
+          </div>
+          <button class="accent">Export PPTX</button>
+          <div class="output-path">~/Library/Application Support/birthday-bucket/output/birthdays-2026-02-28.pptx</div>
+        </div>
+      </div>
+
+      <!-- Right Column: Birthday List -->
+      <div class="panel">
+        <div class="panel-heading">
+          <h2>Birthdays</h2>
+          <span class="hint">24 February — 2 March</span>
+        </div>
+
+        <div class="week-toggle">
+          <button class="active">This Week</button>
+          <button>Next Week</button>
+        </div>
+
+        <div class="birthday-list">
+          <div class="birthday-card">
+            <div class="birthday-info">
+              <span class="birthday-name">Emma Richardson</span>
+              <span class="birthday-date">Monday, 24 February</span>
+            </div>
+            <div class="birthday-meta">
+              <span class="birthday-age">34</span>
+              <span class="badge badge-contact">contact</span>
+            </div>
+          </div>
+
+          <div class="birthday-card">
+            <div class="birthday-info">
+              <span class="birthday-name">James Mitchell</span>
+              <span class="birthday-date">Tuesday, 25 February</span>
+            </div>
+            <div class="birthday-meta">
+              <span class="birthday-age">52</span>
+              <span class="badge badge-contact">contact</span>
+            </div>
+          </div>
+
+          <div class="birthday-card">
+            <div class="birthday-info">
+              <span class="birthday-name">Olivia Chen</span>
+              <span class="birthday-date">Wednesday, 26 February</span>
+            </div>
+            <div class="birthday-meta">
+              <span class="birthday-age">9</span>
+              <span class="badge badge-child">child</span>
+            </div>
+          </div>
+
+          <div class="birthday-card">
+            <div class="birthday-info">
+              <span class="birthday-name">David Thompson</span>
+              <span class="birthday-date">Thursday, 27 February</span>
+            </div>
+            <div class="birthday-meta">
+              <span class="birthday-age">41</span>
+              <span class="badge badge-contact">contact</span>
+            </div>
+          </div>
+
+          <div class="birthday-card">
+            <div class="birthday-info">
+              <span class="birthday-name">Sophie Williams</span>
+              <span class="birthday-date">Friday, 28 February</span>
+            </div>
+            <div class="birthday-meta">
+              <span class="birthday-age">28</span>
+              <span class="badge badge-contact">contact</span>
+            </div>
+          </div>
+
+          <div class="birthday-card">
+            <div class="birthday-info">
+              <span class="birthday-name">Noah Patel</span>
+              <span class="birthday-date">Saturday, 1 March</span>
+            </div>
+            <div class="birthday-meta">
+              <span class="birthday-age">7</span>
+              <span class="badge badge-child">child</span>
+            </div>
+          </div>
+
+          <div class="birthday-card">
+            <div class="birthday-info">
+              <span class="birthday-name">Rachel Adams</span>
+              <span class="birthday-date">Sunday, 2 March</span>
+            </div>
+            <div class="birthday-meta">
+              <span class="birthday-age">63</span>
+              <span class="badge badge-contact">contact</span>
+            </div>
+          </div>
+        </div>
+
+        <p class="summary-text">7 birthdays this week</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
