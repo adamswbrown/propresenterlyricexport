@@ -60,6 +60,7 @@ type MatchResult = {
   songName: string;
   praiseSlot?: PraiseSlot;
   isKidsVideo?: boolean;
+  isManual?: boolean;
   matches: Array<{ uuid: string; name: string; library: string; confidence: number }>;
   bestMatch?: { uuid: string; name: string; library: string; confidence: number };
   requiresReview: boolean;
@@ -74,6 +75,7 @@ type VerseResult = {
 
 type BibleMatch = {
   reference: string;
+  isManual?: boolean;
   matches: Array<{ uuid: string; name: string; confidence: number }>;
   bestMatch?: { uuid: string; name: string; confidence: number };
   requiresReview: boolean;
@@ -111,6 +113,19 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
   const [verseSearchQuery, setVerseSearchQuery] = useState('');
   const [verseSearchResults, setVerseSearchResults] = useState<Array<{ uuid: string; name: string; library: string }>>([]);
   const [verseSearchLoading, setVerseSearchLoading] = useState(false);
+
+  // Add Song state (manual additions in Match step)
+  const [showAddSong, setShowAddSong] = useState(false);
+  const [addSongSlot, setAddSongSlot] = useState<PraiseSlot>('praise1');
+  const [addSongQuery, setAddSongQuery] = useState('');
+  const [addSongResults, setAddSongResults] = useState<Array<{ uuid: string; name: string; library: string }>>([]);
+  const [addSongLoading, setAddSongLoading] = useState(false);
+
+  // Add Verse state (manual additions in Verse step)
+  const [showAddVerse, setShowAddVerse] = useState(false);
+  const [addVerseQuery, setAddVerseQuery] = useState('');
+  const [addVerseResults, setAddVerseResults] = useState<Array<{ uuid: string; name: string; library: string }>>([]);
+  const [addVerseLoading, setAddVerseLoading] = useState(false);
 
   // Context menu state for worship slot override
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; matchIndex: number } | null>(null);
@@ -804,13 +819,19 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
               </div>
             )}
 
-            {matchResults.length === 0 ? (
+            {matchResults.length === 0 && !showAddSong ? (
               <div className="empty-state" style={{ padding: '60px 20px' }}>
-                {isProcessing ? 'Matching songs...' : 'No songs to match. Go back to Parse step.'}
+                {isProcessing ? 'Matching songs...' : (
+                  <div>
+                    <div style={{ marginBottom: '16px', color: 'var(--muted)' }}>No songs to match. Go back to Parse step.</div>
+                    <button className="ghost" type="button" onClick={() => setShowAddSong(true)}>+ Add Song Manually</button>
+                  </div>
+                )}
               </div>
             ) : (
               <div>
-                {/* Statistics and Rescan */}
+                {/* Statistics and Rescan - only when there are songs */}
+                {matchResults.length > 0 && (
                 <div style={{ marginBottom: '16px', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', fontSize: '14px', display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                     <span><strong>{matchResults.length}</strong> total songs</span>
@@ -834,6 +855,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                     </button>
                   )}
                 </div>
+                )}
 
                 {/* Match List */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
@@ -845,7 +867,8 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                         background: 'rgba(255,255,255,0.03)',
                         borderRadius: '12px',
                         border: `1px solid ${
-                          result.selectedMatch && !result.requiresReview ? 'rgba(47, 212, 194, 0.3)'
+                          result.isManual ? 'rgba(147, 112, 219, 0.4)'
+                          : result.selectedMatch && !result.requiresReview ? 'rgba(47, 212, 194, 0.3)'
                           : result.requiresReview ? 'rgba(255, 193, 7, 0.3)'
                           : 'rgba(244, 67, 54, 0.3)'
                         }`
@@ -855,6 +878,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                       <div 
                         style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}
                         onContextMenu={(e) => {
+                          if (result.isManual) return;
                           e.preventDefault();
                           setContextMenu({ x: e.clientX, y: e.clientY, matchIndex: index });
                         }}
@@ -863,7 +887,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                           {result.selectedMatch ? '✓' : result.requiresReview ? '⚠' : '✗'}
                         </span>
                         <div style={{ flex: 1 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
                             <span style={{ fontWeight: 600 }}>{result.songName}</span>
                             {result.praiseSlot && (
                               <span 
@@ -874,24 +898,46 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                                   fontSize: '11px',
                                   fontWeight: 600,
                                   color: result.praiseSlot === 'kids' ? '#ffc107' : 'var(--accent)',
-                                  cursor: 'pointer'
+                                  cursor: result.isManual ? 'default' : 'pointer'
                                 }}
-                                title="Right-click to change worship slot"
+                                title={result.isManual ? undefined : "Right-click to change worship slot"}
                               >
                                 {formatPraiseSlot(result.praiseSlot)}
                               </span>
                             )}
+                            {result.isManual && (
+                              <span style={{ padding: '2px 8px', background: 'rgba(147, 112, 219, 0.15)', borderRadius: '4px', fontSize: '11px', color: 'rgba(147, 112, 219, 0.8)' }}>
+                                Manual
+                              </span>
+                            )}
                           </div>
-                          {result.bestMatch && (
+                          {!result.isManual && result.bestMatch && (
                             <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
                               Best match: {result.bestMatch.confidence}% confidence
                               {result.bestMatch.library && ` • ${result.bestMatch.library}`}
                             </div>
                           )}
+                          {result.isManual && result.bestMatch?.library && (
+                            <div style={{ fontSize: '12px', color: 'var(--muted)' }}>{result.bestMatch.library}</div>
+                          )}
                         </div>
+                        {result.isManual && (
+                          <button
+                            className="ghost small"
+                            type="button"
+                            onClick={() => {
+                              setMatchResults(prev => prev.filter((_, i) => i !== index));
+                              setNotification({ message: `Removed "${result.songName}"`, type: 'info' });
+                            }}
+                            style={{ color: '#f44336', fontSize: '12px', padding: '4px 10px', flexShrink: 0 }}
+                          >
+                            ✕
+                          </button>
+                        )}
                       </div>
 
                       {/* Match selection dropdown */}
+                      {!result.isManual && (
                       <div style={{ marginLeft: '30px' }}>
                         <select
                           value={result.selectedMatch?.uuid || ''}
@@ -1177,8 +1223,122 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                           </div>
                         )}
                       </div>
+                      )}
                     </div>
                   ))}
+                </div>
+
+                {/* Add Song Section */}
+                <div style={{ marginBottom: '16px' }}>
+                  {!showAddSong ? (
+                    <button
+                      className="ghost"
+                      type="button"
+                      onClick={() => setShowAddSong(true)}
+                      style={{ width: '100%', border: '1px dashed var(--panel-border)', borderRadius: '12px', padding: '12px', fontSize: '14px', color: 'var(--muted)' }}
+                    >
+                      + Add Song
+                    </button>
+                  ) : (
+                    <div style={{ padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px dashed rgba(147, 112, 219, 0.4)' }}>
+                      <div style={{ fontWeight: 600, marginBottom: '12px', fontSize: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>Add Song Manually</span>
+                        <button className="ghost small" type="button" onClick={() => { setShowAddSong(false); setAddSongQuery(''); setAddSongResults([]); }} style={{ color: 'var(--muted)' }}>✕</button>
+                      </div>
+                      <div style={{ marginBottom: '10px' }}>
+                        <label style={{ display: 'block', fontSize: '12px', color: 'var(--muted)', marginBottom: '6px' }}>Worship Slot</label>
+                        <select
+                          value={addSongSlot}
+                          onChange={(e) => { setAddSongSlot(e.target.value as PraiseSlot); setAddSongResults([]); setAddSongQuery(''); }}
+                          style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--panel-border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '13px' }}
+                        >
+                          <option value="praise1">Praise 1</option>
+                          <option value="praise2">Praise 2</option>
+                          <option value="praise3">Praise 3</option>
+                          <option value="kids">Kids</option>
+                        </select>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                        <input
+                          type="text"
+                          placeholder={addSongSlot === 'kids' ? 'Search Kids library...' : 'Search Worship library...'}
+                          value={addSongQuery}
+                          onChange={(e) => setAddSongQuery(e.target.value)}
+                          onKeyDown={async (e) => {
+                            if (e.key === 'Enter' && addSongQuery.trim()) {
+                              setAddSongLoading(true);
+                              try {
+                                const libIds = addSongSlot === 'kids'
+                                  ? [props.settings.kidsLibraryId].filter(Boolean) as string[]
+                                  : [props.settings.worshipLibraryId].filter(Boolean) as string[];
+                                const sr = await window.api.searchPresentations(props.connectionConfig, libIds, addSongQuery.trim());
+                                if (sr.success) setAddSongResults(sr.results);
+                              } catch (err: any) { setNotification({ message: `Search failed: ${err.message}`, type: 'error' }); }
+                              setAddSongLoading(false);
+                            }
+                          }}
+                          style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--panel-border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '13px' }}
+                        />
+                        <button
+                          className="ghost small"
+                          type="button"
+                          disabled={!addSongQuery.trim() || addSongLoading}
+                          onClick={async () => {
+                            if (!addSongQuery.trim()) return;
+                            setAddSongLoading(true);
+                            try {
+                              const libIds = addSongSlot === 'kids'
+                                ? [props.settings.kidsLibraryId].filter(Boolean) as string[]
+                                : [props.settings.worshipLibraryId].filter(Boolean) as string[];
+                              const sr = await window.api.searchPresentations(props.connectionConfig, libIds, addSongQuery.trim());
+                              if (sr.success) setAddSongResults(sr.results);
+                            } catch (err: any) { setNotification({ message: `Search failed: ${err.message}`, type: 'error' }); }
+                            setAddSongLoading(false);
+                          }}
+                          style={{ fontSize: '12px', padding: '8px 14px' }}
+                        >
+                          {addSongLoading ? '...' : 'Search'}
+                        </button>
+                      </div>
+                      {addSongResults.length > 0 && (
+                        <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--panel-border)', borderRadius: '6px' }}>
+                          {addSongResults.map((pres) => (
+                            <div
+                              key={pres.uuid}
+                              onClick={() => {
+                                const newResult: MatchResult = {
+                                  songName: pres.name,
+                                  praiseSlot: addSongSlot,
+                                  isKidsVideo: addSongSlot === 'kids',
+                                  isManual: true,
+                                  matches: [{ uuid: pres.uuid, name: pres.name, library: pres.library, confidence: -1 }],
+                                  bestMatch: { uuid: pres.uuid, name: pres.name, library: pres.library, confidence: -1 },
+                                  requiresReview: false,
+                                  selectedMatch: { uuid: pres.uuid, name: pres.name }
+                                };
+                                setMatchResults(prev => [...prev, newResult]);
+                                setShowAddSong(false);
+                                setAddSongQuery('');
+                                setAddSongResults([]);
+                                setNotification({ message: `Added "${pres.name}" to ${formatPraiseSlot(addSongSlot)}`, type: 'success' });
+                              }}
+                              style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+                              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                            >
+                              <span>{pres.name}</span>
+                              <span style={{ fontSize: '11px', color: 'var(--muted)' }}>{pres.library}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {addSongResults.length === 0 && addSongQuery && !addSongLoading && (
+                        <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
+                          Press Enter or click Search to find songs.
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Context menu for changing worship slot */}
@@ -1388,19 +1548,147 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
             )}
 
             {verseItems.length === 0 ? (
-              <div className="empty-state" style={{ padding: '60px 20px' }}>
-                <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>📖</div>
-                <h3 style={{ margin: '0 0 8px', color: 'var(--muted)' }}>No Bible Verses Found</h3>
-                <p style={{ margin: '0 0 24px', color: 'var(--muted)', fontSize: '14px' }}>
-                  No Bible references were detected in the PDF.
-                </p>
-                <button
-                  className="primary"
-                  onClick={() => setCurrentStep('build')}
-                  type="button"
-                >
-                  Continue to Build →
-                </button>
+              <div>
+                <div className="empty-state" style={{ padding: '40px 20px' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>📖</div>
+                  <h3 style={{ margin: '0 0 8px', color: 'var(--muted)' }}>No Bible Verses Found</h3>
+                  <p style={{ margin: '0 0 16px', color: 'var(--muted)', fontSize: '14px' }}>
+                    No Bible references were detected in the PDF.
+                  </p>
+                  <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <button
+                      className="ghost"
+                      onClick={() => setShowAddVerse(true)}
+                      type="button"
+                    >
+                      + Add Verse
+                    </button>
+                    <button
+                      className="primary"
+                      onClick={() => setCurrentStep('build')}
+                      type="button"
+                    >
+                      Continue to Build →
+                    </button>
+                  </div>
+                </div>
+                {/* Manual verses added when no PDF verses */}
+                {bibleMatches.filter(v => v.isManual).length > 0 && (
+                  <div style={{ marginTop: '16px' }}>
+                    <h3 style={{ fontSize: '15px', marginBottom: '12px', color: 'var(--muted)' }}>
+                      Manually Added ({bibleMatches.filter(v => v.isManual).length})
+                    </h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                      {bibleMatches.filter(v => v.isManual).map((match, idx) => (
+                        <div key={idx} style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', border: '1px solid rgba(147, 112, 219, 0.4)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <span style={{ fontSize: '16px' }}>✓</span>
+                          <div style={{ flex: 1 }}>
+                            <span style={{ fontWeight: 600 }}>{match.selectedMatch?.name || match.reference}</span>
+                            <span style={{ marginLeft: '8px', padding: '2px 8px', background: 'rgba(147, 112, 219, 0.15)', borderRadius: '4px', fontSize: '11px', color: 'rgba(147, 112, 219, 0.8)' }}>Manual</span>
+                          </div>
+                          <button
+                            className="ghost small"
+                            type="button"
+                            onClick={() => {
+                              setBibleMatches(prev => prev.filter(v => v !== match));
+                              setNotification({ message: `Removed "${match.selectedMatch?.name || match.reference}"`, type: 'info' });
+                            }}
+                            style={{ color: '#f44336', fontSize: '12px', padding: '4px 10px', flexShrink: 0 }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <button className="ghost" type="button" onClick={() => setShowAddVerse(true)}>+ Add Another Verse</button>
+                      <button className="primary" type="button" onClick={() => setCurrentStep('build')}>Continue to Build →</button>
+                    </div>
+                  </div>
+                )}
+                {/* Add Verse panel (empty state) */}
+                {showAddVerse && (
+                  <div style={{ marginTop: '12px', padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px dashed rgba(147, 112, 219, 0.4)' }}>
+                    <div style={{ fontWeight: 600, marginBottom: '12px', fontSize: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>Add Verse Manually</span>
+                      <button className="ghost small" type="button" onClick={() => { setShowAddVerse(false); setAddVerseQuery(''); setAddVerseResults([]); }} style={{ color: 'var(--muted)' }}>✕</button>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                      <input
+                        type="text"
+                        placeholder="Search service content library..."
+                        value={addVerseQuery}
+                        onChange={(e) => setAddVerseQuery(e.target.value)}
+                        onKeyDown={async (e) => {
+                          if (e.key === 'Enter' && addVerseQuery.trim()) {
+                            setAddVerseLoading(true);
+                            try {
+                              const sr = await window.api.searchPresentations(props.connectionConfig, [props.settings.serviceContentLibraryId].filter(Boolean) as string[], addVerseQuery.trim());
+                              if (sr.success) setAddVerseResults(sr.results);
+                            } catch (err: any) { setNotification({ message: `Search failed: ${err.message}`, type: 'error' }); }
+                            setAddVerseLoading(false);
+                          }
+                        }}
+                        style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--panel-border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '13px' }}
+                      />
+                      <button
+                        className="ghost small"
+                        type="button"
+                        disabled={!addVerseQuery.trim() || addVerseLoading}
+                        onClick={async () => {
+                          if (!addVerseQuery.trim()) return;
+                          setAddVerseLoading(true);
+                          try {
+                            const sr = await window.api.searchPresentations(props.connectionConfig, [props.settings.serviceContentLibraryId].filter(Boolean) as string[], addVerseQuery.trim());
+                            if (sr.success) setAddVerseResults(sr.results);
+                          } catch (err: any) { setNotification({ message: `Search failed: ${err.message}`, type: 'error' }); }
+                          setAddVerseLoading(false);
+                        }}
+                        style={{ fontSize: '12px', padding: '8px 14px' }}
+                      >
+                        {addVerseLoading ? '...' : 'Search'}
+                      </button>
+                    </div>
+                    {addVerseResults.length > 0 && (
+                      <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--panel-border)', borderRadius: '6px' }}>
+                        {addVerseResults.map((pres) => (
+                          <div
+                            key={pres.uuid}
+                            onClick={() => {
+                              const newMatch: BibleMatch = {
+                                reference: pres.name,
+                                isManual: true,
+                                matches: [{ uuid: pres.uuid, name: pres.name, confidence: -1 }],
+                                bestMatch: { uuid: pres.uuid, name: pres.name, confidence: -1 },
+                                requiresReview: false,
+                                selectedMatch: { uuid: pres.uuid, name: pres.name }
+                              };
+                              setBibleMatches(prev => [...prev, newMatch]);
+                              setShowAddVerse(false);
+                              setAddVerseQuery('');
+                              setAddVerseResults([]);
+                              setNotification({ message: `Added "${pres.name}"`, type: 'success' });
+                            }}
+                            style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                          >
+                            <span>{pres.name}</span>
+                            <span style={{ fontSize: '11px', color: 'var(--muted)' }}>{pres.library}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {addVerseResults.length === 0 && addVerseQuery && !addVerseLoading && (
+                      <div style={{ fontSize: '12px', color: 'var(--muted)' }}>Press Enter or click Search to find verses.</div>
+                    )}
+                    {!props.settings.serviceContentLibraryId && (
+                      <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '8px' }}>
+                        No Service Content Library configured — go back to Setup to configure one.
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               <div>
@@ -1889,6 +2177,132 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                       </div>
                     );
                   })}
+                </div>
+
+                {/* Manually Added Verses */}
+                {bibleMatches.filter(v => v.isManual).length > 0 && (
+                  <div style={{ marginBottom: '20px' }}>
+                    <h3 style={{ fontSize: '15px', marginBottom: '10px', color: 'var(--muted)' }}>
+                      Manually Added ({bibleMatches.filter(v => v.isManual).length})
+                    </h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {bibleMatches.filter(v => v.isManual).map((match, idx) => (
+                        <div key={idx} style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', border: '1px solid rgba(147, 112, 219, 0.4)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <span style={{ fontSize: '16px' }}>✓</span>
+                          <div style={{ flex: 1 }}>
+                            <span style={{ fontWeight: 600 }}>{match.selectedMatch?.name || match.reference}</span>
+                            <span style={{ marginLeft: '8px', padding: '2px 8px', background: 'rgba(147, 112, 219, 0.15)', borderRadius: '4px', fontSize: '11px', color: 'rgba(147, 112, 219, 0.8)' }}>Manual</span>
+                          </div>
+                          <button
+                            className="ghost small"
+                            type="button"
+                            onClick={() => {
+                              setBibleMatches(prev => prev.filter(v => v !== match));
+                              setNotification({ message: `Removed "${match.selectedMatch?.name || match.reference}"`, type: 'info' });
+                            }}
+                            style={{ color: '#f44336', fontSize: '12px', padding: '4px 10px', flexShrink: 0 }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Add Verse Section */}
+                <div style={{ marginBottom: '16px' }}>
+                  {!showAddVerse ? (
+                    <button
+                      className="ghost"
+                      type="button"
+                      onClick={() => setShowAddVerse(true)}
+                      style={{ width: '100%', border: '1px dashed var(--panel-border)', borderRadius: '12px', padding: '12px', fontSize: '14px', color: 'var(--muted)' }}
+                    >
+                      + Add Verse
+                    </button>
+                  ) : (
+                    <div style={{ padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px dashed rgba(147, 112, 219, 0.4)' }}>
+                      <div style={{ fontWeight: 600, marginBottom: '12px', fontSize: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>Add Verse Manually</span>
+                        <button className="ghost small" type="button" onClick={() => { setShowAddVerse(false); setAddVerseQuery(''); setAddVerseResults([]); }} style={{ color: 'var(--muted)' }}>✕</button>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                        <input
+                          type="text"
+                          placeholder="Search service content library..."
+                          value={addVerseQuery}
+                          onChange={(e) => setAddVerseQuery(e.target.value)}
+                          onKeyDown={async (e) => {
+                            if (e.key === 'Enter' && addVerseQuery.trim()) {
+                              setAddVerseLoading(true);
+                              try {
+                                const sr = await window.api.searchPresentations(props.connectionConfig, [props.settings.serviceContentLibraryId].filter(Boolean) as string[], addVerseQuery.trim());
+                                if (sr.success) setAddVerseResults(sr.results);
+                              } catch (err: any) { setNotification({ message: `Search failed: ${err.message}`, type: 'error' }); }
+                              setAddVerseLoading(false);
+                            }
+                          }}
+                          style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--panel-border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '13px' }}
+                        />
+                        <button
+                          className="ghost small"
+                          type="button"
+                          disabled={!addVerseQuery.trim() || addVerseLoading}
+                          onClick={async () => {
+                            if (!addVerseQuery.trim()) return;
+                            setAddVerseLoading(true);
+                            try {
+                              const sr = await window.api.searchPresentations(props.connectionConfig, [props.settings.serviceContentLibraryId].filter(Boolean) as string[], addVerseQuery.trim());
+                              if (sr.success) setAddVerseResults(sr.results);
+                            } catch (err: any) { setNotification({ message: `Search failed: ${err.message}`, type: 'error' }); }
+                            setAddVerseLoading(false);
+                          }}
+                          style={{ fontSize: '12px', padding: '8px 14px' }}
+                        >
+                          {addVerseLoading ? '...' : 'Search'}
+                        </button>
+                      </div>
+                      {addVerseResults.length > 0 && (
+                        <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--panel-border)', borderRadius: '6px' }}>
+                          {addVerseResults.map((pres) => (
+                            <div
+                              key={pres.uuid}
+                              onClick={() => {
+                                const newMatch: BibleMatch = {
+                                  reference: pres.name,
+                                  isManual: true,
+                                  matches: [{ uuid: pres.uuid, name: pres.name, confidence: -1 }],
+                                  bestMatch: { uuid: pres.uuid, name: pres.name, confidence: -1 },
+                                  requiresReview: false,
+                                  selectedMatch: { uuid: pres.uuid, name: pres.name }
+                                };
+                                setBibleMatches(prev => [...prev, newMatch]);
+                                setShowAddVerse(false);
+                                setAddVerseQuery('');
+                                setAddVerseResults([]);
+                                setNotification({ message: `Added "${pres.name}"`, type: 'success' });
+                              }}
+                              style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+                              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                            >
+                              <span>{pres.name}</span>
+                              <span style={{ fontSize: '11px', color: 'var(--muted)' }}>{pres.library}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {addVerseResults.length === 0 && addVerseQuery && !addVerseLoading && (
+                        <div style={{ fontSize: '12px', color: 'var(--muted)' }}>Press Enter or click Search to find verses.</div>
+                      )}
+                      {!props.settings.serviceContentLibraryId && (
+                        <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '8px' }}>
+                          No Service Content Library configured — go back to Setup to configure one.
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Actions */}
