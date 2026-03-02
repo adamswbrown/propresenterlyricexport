@@ -5,6 +5,22 @@ All notable changes to ProPresenter Lyrics Export will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-03-02
+
+### Added
+- **Birthday Bucket** — New integrated feature for generating birthday PowerPoint slides from ChurchSuite data
+  - Connect to ChurchSuite using your account slug, API key, and app name
+  - Syncs contacts and children in one tap, merging both sources automatically
+  - Shows this week's and next week's birthdays with name, date, age, and source badge
+  - Exports a ready-to-use PowerPoint presentation matching your church's birthday slide template:
+    - **Title slide** — "Happy Birthday from [Church Name]!" with the week range
+    - **Per-person slides** — Photo placeholder box with the person's name, alongside a "Happy Birthday from [Church]!" header
+    - **Song slide** — All birthday names listed in the "Jesus bless you dear: [names]" format for the birthday song
+  - Configurable church name and custom background image (falls back to warm amber if no image is set)
+  - Background image path is saved in settings and restored across launches
+  - Accessible via the 🎂 button in the app header (toggle on/off in Settings → Advanced Features)
+- **Web Proxy domain example** — Updated setup guide to use a real-world domain example
+
 ## [3.1.0] - 2026-02-25
 
 ### Added

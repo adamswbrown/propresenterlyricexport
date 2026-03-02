@@ -1,131 +1,61 @@
-# ProPresenter Lyrics Export v3.0.0
+# ProPresenter Lyrics Export v3.2.0
 
-**Three apps, one ecosystem** — everything you need to run ProPresenter lyrics for your church, from the production booth to every seat in the house and beyond.
-
----
-
-## What's New in v3.0.0
-
-This is a major release introducing two brand-new companion apps alongside the desktop app you already know.
+**Birthday slides, straight from ChurchSuite** — celebrate your congregation's birthdays with a beautifully formatted PowerPoint presentation, generated in seconds.
 
 ---
 
-### 🖥️ Desktop App — ProPresenter Lyrics v3.0.0
+## What's New in v3.2.0
 
-The desktop app continues to work exactly as before — export lyrics from ProPresenter playlists to PowerPoint, generate service playlists from PDFs, and manage your worship library from a polished Electron interface.
+### 🎂 Birthday Bucket
 
-> No breaking changes. The major version bump reflects the addition of the Viewer and Web Proxy companion apps below.
-
-**Existing features (unchanged):**
-- Export lyrics to PowerPoint (PPTX), Text, or JSON
-- Service Generator — automate Sunday service playlists from PDF service orders
-- Song alias/override mapping for mismatched song names
-- 25+ curated presentation fonts with one-click download
-- Cross-library search and inline library matching
-- ProPresenter auto-launch on connect
-
-📖 **[User Guide](https://adamswbrown.github.io/propresenterlyricexport/user-guide)** · **[Service Generator Guide](https://adamswbrown.github.io/propresenterlyricexport/guides/service-generator)**
-
----
-
-### 📺 NEW: ProPresenter Viewer v1.0.0
-
-**Let your congregation follow along on their own devices.**
-
-A lightweight menu bar app (macOS) or system tray app (Windows) that streams live slide thumbnails and lyrics to any phone, tablet, or laptop on your Wi-Fi network. No app install needed for viewers — they just open a URL in their browser.
-
-#### Key Features
-
-| Feature | Details |
-|---------|---------|
-| **Real-time slides** | Slide thumbnails + lyrics text pushed to all devices via Server-Sent Events (SSE) |
-| **Responsive design** | Optimized layouts for iPad, phones (portrait & landscape), and desktop browsers |
-| **LIVE indicator** | Red badge with pulse animation when content is actively presented |
-| **Fullscreen mode** | One-tap or double-tap the slide image for distraction-free viewing |
-| **Smart reconnection** | SSE heartbeat every 15s, automatic reconnect on timeout (25s), page visibility detection auto-refreshes when returning from a locked screen |
-| **Manual refresh** | Circular arrow button forces re-fetch of current slide + reconnects the event stream |
-| **Disconnect detection** | Clears stale content immediately when ProPresenter is quit — no misleading "Connected" state |
-| **Zero config for viewers** | Share a URL or QR code — anyone on the same Wi-Fi opens it in Safari/Chrome |
+The Desktop App now includes **Birthday Bucket** — a new integrated feature that pulls birthday data directly from ChurchSuite and exports a ready-to-use birthday PowerPoint presentation, perfectly formatted for Sunday services.
 
 #### How It Works
 
-```
-ProPresenter 7        Viewer App (menu bar)        Congregation devices
-┌─────────────┐      ┌─────────────────────┐      ┌──────────────────┐
-│  Network API │─────>│  Polls PP every 1.5s │      │  Phone / iPad /  │
-│  (port 1025) │      │  Serves web viewer   │─────>│  Laptop browser  │
-└─────────────┘      │  on port 3100        │ SSE  │  at viewer URL   │
-                     └─────────────────────┘      └──────────────────┘
-```
+1. Enable **Birthday Bucket** in Settings → Advanced Features
+2. Click the 🎂 button in the app header
+3. Enter your ChurchSuite credentials (account slug, API key, app name)
+4. Hit **Sync Now** — contacts and children are fetched and merged automatically
+5. Browse this week's or next week's birthdays
+6. Click **Export PPTX** to generate your birthday slide deck
 
-#### Settings Window
+#### Slide Format
 
-- ProPresenter host/port configuration with **Test Connection** button
-- Server port selection with auto-detected local IP
-- Viewer URL with **Copy** and **Open** buttons
-- Connection status with ProPresenter version display
-- Activity log showing slide changes and connection events
+The exported PowerPoint matches the standard birthday presentation template:
 
-#### Performance
+| Slide | Description |
+|-------|-------------|
+| **Title slide** | "Happy Birthday from [Church Name]!" centred with the week range (e.g. "3–9 March") |
+| **Per-person slides** | Photo placeholder box on the left with the person's name; "Happy Birthday from [church]!" in the top right — paste in their photo and it's done |
+| **Song slide** | "Jesus bless you today!" ×2, "Jesus bless you dear:", all first names at 40pt bold, "Jesus bless you always!" — vertically centred, ready to follow on screen during the birthday song |
 
-The Viewer App has negligible impact on ProPresenter during services:
-- **Polling**: ~10,800 small HTTP requests over 90 minutes — all to localhost with microsecond latency
-- **Thumbnails**: One cached JPEG per slide change, proxied through the Viewer App
-- **Memory**: ~100-150MB (Electron baseline)
-- **CPU**: Near-zero between slide changes
+#### Customisation
 
-📖 **[Full Viewer Guide](https://adamswbrown.github.io/propresenterlyricexport/guides/viewer)** — Setup walkthrough, sharing tips, device states, troubleshooting, and FAQ
+- **Church name** — shown on every slide (defaults to "St Andrew's")
+- **Background image** — set a custom PNG/JPG (e.g. your birthday cupcake graphic); falls back to warm amber if no image is set
+- Both settings are saved and restored across launches
+
+#### What Gets Synced
+
+Birthday Bucket fetches from two ChurchSuite modules and merges them:
+- **Contacts** (`/addressbook/contacts`) — adult congregation members
+- **Children** (`/children/children`) — youth ministry records
+
+Each birthday card shows the person's name, birthday date, age they're turning, and a source badge (Contact / Child) so you can spot the record at a glance.
 
 ---
 
-### 🌐 NEW: ProPresenter Web Proxy v1.0.0
+## What Was in Previous Releases
 
-**Access ProPresenter from anywhere — securely.**
+### v3.1.0 — App Version Display
 
-A menu bar app that wraps the full ProPresenter Lyrics web server and Cloudflare Tunnel into a one-click experience. Sign in with Google, manage users, and use the full ProPresenter Lyrics interface from any browser — at home, at the office, or on the road.
+- Version number shown in the Lyrics app header and Web Proxy title bar
 
-#### Key Features
+### v3.0.0 — Viewer & Web Proxy
 
-| Feature | Details |
-|---------|---------|
-| **Google OAuth** | Sign in with Google — only emails on your allowlist can access |
-| **Cloudflare Tunnel** | Secure outbound-only tunnel — no port forwarding, no firewall changes, no exposed ports |
-| **Full web UI** | React interface mirroring the desktop app: playlist browsing, PPTX export with progress streaming, Service Generator, font management |
-| **User management** | Add/remove allowed emails, grant admin roles — from the web UI or CLI |
-| **Bearer token auth** | Auto-generated token for API access, automation, and SSE fallback |
-| **PPTX export streaming** | Real-time export progress via Server-Sent Events |
-| **File-based sessions** | Sessions persist across server restarts (6-hour TTL, auto-pruned) |
-| **Structured logging** | Daily JSON log files with automatic 14-day rotation |
-| **Process management** | Manages web server + tunnel as child processes with auto-restart on crash (exponential backoff, max 5 retries) |
-| **Tray controls** | Start/Stop server and tunnel independently from the menu bar context menu |
+**ProPresenter Viewer v1.0.0** — Let your congregation follow along on their own devices. A lightweight menu bar / tray app that streams live slide thumbnails and lyrics to any phone, tablet, or laptop on your Wi-Fi. No app install needed — viewers just open a URL in their browser.
 
-#### Architecture
-
-```
-User's browser  →  Cloudflare Tunnel  →  Web Proxy (your machine)  →  ProPresenter API
-     HTTPS              encrypted               HTTP                    localhost
-```
-
-#### Settings Window
-
-- ProPresenter connection (host/port) with **Test Connection**
-- Google OAuth credentials (Client ID + Secret)
-- Cloudflare Tunnel URL configuration
-- Web server port selection
-- Start/Stop controls for server and tunnel
-- Bearer token display with one-click copy
-- Health status: ProPresenter connection, web server, and tunnel
-- Live activity log showing server events, tunnel status, and errors
-
-#### Security
-
-- **Three auth layers**: Google OAuth sessions → Bearer token fallback → Rate-limited login endpoint
-- **End-to-end encryption**: Browser ↔ Cloudflare Edge ↔ encrypted tunnel ↔ localhost
-- **httpOnly secure cookies** with `sameSite=lax` and 6-hour expiry
-- **Content Security Policy** headers via Helmet
-- All config stored locally at `~/.propresenter-words/` with restrictive permissions
-
-📖 **[Web Proxy Guide](https://adamswbrown.github.io/propresenterlyricexport/guides/proxy-app)** · **[Manual Setup Guide](https://adamswbrown.github.io/propresenterlyricexport/guides/web-proxy-setup)** (Google OAuth, Cloudflare Tunnel, user management)
+**ProPresenter Web Proxy v1.0.0** — Access ProPresenter from anywhere, securely. Sign in with Google, manage users, and use the full Lyrics web interface from any browser via a Cloudflare Tunnel — no port forwarding required.
 
 ---
 
@@ -133,9 +63,9 @@ User's browser  →  Cloudflare Tunnel  →  Web Proxy (your machine)  →  ProP
 
 | App | macOS | Windows |
 |-----|-------|---------|
-| **ProPresenter Lyrics** v3.0.0 | `ProPresenter-Lyrics-3.0.0-mac.zip` | `ProPresenter-Lyrics-3.0.0-win.exe` |
+| **ProPresenter Lyrics** v3.2.0 | `ProPresenter-Lyrics-3.2.0-mac.zip` | `ProPresenter-Lyrics-3.2.0-win.exe` |
 | **ProPresenter Viewer** v1.0.0 | `ProPresenter-Viewer-1.0.0-mac.zip` | `ProPresenter-Viewer-1.0.0-win.exe` |
-| **ProPresenter Web Proxy** v1.0.0 | `ProPresenter-WebProxy-1.0.0-mac.zip` | `ProPresenter-WebProxy-1.0.0-win.exe` |
+| **ProPresenter Web Proxy** v1.1.0 | `ProPresenter-WebProxy-1.1.0-mac.zip` | `ProPresenter-WebProxy-1.1.0-win.exe` |
 
 ### macOS First Launch
 
@@ -155,8 +85,9 @@ xattr -cr "/Applications/ProPresenter Web Proxy.app"
 |-----------|-------------|
 | **ProPresenter** | Version 7 with Network API enabled ([setup instructions](https://adamswbrown.github.io/propresenterlyricexport/getting-started#critical-configure-propresenter-first)) |
 | **Desktop App** | macOS 10.14+ or Windows 10+ |
-| **Viewer** | Same as above + viewers need any modern browser on the same Wi-Fi |
-| **Web Proxy** | Same as above + a Cloudflare account (free) and a domain for remote access |
+| **Birthday Bucket** | A ChurchSuite account with API access |
+| **Viewer** | Viewers need any modern browser on the same Wi-Fi |
+| **Web Proxy** | A Cloudflare account (free) and a domain for remote access |
 
 ---
 
@@ -168,10 +99,9 @@ Full documentation: **[adamswbrown.github.io/propresenterlyricexport](https://ad
 |-------|-------------|
 | [Getting Started](https://adamswbrown.github.io/propresenterlyricexport/getting-started) | Install and connect in 5 minutes |
 | [User Guide](https://adamswbrown.github.io/propresenterlyricexport/user-guide) | Desktop app and CLI workflows |
+| [Service Generator](https://adamswbrown.github.io/propresenterlyricexport/guides/service-generator) | Automate playlists from PDF service orders |
 | [Viewer Guide](https://adamswbrown.github.io/propresenterlyricexport/guides/viewer) | Live slides for congregation devices |
 | [Web Proxy Guide](https://adamswbrown.github.io/propresenterlyricexport/guides/proxy-app) | Secure remote access setup |
-| [Web Proxy Setup (Manual)](https://adamswbrown.github.io/propresenterlyricexport/guides/web-proxy-setup) | Google OAuth + Cloudflare Tunnel CLI setup |
-| [Service Generator](https://adamswbrown.github.io/propresenterlyricexport/guides/service-generator) | Automate playlists from PDF service orders |
 | [PPTX Export](https://adamswbrown.github.io/propresenterlyricexport/guides/pptx-export) | Customize fonts, colors, and styling |
 | [FAQ](https://adamswbrown.github.io/propresenterlyricexport/faq) | Common questions and troubleshooting |
 
