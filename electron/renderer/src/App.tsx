@@ -28,7 +28,6 @@ type SettingsState = {
   templatePlaylistId: string;
   // Birthday Bucket
   enableBirthdayBucket: boolean;
-  churchSuiteAccount: string;
   churchSuiteClientId: string;
   churchSuiteClientSecret: string;
   birthdayChurchName: string;
@@ -171,7 +170,6 @@ function App(): JSX.Element {
     serviceContentLibraryId: '',
     templatePlaylistId: '',
     enableBirthdayBucket: false,
-    churchSuiteAccount: '',
     churchSuiteClientId: '',
     churchSuiteClientSecret: '',
     birthdayChurchName: '',
@@ -218,7 +216,6 @@ function App(): JSX.Element {
         serviceContentLibraryId: saved.serviceContentLibraryId ?? '',
         templatePlaylistId: saved.templatePlaylistId ?? '',
         enableBirthdayBucket: saved.enableBirthdayBucket ?? false,
-        churchSuiteAccount: saved.churchSuiteAccount ?? '',
         churchSuiteClientId: saved.churchSuiteClientId ?? '',
         churchSuiteClientSecret: saved.churchSuiteClientSecret ?? '',
         birthdayChurchName: saved.birthdayChurchName ?? '',
@@ -583,7 +580,6 @@ function App(): JSX.Element {
       serviceContentLibraryId: settings.serviceContentLibraryId || null,
       templatePlaylistId: settings.templatePlaylistId || null,
       enableBirthdayBucket: settings.enableBirthdayBucket,
-      churchSuiteAccount: settings.churchSuiteAccount || null,
       churchSuiteClientId: settings.churchSuiteClientId || null,
       churchSuiteClientSecret: settings.churchSuiteClientSecret || null,
       birthdayChurchName: settings.birthdayChurchName || null,
@@ -710,7 +706,6 @@ function App(): JSX.Element {
     return (
       <BirthdayBucketView
         churchSuiteConfig={{
-          account: settings.churchSuiteAccount,
           clientId: settings.churchSuiteClientId,
           clientSecret: settings.churchSuiteClientSecret,
         }}

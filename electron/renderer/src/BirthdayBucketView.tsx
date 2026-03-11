@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from 'react';
 
 type BirthdayBucketViewProps = {
   churchSuiteConfig: {
-    account: string;
     clientId: string;
     clientSecret: string;
   };
@@ -41,15 +40,12 @@ export function BirthdayBucketView(props: BirthdayBucketViewProps) {
   const [notification, setNotification] = useState<Notification | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [isAuthorizing, setIsAuthorizing] = useState(false);
   const [weekOffset, setWeekOffset] = useState(0);
   const [birthdays, setBirthdays] = useState<BirthdayEntry[]>([]);
   const [weekRange, setWeekRange] = useState<{ start: string; end: string } | null>(null);
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
-  const [oauthAuthenticated, setOauthAuthenticated] = useState(false);
 
   // Local config state
-  const [account, setAccount] = useState(props.churchSuiteConfig.account);
   const [clientId, setClientId] = useState(props.churchSuiteConfig.clientId);
   const [clientSecret, setClientSecret] = useState(props.churchSuiteConfig.clientSecret);
   const [churchName, setChurchName] = useState(props.churchName);
@@ -61,13 +57,6 @@ export function BirthdayBucketView(props: BirthdayBucketViewProps) {
     const timer = setTimeout(() => setNotification(null), 5000);
     return () => clearTimeout(timer);
   }, [notification]);
-
-  // Check OAuth2 status on mount
-  useEffect(() => {
-    window.api.churchSuiteOAuth2Status().then((status) => {
-      setOauthAuthenticated(status.authenticated);
-    });
-  }, []);
 
   const loadBirthdays = useCallback(async (offset: number) => {
     try {
@@ -85,53 +74,9 @@ export function BirthdayBucketView(props: BirthdayBucketViewProps) {
     loadBirthdays(weekOffset);
   }, [weekOffset, loadBirthdays]);
 
-  const handleOAuth2Authorize = async () => {
-    if (!account || !clientId || !clientSecret) {
-      setNotification({ message: 'Please enter account, client ID, and client secret', type: 'error' });
-      return;
-    }
-
-    setIsAuthorizing(true);
-    setNotification({ message: 'Opening browser for authorization...', type: 'info' });
-
-    props.onConfigChange({
-      churchSuiteAccount: account,
-      churchSuiteClientId: clientId,
-      churchSuiteClientSecret: clientSecret,
-    });
-
-    try {
-      const result = await window.api.churchSuiteOAuth2Authorize({ account, clientId, clientSecret });
-      if (result.success) {
-        setOauthAuthenticated(true);
-        setNotification({ message: 'Successfully authorized with ChurchSuite', type: 'success' });
-      } else {
-        setNotification({ message: result.error || 'Authorization failed', type: 'error' });
-      }
-    } catch (error: any) {
-      setNotification({ message: error?.message || 'Authorization failed', type: 'error' });
-    } finally {
-      setIsAuthorizing(false);
-    }
-  };
-
-  const handleOAuth2Disconnect = async () => {
-    await window.api.churchSuiteOAuth2Disconnect();
-    setOauthAuthenticated(false);
-    setSyncResult(null);
-    setBirthdays([]);
-    setNotification({ message: 'Disconnected from ChurchSuite', type: 'info' });
-  };
-
-  const handleCancelAuth = async () => {
-    await window.api.churchSuiteOAuth2Cancel();
-    setIsAuthorizing(false);
-    setNotification({ message: 'Authorization cancelled', type: 'info' });
-  };
-
   const handleSync = async () => {
-    if (!oauthAuthenticated) {
-      setNotification({ message: 'Please authorize with ChurchSuite first', type: 'error' });
+    if (!clientId || !clientSecret) {
+      setNotification({ message: 'Please enter Client ID and Client Secret', type: 'error' });
       return;
     }
 
@@ -139,12 +84,12 @@ export function BirthdayBucketView(props: BirthdayBucketViewProps) {
     setNotification({ message: 'Syncing with ChurchSuite...', type: 'info' });
 
     props.onConfigChange({
-      churchSuiteAccount: account,
       churchSuiteClientId: clientId,
       churchSuiteClientSecret: clientSecret,
       birthdayChurchName: churchName,
       birthdayBackgroundImagePath: backgroundImagePath,
     });
+    props.onSaveSettings();
 
     try {
       const result = await window.api.churchSuiteSync();
@@ -261,14 +206,10 @@ export function BirthdayBucketView(props: BirthdayBucketViewProps) {
           <div style={panelStyle}>
             <h3 style={panelTitleStyle}>Connection</h3>
             <p style={{ margin: '0 0 16px', fontSize: '12px', color: 'var(--muted)' }}>
-              ChurchSuite OAuth2 credentials
+              ChurchSuite API credentials
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div>
-                <label style={labelStyle}>Account</label>
-                <input type="text" value={account} onChange={(e) => setAccount(e.target.value)} placeholder="gracechurch" style={inputStyle} />
-              </div>
               <div>
                 <label style={labelStyle}>Client ID</label>
                 <input type="text" value={clientId} onChange={(e) => setClientId(e.target.value)} placeholder="Your OAuth2 Client ID" style={inputStyle} />
@@ -278,50 +219,9 @@ export function BirthdayBucketView(props: BirthdayBucketViewProps) {
                 <input type="password" value={clientSecret} onChange={(e) => setClientSecret(e.target.value)} placeholder="Your OAuth2 Client Secret" style={inputStyle} />
               </div>
 
-              {oauthAuthenticated ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: '8px',
-                    padding: '10px 12px', background: 'rgba(47, 212, 194, 0.08)',
-                    borderRadius: '10px', fontSize: '13px', color: 'var(--accent)',
-                  }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)', display: 'inline-block' }} />
-                    Connected to ChurchSuite
-                  </div>
-                  <button className="ghost" onClick={handleOAuth2Disconnect} type="button" style={{ width: '100%', fontSize: '12px' }}>
-                    Disconnect
-                  </button>
-                </div>
-              ) : isAuthorizing ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{
-                    padding: '10px 12px', background: 'rgba(245, 193, 86, 0.08)',
-                    borderRadius: '10px', fontSize: '13px', color: 'var(--warning)', textAlign: 'center',
-                  }}>
-                    Waiting for browser authorization...
-                  </div>
-                  <button className="ghost" onClick={handleCancelAuth} type="button" style={{ width: '100%', fontSize: '12px' }}>
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <button
-                  className="primary"
-                  onClick={handleOAuth2Authorize}
-                  disabled={!account || !clientId || !clientSecret}
-                  type="button"
-                  style={{ width: '100%', marginTop: '4px' }}
-                >
-                  Authorize with ChurchSuite
-                </button>
-              )}
-
-              {/* Sync button */}
-              {oauthAuthenticated && (
-                <button className="primary" onClick={handleSync} disabled={isSyncing} type="button" style={{ width: '100%', marginTop: '4px' }}>
-                  {isSyncing ? 'Syncing...' : 'Sync Now'}
-                </button>
-              )}
+              <button className="primary" onClick={handleSync} disabled={isSyncing || !clientId || !clientSecret} type="button" style={{ width: '100%', marginTop: '4px' }}>
+                {isSyncing ? 'Syncing...' : 'Sync Now'}
+              </button>
             </div>
 
             {/* Sync stats */}
@@ -417,9 +317,7 @@ export function BirthdayBucketView(props: BirthdayBucketViewProps) {
               <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--muted)', fontSize: '14px' }}>
                 {syncResult
                   ? 'No birthdays this week'
-                  : !oauthAuthenticated
-                    ? 'Authorize with ChurchSuite to get started'
-                    : 'Sync with ChurchSuite to see birthdays'}
+                  : 'Enter your credentials and sync to see birthdays'}
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

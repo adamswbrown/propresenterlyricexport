@@ -38,8 +38,7 @@ type SettingsPayload = {
   enableBirthdayBucket?: boolean;
   birthdayChurchName?: string | null;
   birthdayBackgroundImagePath?: string | null;
-  // Birthday Bucket — ChurchSuite OAuth2
-  churchSuiteAccount?: string | null;
+  // Birthday Bucket — ChurchSuite OAuth2 Client Credentials
   churchSuiteClientId?: string | null;
   churchSuiteClientSecret?: string | null;
 };
@@ -151,15 +150,6 @@ const api = {
     ipcRenderer.invoke('churchsuite:openOutput'),
   chooseBirthdayBackground: (): Promise<{ canceled: boolean; filePath: string | undefined }> =>
     ipcRenderer.invoke('birthday:chooseBackground'),
-  // Birthday Bucket OAuth2
-  churchSuiteOAuth2Authorize: (params: { account: string; clientId: string; clientSecret: string }): Promise<{ success: boolean; expiresAt?: number; error?: string }> =>
-    ipcRenderer.invoke('churchsuite:oauth2:authorize', params),
-  churchSuiteOAuth2Cancel: (): Promise<{ success: boolean }> =>
-    ipcRenderer.invoke('churchsuite:oauth2:cancel'),
-  churchSuiteOAuth2Status: (): Promise<{ authenticated: boolean; authType: string; expiresAt?: number; error?: string }> =>
-    ipcRenderer.invoke('churchsuite:oauth2:status'),
-  churchSuiteOAuth2Disconnect: (): Promise<{ success: boolean }> =>
-    ipcRenderer.invoke('churchsuite:oauth2:disconnect'),
 };
 
 contextBridge.exposeInMainWorld('api', api);

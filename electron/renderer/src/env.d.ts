@@ -36,7 +36,6 @@ type SettingsPayload = {
   templatePlaylistId?: string | null;
   // Birthday Bucket
   enableBirthdayBucket?: boolean;
-  churchSuiteAccount?: string | null;
   churchSuiteClientId?: string | null;
   churchSuiteClientSecret?: string | null;
   birthdayChurchName?: string | null;
@@ -159,11 +158,6 @@ interface ElectronAPI {
   churchSuiteExportPptx: (weekOffset: number) => Promise<{ success: boolean; filename: string; error?: string }>;
   churchSuiteOpenOutput: () => Promise<void>;
   chooseBirthdayBackground: () => Promise<{ canceled: boolean; filePath: string | undefined }>;
-  // Birthday Bucket OAuth2
-  churchSuiteOAuth2Authorize: (params: { account: string; clientId: string; clientSecret: string }) => Promise<{ success: boolean; expiresAt?: number; error?: string }>;
-  churchSuiteOAuth2Cancel: () => Promise<{ success: boolean }>;
-  churchSuiteOAuth2Status: () => Promise<{ authenticated: boolean; authType: string; expiresAt?: number; error?: string }>;
-  churchSuiteOAuth2Disconnect: () => Promise<{ success: boolean }>;
 }
 
 declare global {

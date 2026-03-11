@@ -33,36 +33,44 @@ export async function churchSuiteFetch<T>(
   return res.json() as Promise<T>;
 }
 
+/**
+ * v2 paginated response envelope.
+ * List endpoints return: { data: T[], pagination: { num_results, per_page, page, next_page, prev_page } }
+ */
+interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    num_results: number;
+    per_page: number;
+    page: number;
+    next_page: number | null;
+    prev_page: number | null;
+  };
+}
+
 export async function fetchAllPages<T>(
   config: ChurchSuiteConfig,
   path: string,
-  perPage = 50
+  perPage = 100
 ): Promise<T[]> {
   const all: T[] = [];
   let page = 1;
   let hasMore = true;
 
   while (hasMore) {
-    const response = await churchSuiteFetch<T[] | { [key: string]: T[] }>(
+    const response = await churchSuiteFetch<PaginatedResponse<T>>(
       config,
       path,
       { page: String(page), per_page: String(perPage) }
     );
 
-    const items = Array.isArray(response)
-      ? response
-      : (Object.values(response).find(Array.isArray) as T[] | undefined);
-
-    if (!items || items.length === 0) {
-      hasMore = false;
-    } else {
-      all.push(...items);
-      if (items.length < perPage) {
-        hasMore = false;
-      } else {
-        page++;
-      }
+    if (response.data && response.data.length > 0) {
+      all.push(...response.data);
     }
+
+    // Use the pagination metadata to determine if there are more pages
+    hasMore = response.pagination?.next_page != null;
+    page++;
   }
 
   return all;
