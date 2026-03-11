@@ -40,3 +40,27 @@ export interface PlaylistTemplate {
   name: string;
   structure: TemplateItem[];
 }
+
+/**
+ * Planned Service Types
+ * For pre-planning services ahead of time without a PDF
+ */
+
+export type PraiseSlotType = 'praise1' | 'praise2' | 'praise3' | 'kids' | 'reading';
+
+export interface PlannedSlotItem {
+  uuid: string;           // ProPresenter presentation UUID
+  name: string;           // Display name
+  library?: string;       // Source library name
+}
+
+export interface PlannedService {
+  id: string;             // Unique identifier (UUID)
+  name: string;           // e.g., "St Andrews - 25th September"
+  date: string;           // ISO date string for the planned service date
+  templatePlaylistId: string;  // Template used
+  slots: Record<PraiseSlotType, PlannedSlotItem[]>;  // Songs assigned to each slot
+  notes?: string;         // Optional notes
+  createdAt: string;      // ISO timestamp
+  updatedAt: string;      // ISO timestamp
+}
