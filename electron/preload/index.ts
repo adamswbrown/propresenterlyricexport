@@ -36,11 +36,12 @@ type SettingsPayload = {
   templatePlaylistId?: string | null;
   // Birthday Bucket
   enableBirthdayBucket?: boolean;
-  churchSuiteAccount?: string | null;
-  churchSuiteApiKey?: string | null;
-  churchSuiteAppName?: string | null;
   birthdayChurchName?: string | null;
   birthdayBackgroundImagePath?: string | null;
+  // Birthday Bucket — ChurchSuite OAuth2
+  churchSuiteAccount?: string | null;
+  churchSuiteClientId?: string | null;
+  churchSuiteClientSecret?: string | null;
 };
 
 interface ExportPayload extends ConnectionConfig {
@@ -140,8 +141,8 @@ const api = {
   focusPlaylistItem: (config: ConnectionConfig, playlistId: string, headerName: string): Promise<{ success: boolean; error?: string; index?: number }> =>
     ipcRenderer.invoke('playlist:focus-item', config, playlistId, headerName),
   // Birthday Bucket
-  churchSuiteSync: (config: { account: string; apiKey: string; appName: string }): Promise<{ success: boolean; contacts: number; children: number; syncedAt: string; error?: string }> =>
-    ipcRenderer.invoke('churchsuite:sync', config),
+  churchSuiteSync: (): Promise<{ success: boolean; contacts: number; children: number; syncedAt: string; error?: string }> =>
+    ipcRenderer.invoke('churchsuite:sync'),
   churchSuiteGetBirthdays: (weekOffset: number): Promise<{ success: boolean; entries: any[]; range: { start: string; end: string } }> =>
     ipcRenderer.invoke('churchsuite:getBirthdays', weekOffset),
   churchSuiteExportPptx: (weekOffset: number): Promise<{ success: boolean; filename: string; error?: string }> =>
@@ -150,6 +151,15 @@ const api = {
     ipcRenderer.invoke('churchsuite:openOutput'),
   chooseBirthdayBackground: (): Promise<{ canceled: boolean; filePath: string | undefined }> =>
     ipcRenderer.invoke('birthday:chooseBackground'),
+  // Birthday Bucket OAuth2
+  churchSuiteOAuth2Authorize: (params: { account: string; clientId: string; clientSecret: string }): Promise<{ success: boolean; expiresAt?: number; error?: string }> =>
+    ipcRenderer.invoke('churchsuite:oauth2:authorize', params),
+  churchSuiteOAuth2Cancel: (): Promise<{ success: boolean }> =>
+    ipcRenderer.invoke('churchsuite:oauth2:cancel'),
+  churchSuiteOAuth2Status: (): Promise<{ authenticated: boolean; authType: string; expiresAt?: number; error?: string }> =>
+    ipcRenderer.invoke('churchsuite:oauth2:status'),
+  churchSuiteOAuth2Disconnect: (): Promise<{ success: boolean }> =>
+    ipcRenderer.invoke('churchsuite:oauth2:disconnect'),
 };
 
 contextBridge.exposeInMainWorld('api', api);

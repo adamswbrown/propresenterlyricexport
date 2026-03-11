@@ -29,8 +29,8 @@ type SettingsState = {
   // Birthday Bucket
   enableBirthdayBucket: boolean;
   churchSuiteAccount: string;
-  churchSuiteApiKey: string;
-  churchSuiteAppName: string;
+  churchSuiteClientId: string;
+  churchSuiteClientSecret: string;
   birthdayChurchName: string;
   birthdayBackgroundImagePath: string;
 };
@@ -172,8 +172,8 @@ function App(): JSX.Element {
     templatePlaylistId: '',
     enableBirthdayBucket: false,
     churchSuiteAccount: '',
-    churchSuiteApiKey: '',
-    churchSuiteAppName: '',
+    churchSuiteClientId: '',
+    churchSuiteClientSecret: '',
     birthdayChurchName: '',
     birthdayBackgroundImagePath: '',
   });
@@ -219,8 +219,8 @@ function App(): JSX.Element {
         templatePlaylistId: saved.templatePlaylistId ?? '',
         enableBirthdayBucket: saved.enableBirthdayBucket ?? false,
         churchSuiteAccount: saved.churchSuiteAccount ?? '',
-        churchSuiteApiKey: saved.churchSuiteApiKey ?? '',
-        churchSuiteAppName: saved.churchSuiteAppName ?? '',
+        churchSuiteClientId: saved.churchSuiteClientId ?? '',
+        churchSuiteClientSecret: saved.churchSuiteClientSecret ?? '',
         birthdayChurchName: saved.birthdayChurchName ?? '',
         birthdayBackgroundImagePath: saved.birthdayBackgroundImagePath ?? '',
       }));
@@ -584,8 +584,8 @@ function App(): JSX.Element {
       templatePlaylistId: settings.templatePlaylistId || null,
       enableBirthdayBucket: settings.enableBirthdayBucket,
       churchSuiteAccount: settings.churchSuiteAccount || null,
-      churchSuiteApiKey: settings.churchSuiteApiKey || null,
-      churchSuiteAppName: settings.churchSuiteAppName || null,
+      churchSuiteClientId: settings.churchSuiteClientId || null,
+      churchSuiteClientSecret: settings.churchSuiteClientSecret || null,
       birthdayChurchName: settings.birthdayChurchName || null,
       birthdayBackgroundImagePath: settings.birthdayBackgroundImagePath || null,
     };
@@ -711,8 +711,8 @@ function App(): JSX.Element {
       <BirthdayBucketView
         churchSuiteConfig={{
           account: settings.churchSuiteAccount,
-          apiKey: settings.churchSuiteApiKey,
-          appName: settings.churchSuiteAppName || 'birthday-bucket',
+          clientId: settings.churchSuiteClientId,
+          clientSecret: settings.churchSuiteClientSecret,
         }}
         churchName={settings.birthdayChurchName}
         backgroundImagePath={settings.birthdayBackgroundImagePath}

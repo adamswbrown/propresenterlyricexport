@@ -1,6 +1,16 @@
 import type { ChurchSuiteConfig } from '../types/churchsuite';
 
-const BASE_URL = 'https://api.churchsuite.com/v1';
+const BASE_URL = 'https://api.churchsuite.com/v2';
+
+function getHeaders(config: ChurchSuiteConfig): Record<string, string> {
+  if (!config.accessToken) {
+    throw new Error('OAuth2 access token is required. Please authorize with ChurchSuite first.');
+  }
+  return {
+    Authorization: `Bearer ${config.accessToken}`,
+    'Content-Type': 'application/json',
+  };
+}
 
 export async function churchSuiteFetch<T>(
   config: ChurchSuiteConfig,
@@ -13,12 +23,7 @@ export async function churchSuiteFetch<T>(
   }
 
   const res = await fetch(url.toString(), {
-    headers: {
-      'X-Account': config.account,
-      'X-Application': config.appName,
-      'X-Auth': config.apiKey,
-      'Content-Type': 'application/json',
-    },
+    headers: getHeaders(config),
   });
 
   if (!res.ok) {

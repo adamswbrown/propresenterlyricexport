@@ -37,11 +37,15 @@ interface AppSettings {
   templatePlaylistId?: string | null;
   // Birthday Bucket
   enableBirthdayBucket?: boolean;
-  churchSuiteAccount?: string | null;
-  churchSuiteApiKey?: string | null;
-  churchSuiteAppName?: string | null;
   birthdayChurchName?: string | null;
   birthdayBackgroundImagePath?: string | null;
+  // Birthday Bucket — ChurchSuite OAuth2
+  churchSuiteAccount?: string | null;
+  churchSuiteClientId?: string | null;
+  churchSuiteClientSecret?: string | null;
+  churchSuiteAccessToken?: string | null;
+  churchSuiteRefreshToken?: string | null;
+  churchSuiteTokenExpiresAt?: number | null;
 }
 
 interface ConnectionConfig {
@@ -1384,8 +1388,150 @@ ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig
 // In-memory cache for synced birthday data
 let birthdayCache: { people: any[]; syncedAt: string } | null = null;
 
-ipcMain.handle('churchsuite:sync', async (_event, config: { account: string; apiKey: string; appName: string }) => {
+// Build ChurchSuiteConfig from persisted OAuth2 settings
+function buildChurchSuiteConfig(): import('../../src/types/churchsuite').ChurchSuiteConfig {
+  return {
+    account: settings.get('churchSuiteAccount') ?? '',
+    clientId: settings.get('churchSuiteClientId') ?? '',
+    clientSecret: settings.get('churchSuiteClientSecret') ?? '',
+    accessToken: settings.get('churchSuiteAccessToken') ?? undefined,
+    refreshToken: settings.get('churchSuiteRefreshToken') ?? undefined,
+    tokenExpiresAt: settings.get('churchSuiteTokenExpiresAt') ?? undefined,
+  };
+}
+
+// OAuth2 authorization state
+let oauthAbort: (() => void) | null = null;
+
+// Start OAuth2 authorization flow — opens browser and listens for callback
+ipcMain.handle('churchsuite:oauth2:authorize', async (_event, params: { account: string; clientId: string; clientSecret: string }) => {
   try {
+    const { getAuthorizationUrl, generateState, listenForCallback, exchangeCodeForTokens } =
+      await import('../../src/services/churchsuite-oauth2');
+
+    // Abort any in-progress flow
+    if (oauthAbort) {
+      oauthAbort();
+      oauthAbort = null;
+    }
+
+    const state = generateState();
+    const authUrl = getAuthorizationUrl(params.account, params.clientId, state);
+
+    // Start the loopback callback listener
+    const { promise, abort } = listenForCallback();
+    oauthAbort = abort;
+
+    // Open the browser for user to authorize
+    shell.openExternal(authUrl);
+
+    // Wait for the callback
+    const result = await promise;
+    oauthAbort = null;
+
+    if (result.state !== state) {
+      throw new Error('OAuth2 state mismatch — possible CSRF attack');
+    }
+
+    // Exchange code for tokens
+    const tokens = await exchangeCodeForTokens(
+      params.account,
+      params.clientId,
+      params.clientSecret,
+      result.code
+    );
+
+    // Persist tokens and config
+    settings.set('churchSuiteAccount', params.account);
+    settings.set('churchSuiteClientId', params.clientId);
+    settings.set('churchSuiteClientSecret', params.clientSecret);
+    settings.set('churchSuiteAccessToken', tokens.accessToken);
+    settings.set('churchSuiteRefreshToken', tokens.refreshToken ?? null);
+    settings.set('churchSuiteTokenExpiresAt', tokens.expiresAt);
+
+    return {
+      success: true,
+      expiresAt: tokens.expiresAt,
+    };
+  } catch (error: any) {
+    console.error('OAuth2 authorization error:', error);
+    return { success: false, error: error.message || 'Authorization failed' };
+  }
+});
+
+// Cancel an in-progress OAuth2 flow
+ipcMain.handle('churchsuite:oauth2:cancel', async () => {
+  if (oauthAbort) {
+    oauthAbort();
+    oauthAbort = null;
+  }
+  return { success: true };
+});
+
+// Check & refresh token if needed
+ipcMain.handle('churchsuite:oauth2:status', async () => {
+  const accessToken = settings.get('churchSuiteAccessToken');
+  const expiresAt = settings.get('churchSuiteTokenExpiresAt');
+  const refreshToken = settings.get('churchSuiteRefreshToken');
+
+  if (!accessToken) {
+    return { authenticated: false, authType: 'oauth2' };
+  }
+
+  // Check if token is expired (with 60s buffer)
+  const isExpired = expiresAt ? (expiresAt - 60_000) < Date.now() : false;
+
+  if (isExpired && refreshToken) {
+    try {
+      const { refreshAccessToken } = await import('../../src/services/churchsuite-oauth2');
+      const account = settings.get('churchSuiteAccount') ?? '';
+      const clientId = settings.get('churchSuiteClientId') ?? '';
+      const clientSecret = settings.get('churchSuiteClientSecret') ?? '';
+
+      const tokens = await refreshAccessToken(account, clientId, clientSecret, refreshToken);
+
+      settings.set('churchSuiteAccessToken', tokens.accessToken);
+      settings.set('churchSuiteRefreshToken', tokens.refreshToken ?? refreshToken);
+      settings.set('churchSuiteTokenExpiresAt', tokens.expiresAt);
+
+      return { authenticated: true, authType: 'oauth2', expiresAt: tokens.expiresAt };
+    } catch (error: any) {
+      console.error('Token refresh failed:', error);
+      return { authenticated: false, authType: 'oauth2', error: 'Token expired and refresh failed' };
+    }
+  }
+
+  return {
+    authenticated: !isExpired,
+    authType: 'oauth2',
+    expiresAt: expiresAt ?? undefined,
+  };
+});
+
+// Disconnect OAuth2 — clear stored tokens
+ipcMain.handle('churchsuite:oauth2:disconnect', async () => {
+  settings.set('churchSuiteAccessToken', null);
+  settings.set('churchSuiteRefreshToken', null);
+  settings.set('churchSuiteTokenExpiresAt', null);
+  return { success: true };
+});
+
+ipcMain.handle('churchsuite:sync', async () => {
+  try {
+    const config = buildChurchSuiteConfig();
+
+    // Auto-refresh token if needed
+    const { isTokenValid, canRefresh, refreshAccessToken } = await import('../../src/services/churchsuite-oauth2');
+    if (!isTokenValid(config) && canRefresh(config)) {
+      const tokens = await refreshAccessToken(config.account, config.clientId, config.clientSecret, config.refreshToken!);
+      config.accessToken = tokens.accessToken;
+      config.refreshToken = tokens.refreshToken;
+      config.tokenExpiresAt = tokens.expiresAt;
+      settings.set('churchSuiteAccessToken', tokens.accessToken);
+      settings.set('churchSuiteRefreshToken', tokens.refreshToken ?? null);
+      settings.set('churchSuiteTokenExpiresAt', tokens.expiresAt);
+    }
+
     const { fetchContacts } = await import('../../src/services/churchsuite-contacts');
     const { fetchChildren } = await import('../../src/services/churchsuite-children');
 

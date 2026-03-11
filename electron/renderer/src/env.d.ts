@@ -37,8 +37,8 @@ type SettingsPayload = {
   // Birthday Bucket
   enableBirthdayBucket?: boolean;
   churchSuiteAccount?: string | null;
-  churchSuiteApiKey?: string | null;
-  churchSuiteAppName?: string | null;
+  churchSuiteClientId?: string | null;
+  churchSuiteClientSecret?: string | null;
   birthdayChurchName?: string | null;
   birthdayBackgroundImagePath?: string | null;
 };
@@ -154,11 +154,16 @@ interface ElectronAPI {
   buildServicePlaylist: (config: ConnectionConfig, playlistId: string, items: any[]) => Promise<{ success: boolean; error?: string }>;
   focusPlaylistItem: (config: ConnectionConfig, playlistId: string, headerName: string) => Promise<{ success: boolean; error?: string; index?: number }>;
   // Birthday Bucket
-  churchSuiteSync: (config: { account: string; apiKey: string; appName: string }) => Promise<{ success: boolean; contacts: number; children: number; syncedAt: string; error?: string }>;
+  churchSuiteSync: () => Promise<{ success: boolean; contacts: number; children: number; syncedAt: string; error?: string }>;
   churchSuiteGetBirthdays: (weekOffset: number) => Promise<{ success: boolean; entries: any[]; range: { start: string; end: string } }>;
   churchSuiteExportPptx: (weekOffset: number) => Promise<{ success: boolean; filename: string; error?: string }>;
   churchSuiteOpenOutput: () => Promise<void>;
   chooseBirthdayBackground: () => Promise<{ canceled: boolean; filePath: string | undefined }>;
+  // Birthday Bucket OAuth2
+  churchSuiteOAuth2Authorize: (params: { account: string; clientId: string; clientSecret: string }) => Promise<{ success: boolean; expiresAt?: number; error?: string }>;
+  churchSuiteOAuth2Cancel: () => Promise<{ success: boolean }>;
+  churchSuiteOAuth2Status: () => Promise<{ authenticated: boolean; authType: string; expiresAt?: number; error?: string }>;
+  churchSuiteOAuth2Disconnect: () => Promise<{ success: boolean }>;
 }
 
 declare global {

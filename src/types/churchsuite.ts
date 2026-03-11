@@ -1,7 +1,18 @@
+/** OAuth2 authentication for ChurchSuite Core API v2 */
 export interface ChurchSuiteConfig {
   account: string;
-  apiKey: string;
-  appName: string;
+  clientId: string;
+  clientSecret: string;
+  accessToken?: string;
+  refreshToken?: string;
+  tokenExpiresAt?: number; // Unix timestamp in ms
+}
+
+/** Stored OAuth2 tokens (persisted in electron-store) */
+export interface ChurchSuiteOAuth2Tokens {
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt: number; // Unix timestamp in ms
 }
 
 export interface BirthdayPerson {
