@@ -12,6 +12,7 @@ A modern desktop + CLI toolkit for worship leaders and production teams who need
 - 📤 **Multiple Export Formats** - Text, JSON, or beautifully formatted PowerPoint
 - ✅ **Connection Validation** - Automatic connectivity checking
 - 🔄 **Batch Export** - Export entire playlists in one command
+- 🎂 **Birthday Bucket** - Generate birthday blessing slides from ChurchSuite contacts and children
 - 🏆 **Service Generator** - Create complete worship service documents with Bible passages
 - 🎨 **Customizable Styling** - Fonts, colors, and layouts for PowerPoint export
 - 🌍 **Cross-Platform** - Native support for macOS (ARM64 & Intel) and Windows
@@ -65,6 +66,7 @@ Complete documentation is available at **[adamswbrown.github.io/propresenterlyri
 
 - **[Getting Started](https://adamswbrown.github.io/propresenterlyricexport/getting-started)** - Installation and setup (replaces QUICK_START.md, SETUP.md)
 - **[User Guide](https://adamswbrown.github.io/propresenterlyricexport/user-guide)** - Desktop and CLI usage, connection settings, troubleshooting
+- **[Birthday Bucket Guide](https://adamswbrown.github.io/propresenterlyricexport/guides/birthday-bucket)** - Generate birthday blessing slides from ChurchSuite
 - **[Service Generator Guide](https://adamswbrown.github.io/propresenterlyricexport/guides/service-generator)** - Create professional worship service documents
 - **[CLI Command Reference](https://adamswbrown.github.io/propresenterlyricexport/guides/cli-guide)** - All commands with examples
 - **[PPTX Export Guide](https://adamswbrown.github.io/propresenterlyricexport/guides/pptx-export)** - Customization and styling

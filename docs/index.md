@@ -31,7 +31,7 @@ Watch how easy it is to export lyrics from ProPresenter to PowerPoint:
 ## Navigation
 
 - **User Docs**: [Getting Started](./getting-started) | [User Guide](./user-guide) | [FAQ](./faq)
-- **Guides**: [Web Proxy](./guides/proxy-app) | [Viewer](./guides/viewer) | [PPTX Export](./guides/pptx-export) | [CLI Commands](./guides/cli-guide) | [Service Generator](./guides/service-generator) | [After Export](./guides/after-export)
+- **Guides**: [Web Proxy](./guides/proxy-app) | [Viewer](./guides/viewer) | [PPTX Export](./guides/pptx-export) | [CLI Commands](./guides/cli-guide) | [Service Generator](./guides/service-generator) | [Birthday Bucket](./guides/birthday-bucket) | [After Export](./guides/after-export)
 - **Developer**: [Setup](./developer/setup) | [Architecture](./developer/architecture) | [Building](./developer/building)
 
 ---
@@ -45,6 +45,7 @@ Watch how easy it is to export lyrics from ProPresenter to PowerPoint:
 - 🎨 **PowerPoint Export** - Beautifully formatted slides with customizable fonts, colors, and styling
 - 🔤 **Font Detection** - 25+ curated presentation-ready fonts with installation status
 - ✅ **Connection Validation** - Automatic ProPresenter connectivity checking
+- 🎂 **Birthday Bucket** (Optional) - Generate birthday blessing slides from ChurchSuite contacts
 - 🔄 **Service Generator** (Optional) - Automate Sunday service playlist creation from PDF service orders
 - 🌍 **Cross-Platform** - macOS (ARM64 & Intel) and Windows
 - 📦 **Standalone** - No Node.js installation required
@@ -57,6 +58,7 @@ Watch how easy it is to export lyrics from ProPresenter to PowerPoint:
 - **[Viewer Guide](./guides/viewer)** - Real-time slide viewer for congregation devices
 - **[PPTX Export Guide](./guides/pptx-export)** - Customize fonts, colors, and styling
 - **[Service Generator Guide](./guides/service-generator)** - Advanced: Automate service playlists from PDFs
+- **[Birthday Bucket Guide](./guides/birthday-bucket)** - Generate birthday blessing slides from ChurchSuite
 - **[After Export Guide](./guides/after-export)** - Add remaining artifacts (sermons, kids content, birthdays)
 - **[FAQ](./faq)** - Common questions and troubleshooting
 - **[Developer Guide](./developer)** - Setup, building, and contributing
@@ -99,3 +101,4 @@ Download standalone binaries for macOS or Windows from [Releases](https://github
 | [FAQ](./faq) | [CLI Reference](./guides/cli-guide) | [Building & Release](./developer/building) |
 | | [PPTX Customization](./guides/pptx-export) | |
 | | [Service Generator](./guides/service-generator) | |
+| | [Birthday Bucket](./guides/birthday-bucket) | |
