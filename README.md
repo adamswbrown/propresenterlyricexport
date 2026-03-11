@@ -13,6 +13,7 @@ A modern desktop + CLI toolkit for worship leaders and production teams who need
 - ✅ **Connection Validation** - Automatic connectivity checking
 - 🔄 **Batch Export** - Export entire playlists in one command
 - 🏆 **Service Generator** - Create complete worship service documents with Bible passages
+- 📅 **Plan Service** - Pre-plan services weeks in advance by assigning songs to template slots
 - 🎨 **Customizable Styling** - Fonts, colors, and layouts for PowerPoint export
 - 🌍 **Cross-Platform** - Native support for macOS (ARM64 & Intel) and Windows
 - 📦 **Standalone Executables** - No Node.js installation required

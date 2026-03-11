@@ -5,6 +5,18 @@ All notable changes to ProPresenter Lyrics Export will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2026-03-11
+
+### Added
+- **Plan Service** — Pre-plan services weeks or months in advance without needing a PDF
+  - Select a template playlist and manually assign songs from any library to each slot (Praise 1/2/3, Kids, Reading)
+  - Full library search across all configured libraries (Worship, Kids, Service Content)
+  - CCLI SongSelect and YouTube search integration for finding and importing songs
+  - Save plans to disk for later use — plans persist across app sessions
+  - Load, edit, and delete saved plans from the Setup step
+  - Build playlist from a saved plan — identical to the PDF workflow build step
+  - New persistent storage at `~/.propresenter-words/planned-services.json`
+
 ## [3.2.0] - 2026-03-02
 
 ### Added

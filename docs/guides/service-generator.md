@@ -4,9 +4,9 @@
 
 ---
 
-Automate your Sunday service playlist creation from PDF service orders in minutes.
+Automate your Sunday service playlist creation from PDF service orders in minutes — or pre-plan services weeks in advance.
 
-> **Note:** Service Generator is an **optional advanced feature**. The core functionality of ProPresenter Lyrics Export is extracting lyrics from existing playlists. Service Generator extends this by helping you build playlists from PDF service orders.
+> **Note:** Service Generator is an **optional advanced feature**. The core functionality of ProPresenter Lyrics Export is extracting lyrics from existing playlists. Service Generator extends this by helping you build playlists from PDF service orders or by manually planning services ahead of time.
 
 ## Table of Contents
 
@@ -14,12 +14,13 @@ Automate your Sunday service playlist creation from PDF service orders in minute
 2. [What is Service Generator?](#what-is-service-generator)
 3. [How It Works (6-Step Workflow)](#how-it-works-6-step-workflow)
 4. [Workflow Details](#workflow-details)
-5. [Troubleshooting](#troubleshooting)
-6. [Understanding Service Libraries](#understanding-service-libraries)
-7. [Service Library Structure](#service-library-structure)
-8. [PDF Format Requirements](#pdf-format-requirements) - How to structure your PDFs
-9. [Service Order Sources](#service-order-sources)
-10. [Getting Help](#getting-help)
+5. [Plan Service (Pre-Planning Workflow)](#plan-service-pre-planning-workflow) - Pre-plan services ahead of time
+6. [Troubleshooting](#troubleshooting)
+7. [Understanding Service Libraries](#understanding-service-libraries)
+8. [Service Library Structure](#service-library-structure)
+9. [PDF Format Requirements](#pdf-format-requirements) - How to structure your PDFs
+10. [Service Order Sources](#service-order-sources)
+11. [Getting Help](#getting-help)
 
 ---
 
@@ -86,6 +87,10 @@ Once configured, these settings are saved and remembered for future uses.
 ![Select Library](../assets/select_libary.png)
 
 ![Create Playlist](../assets/create_playlist.png)
+
+After selecting or creating a working playlist, you'll see two workflow options:
+- **Upload PDF** — Parse a service order PDF to auto-match songs (Steps 2-5 below)
+- **Plan Service** — Manually assign songs to template slots ahead of time (see [Plan Service](#plan-service-pre-planning-workflow) below)
 
 ### Step 2: Upload PDF
 
@@ -511,6 +516,68 @@ Service Generator recognizes that videos can appear throughout a service, not ju
    - Open the playlist in ProPresenter
    - Preview each song to ensure correct content
    - Check any custom formatting
+
+---
+
+## Plan Service (Pre-Planning Workflow)
+
+Plan Service lets you **pre-plan services weeks or months in advance** without needing a PDF. This is ideal when you already know the songs for an upcoming service and want to get the playlist ready ahead of time.
+
+### How to Use Plan Service
+
+1. Complete **Step 1 (Setup)** as usual — configure libraries, template, and select/create a working playlist
+2. Click **"Plan Service"** instead of "Upload PDF"
+3. You'll see a planning form with:
+   - **Service Name** — e.g., "St Andrews - 25th September"
+   - **Service Date** — Pick the date for this service
+   - **Notes** — Optional notes about the service
+   - **Template Slots** — Each section from your template:
+     - **Praise 1** — Opening worship songs
+     - **Praise 2** — Mid-service worship
+     - **Praise 3** — Closing worship
+     - **Kids** — Children's songs/videos
+     - **Reading** — Bible passages / scripture
+
+### Adding Songs to Slots
+
+For each slot, click **"+ Add Song"** (or "+ Add Scripture" for Reading):
+
+1. Type a song name in the search box
+2. Press **Enter** or click **Search** — searches across all configured libraries
+3. Click a result to add it to that slot
+4. Add multiple items per slot if needed
+
+**Can't find a song?** The same tools from the PDF workflow are available:
+- **Copy Name** — Copy to clipboard for importing into ProPresenter
+- **Search CCLI** — Open CCLI SongSelect to find and download the song
+- **Search YouTube** — Find kids videos on YouTube
+- After importing into ProPresenter, search again to find the new song
+
+### Saving Plans
+
+Click **"Save Plan"** to persist your plan to disk. Saved plans appear on the Setup step under **"Saved Plans"** where you can:
+
+- **Load** — Reload a plan to edit or build the playlist
+- **Delete** — Remove plans you no longer need
+
+Plans are stored in `~/.propresenter-words/planned-services.json` and persist across app sessions.
+
+### Building from a Plan
+
+When you're ready to build the actual ProPresenter playlist:
+
+1. Click **"Build Playlist"** on the Plan step
+2. Review the summary on the Build step (same as the PDF workflow)
+3. Click **"Add Items"** to populate your ProPresenter playlist
+
+The build process works identically to the PDF workflow — songs are inserted into the correct template sections based on their slot assignments.
+
+### Typical Plan Service Workflow
+
+1. **Weeks before:** Service leader decides on songs for upcoming service
+2. **Plan ahead:** Open Plan Service, assign songs to slots, save the plan
+3. **During the week:** Edit the plan if songs change — load, modify, save again
+4. **Service day:** Load the saved plan, click Build Playlist, done!
 
 ---
 
