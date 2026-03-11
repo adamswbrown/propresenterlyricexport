@@ -36,11 +36,11 @@ type SettingsPayload = {
   templatePlaylistId?: string | null;
   // Birthday Bucket
   enableBirthdayBucket?: boolean;
-  churchSuiteAccount?: string | null;
-  churchSuiteApiKey?: string | null;
-  churchSuiteAppName?: string | null;
   birthdayChurchName?: string | null;
   birthdayBackgroundImagePath?: string | null;
+  // Birthday Bucket — ChurchSuite OAuth2 Client Credentials
+  churchSuiteClientId?: string | null;
+  churchSuiteClientSecret?: string | null;
 };
 
 interface ExportPayload extends ConnectionConfig {
@@ -140,8 +140,8 @@ const api = {
   focusPlaylistItem: (config: ConnectionConfig, playlistId: string, headerName: string): Promise<{ success: boolean; error?: string; index?: number }> =>
     ipcRenderer.invoke('playlist:focus-item', config, playlistId, headerName),
   // Birthday Bucket
-  churchSuiteSync: (config: { account: string; apiKey: string; appName: string }): Promise<{ success: boolean; contacts: number; children: number; syncedAt: string; error?: string }> =>
-    ipcRenderer.invoke('churchsuite:sync', config),
+  churchSuiteSync: (): Promise<{ success: boolean; contacts: number; children: number; syncedAt: string; error?: string }> =>
+    ipcRenderer.invoke('churchsuite:sync'),
   churchSuiteGetBirthdays: (weekOffset: number): Promise<{ success: boolean; entries: any[]; range: { start: string; end: string } }> =>
     ipcRenderer.invoke('churchsuite:getBirthdays', weekOffset),
   churchSuiteExportPptx: (weekOffset: number): Promise<{ success: boolean; filename: string; error?: string }> =>

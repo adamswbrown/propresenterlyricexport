@@ -1,7 +1,15 @@
+/** OAuth2 Client Credentials authentication for ChurchSuite Core API v2 */
 export interface ChurchSuiteConfig {
-  account: string;
-  apiKey: string;
-  appName: string;
+  clientId: string;
+  clientSecret: string;
+  accessToken?: string;
+  tokenExpiresAt?: number; // Unix timestamp in ms
+}
+
+/** OAuth2 token response */
+export interface ChurchSuiteOAuth2Tokens {
+  accessToken: string;
+  expiresAt: number; // Unix timestamp in ms
 }
 
 export interface BirthdayPerson {

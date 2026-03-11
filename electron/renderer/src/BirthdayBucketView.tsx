@@ -3,9 +3,8 @@ import { useState, useEffect, useCallback } from 'react';
 
 type BirthdayBucketViewProps = {
   churchSuiteConfig: {
-    account: string;
-    apiKey: string;
-    appName: string;
+    clientId: string;
+    clientSecret: string;
   };
   churchName: string;
   backgroundImagePath: string;
@@ -46,10 +45,9 @@ export function BirthdayBucketView(props: BirthdayBucketViewProps) {
   const [weekRange, setWeekRange] = useState<{ start: string; end: string } | null>(null);
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
 
-  // Local config state for inputs
-  const [account, setAccount] = useState(props.churchSuiteConfig.account);
-  const [apiKey, setApiKey] = useState(props.churchSuiteConfig.apiKey);
-  const [appName, setAppName] = useState(props.churchSuiteConfig.appName || 'birthday-bucket');
+  // Local config state
+  const [clientId, setClientId] = useState(props.churchSuiteConfig.clientId);
+  const [clientSecret, setClientSecret] = useState(props.churchSuiteConfig.clientSecret);
   const [churchName, setChurchName] = useState(props.churchName);
   const [backgroundImagePath, setBackgroundImagePath] = useState(props.backgroundImagePath);
 
@@ -60,7 +58,6 @@ export function BirthdayBucketView(props: BirthdayBucketViewProps) {
     return () => clearTimeout(timer);
   }, [notification]);
 
-  // Load birthdays when weekOffset changes (if synced)
   const loadBirthdays = useCallback(async (offset: number) => {
     try {
       const result = await window.api.churchSuiteGetBirthdays(offset);
@@ -78,37 +75,28 @@ export function BirthdayBucketView(props: BirthdayBucketViewProps) {
   }, [weekOffset, loadBirthdays]);
 
   const handleSync = async () => {
-    if (!account || !apiKey) {
-      setNotification({ message: 'Please enter account and API key', type: 'error' });
+    if (!clientId || !clientSecret) {
+      setNotification({ message: 'Please enter Client ID and Client Secret', type: 'error' });
       return;
     }
 
     setIsSyncing(true);
     setNotification({ message: 'Syncing with ChurchSuite...', type: 'info' });
 
-    // Persist config
     props.onConfigChange({
-      churchSuiteAccount: account,
-      churchSuiteApiKey: apiKey,
-      churchSuiteAppName: appName,
+      churchSuiteClientId: clientId,
+      churchSuiteClientSecret: clientSecret,
       birthdayChurchName: churchName,
       birthdayBackgroundImagePath: backgroundImagePath,
     });
+    props.onSaveSettings();
 
     try {
-      const result = await window.api.churchSuiteSync({ account, apiKey, appName });
+      const result = await window.api.churchSuiteSync();
 
       if (result.success) {
-        setSyncResult({
-          contacts: result.contacts,
-          children: result.children,
-          syncedAt: result.syncedAt,
-        });
-        setNotification({
-          message: `Synced ${result.contacts} contacts and ${result.children} children`,
-          type: 'success',
-        });
-        // Reload birthdays
+        setSyncResult({ contacts: result.contacts, children: result.children, syncedAt: result.syncedAt });
+        setNotification({ message: `Synced ${result.contacts} contacts and ${result.children} children`, type: 'success' });
         await loadBirthdays(weekOffset);
       } else {
         setNotification({ message: result.error || 'Sync failed', type: 'error' });
@@ -130,7 +118,6 @@ export function BirthdayBucketView(props: BirthdayBucketViewProps) {
   const handleExport = async () => {
     setIsExporting(true);
     setNotification({ message: 'Generating birthday slides...', type: 'info' });
-
     try {
       const result = await window.api.churchSuiteExportPptx(weekOffset);
       if (result.success) {
@@ -155,6 +142,34 @@ export function BirthdayBucketView(props: BirthdayBucketViewProps) {
     return `${Math.floor(hours / 24)}d ago`;
   };
 
+  const inputStyle = {
+    width: '100%',
+    padding: '10px 12px',
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '10px',
+    color: 'var(--text)',
+    fontSize: '14px',
+    outline: 'none',
+  };
+
+  const labelStyle = { display: 'block' as const, fontSize: '12px', color: 'var(--muted)', marginBottom: '4px' };
+
+  const panelStyle = {
+    background: 'var(--panel)',
+    border: '1px solid var(--panel-border)',
+    borderRadius: '18px',
+    padding: '24px',
+  };
+
+  const panelTitleStyle = {
+    margin: '0 0 4px',
+    fontSize: '14px',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.1em',
+    color: 'var(--text)',
+  };
+
   return (
     <div className="service-generator-container">
       <div className="titlebar-drag" />
@@ -169,21 +184,8 @@ export function BirthdayBucketView(props: BirthdayBucketViewProps) {
           <p className="eyebrow">ChurchSuite birthday manager</p>
         </div>
         {syncResult && (
-          <div style={{
-            marginLeft: 'auto',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontSize: '13px',
-            color: 'var(--success)',
-          }}>
-            <span style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              background: 'var(--success)',
-              display: 'inline-block',
-            }} />
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--success)' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', display: 'inline-block' }} />
             Synced
           </div>
         )}
@@ -198,100 +200,26 @@ export function BirthdayBucketView(props: BirthdayBucketViewProps) {
 
       {/* Main Content */}
       <div className="service-layout">
-        {/* Sidebar - Connection & Export */}
+        {/* Sidebar */}
         <aside className="service-sidebar" style={{ gap: '24px' }}>
           {/* Connection Panel */}
-          <div style={{
-            background: 'var(--panel)',
-            border: '1px solid var(--panel-border)',
-            borderRadius: '18px',
-            padding: '24px',
-          }}>
-            <h3 style={{
-              margin: '0 0 4px',
-              fontSize: '14px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              color: 'var(--text)',
-            }}>Connection</h3>
+          <div style={panelStyle}>
+            <h3 style={panelTitleStyle}>Connection</h3>
             <p style={{ margin: '0 0 16px', fontSize: '12px', color: 'var(--muted)' }}>
               ChurchSuite API credentials
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: 'var(--muted)', marginBottom: '4px' }}>
-                  Account
-                </label>
-                <input
-                  type="text"
-                  value={account}
-                  onChange={(e) => setAccount(e.target.value)}
-                  placeholder="gracechurch"
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '10px',
-                    color: 'var(--text)',
-                    fontSize: '14px',
-                    outline: 'none',
-                  }}
-                />
+                <label style={labelStyle}>Client ID</label>
+                <input type="text" value={clientId} onChange={(e) => setClientId(e.target.value)} placeholder="Your OAuth2 Client ID" style={inputStyle} />
               </div>
-
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: 'var(--muted)', marginBottom: '4px' }}>
-                  API Key
-                </label>
-                <input
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="your-api-key"
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '10px',
-                    color: 'var(--text)',
-                    fontSize: '14px',
-                    outline: 'none',
-                  }}
-                />
+                <label style={labelStyle}>Client Secret</label>
+                <input type="password" value={clientSecret} onChange={(e) => setClientSecret(e.target.value)} placeholder="Your OAuth2 Client Secret" style={inputStyle} />
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: 'var(--muted)', marginBottom: '4px' }}>
-                  App Name
-                </label>
-                <input
-                  type="text"
-                  value={appName}
-                  onChange={(e) => setAppName(e.target.value)}
-                  placeholder="birthday-bucket"
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '10px',
-                    color: 'var(--text)',
-                    fontSize: '14px',
-                    outline: 'none',
-                  }}
-                />
-              </div>
-
-              <button
-                className="primary"
-                onClick={handleSync}
-                disabled={isSyncing}
-                type="button"
-                style={{ width: '100%', marginTop: '4px' }}
-              >
+              <button className="primary" onClick={handleSync} disabled={isSyncing || !clientId || !clientSecret} type="button" style={{ width: '100%', marginTop: '4px' }}>
                 {isSyncing ? 'Syncing...' : 'Sync Now'}
               </button>
             </div>
@@ -315,109 +243,45 @@ export function BirthdayBucketView(props: BirthdayBucketViewProps) {
           </div>
 
           {/* Export Panel */}
-          <div style={{
-            background: 'var(--panel)',
-            border: '1px solid var(--panel-border)',
-            borderRadius: '18px',
-            padding: '24px',
-          }}>
-            <h3 style={{
-              margin: '0 0 4px',
-              fontSize: '14px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              color: 'var(--text)',
-            }}>Export</h3>
+          <div style={panelStyle}>
+            <h3 style={panelTitleStyle}>Export</h3>
             <p style={{ margin: '0 0 16px', fontSize: '12px', color: 'var(--muted)' }}>
               Generate PowerPoint for service display
             </p>
-
-            <button
-              className="accent"
-              onClick={handleExport}
-              disabled={isExporting || birthdays.length === 0}
-              type="button"
-              style={{ width: '100%' }}
-            >
+            <button className="accent" onClick={handleExport} disabled={isExporting || birthdays.length === 0} type="button" style={{ width: '100%' }}>
               {isExporting ? 'Exporting...' : 'Export PPTX'}
             </button>
-
-            <button
-              className="ghost"
-              onClick={() => window.api.churchSuiteOpenOutput()}
-              type="button"
-              style={{ width: '100%', marginTop: '8px', fontSize: '12px' }}
-            >
+            <button className="ghost" onClick={() => window.api.churchSuiteOpenOutput()} type="button" style={{ width: '100%', marginTop: '8px', fontSize: '12px' }}>
               Open Output Folder
             </button>
           </div>
 
           {/* Presentation Settings Panel */}
-          <div style={{
-            background: 'var(--panel)',
-            border: '1px solid var(--panel-border)',
-            borderRadius: '18px',
-            padding: '24px',
-          }}>
-            <h3 style={{
-              margin: '0 0 4px',
-              fontSize: '14px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              color: 'var(--text)',
-            }}>Slides</h3>
+          <div style={panelStyle}>
+            <h3 style={panelTitleStyle}>Slides</h3>
             <p style={{ margin: '0 0 16px', fontSize: '12px', color: 'var(--muted)' }}>
               Customise exported PPTX appearance
             </p>
-
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: 'var(--muted)', marginBottom: '4px' }}>
-                  Church Name
-                </label>
-                <input
-                  type="text"
-                  value={churchName}
-                  onChange={(e) => setChurchName(e.target.value)}
-                  placeholder="St Andrew's"
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '10px',
-                    color: 'var(--text)',
-                    fontSize: '14px',
-                    outline: 'none',
-                  }}
-                />
+                <label style={labelStyle}>Church Name</label>
+                <input type="text" value={churchName} onChange={(e) => setChurchName(e.target.value)} placeholder="St Andrew's" style={inputStyle} />
               </div>
-
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: 'var(--muted)', marginBottom: '4px' }}>
-                  Background Image
-                </label>
+                <label style={labelStyle}>Background Image</label>
                 <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '8px', wordBreak: 'break-all' }}>
                   {backgroundImagePath
                     ? backgroundImagePath.split('/').pop() || backgroundImagePath.split('\\').pop()
                     : 'No image set — uses warm amber fallback'}
                 </div>
                 <div style={{ display: 'flex', gap: '6px' }}>
-                  <button
-                    className="ghost"
-                    onClick={handleChooseBackground}
-                    type="button"
-                    style={{ flex: 1, fontSize: '12px' }}
-                  >
+                  <button className="ghost" onClick={handleChooseBackground} type="button" style={{ flex: 1, fontSize: '12px' }}>
                     Choose Image
                   </button>
                   {backgroundImagePath && (
                     <button
                       className="ghost"
-                      onClick={() => {
-                        setBackgroundImagePath('');
-                        props.onConfigChange({ birthdayBackgroundImagePath: '' });
-                      }}
+                      onClick={() => { setBackgroundImagePath(''); props.onConfigChange({ birthdayBackgroundImagePath: '' }); }}
                       type="button"
                       style={{ fontSize: '12px' }}
                     >
@@ -439,40 +303,21 @@ export function BirthdayBucketView(props: BirthdayBucketViewProps) {
             )}
 
             {/* Week toggle */}
-            <div style={{
-              display: 'flex',
-              gap: '8px',
-              marginBottom: '24px',
-            }}>
-              <button
-                className={weekOffset === 0 ? 'primary' : 'ghost'}
-                onClick={() => setWeekOffset(0)}
-                type="button"
-                style={{ flex: 1 }}
-              >
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+              <button className={weekOffset === 0 ? 'primary' : 'ghost'} onClick={() => setWeekOffset(0)} type="button" style={{ flex: 1 }}>
                 This Week
               </button>
-              <button
-                className={weekOffset === 1 ? 'primary' : 'ghost'}
-                onClick={() => setWeekOffset(1)}
-                type="button"
-                style={{ flex: 1 }}
-              >
+              <button className={weekOffset === 1 ? 'primary' : 'ghost'} onClick={() => setWeekOffset(1)} type="button" style={{ flex: 1 }}>
                 Next Week
               </button>
             </div>
 
             {/* Birthday cards */}
             {birthdays.length === 0 ? (
-              <div style={{
-                padding: '60px 20px',
-                textAlign: 'center',
-                color: 'var(--muted)',
-                fontSize: '14px',
-              }}>
+              <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--muted)', fontSize: '14px' }}>
                 {syncResult
                   ? 'No birthdays this week'
-                  : 'Sync with ChurchSuite to see birthdays'}
+                  : 'Enter your credentials and sync to see birthdays'}
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -480,14 +325,9 @@ export function BirthdayBucketView(props: BirthdayBucketViewProps) {
                   <div
                     key={`${entry.source}-${entry.id}`}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '16px 20px',
-                      background: 'rgba(255,255,255,0.03)',
-                      borderRadius: '12px',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                      transition: 'background 0.15s',
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '16px 20px', background: 'rgba(255,255,255,0.03)',
+                      borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', transition: 'background 0.15s',
                     }}
                     onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
@@ -501,37 +341,23 @@ export function BirthdayBucketView(props: BirthdayBucketViewProps) {
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{
-                        fontSize: '20px',
-                        fontWeight: 600,
-                        color: 'var(--accent)',
-                      }}>
+                      <span style={{ fontSize: '20px', fontWeight: 600, color: 'var(--accent)' }}>
                         {entry.turningAge}
                       </span>
                       {entry.source === 'child' && (
                         <span style={{
-                          fontSize: '11px',
-                          padding: '3px 8px',
-                          background: 'rgba(245, 193, 86, 0.15)',
-                          borderRadius: '6px',
-                          color: 'var(--warning)',
-                          fontWeight: 600,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em',
+                          fontSize: '11px', padding: '3px 8px',
+                          background: 'rgba(245, 193, 86, 0.15)', borderRadius: '6px',
+                          color: 'var(--warning)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
                         }}>
                           child
                         </span>
                       )}
                       {entry.source === 'contact' && (
                         <span style={{
-                          fontSize: '11px',
-                          padding: '3px 8px',
-                          background: 'rgba(47, 212, 194, 0.12)',
-                          borderRadius: '6px',
-                          color: 'var(--accent)',
-                          fontWeight: 600,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em',
+                          fontSize: '11px', padding: '3px 8px',
+                          background: 'rgba(47, 212, 194, 0.12)', borderRadius: '6px',
+                          color: 'var(--accent)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
                         }}>
                           contact
                         </span>
@@ -539,13 +365,7 @@ export function BirthdayBucketView(props: BirthdayBucketViewProps) {
                     </div>
                   </div>
                 ))}
-
-                <div style={{
-                  marginTop: '8px',
-                  fontSize: '13px',
-                  color: 'var(--muted)',
-                  textAlign: 'center',
-                }}>
+                <div style={{ marginTop: '8px', fontSize: '13px', color: 'var(--muted)', textAlign: 'center' }}>
                   {birthdays.length} birthday{birthdays.length !== 1 ? 's' : ''} this week
                 </div>
               </div>

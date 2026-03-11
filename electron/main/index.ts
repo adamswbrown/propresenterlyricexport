@@ -37,11 +37,13 @@ interface AppSettings {
   templatePlaylistId?: string | null;
   // Birthday Bucket
   enableBirthdayBucket?: boolean;
-  churchSuiteAccount?: string | null;
-  churchSuiteApiKey?: string | null;
-  churchSuiteAppName?: string | null;
   birthdayChurchName?: string | null;
   birthdayBackgroundImagePath?: string | null;
+  // Birthday Bucket — ChurchSuite OAuth2 Client Credentials
+  churchSuiteClientId?: string | null;
+  churchSuiteClientSecret?: string | null;
+  churchSuiteAccessToken?: string | null;
+  churchSuiteTokenExpiresAt?: number | null;
 }
 
 interface ConnectionConfig {
@@ -1384,8 +1386,37 @@ ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig
 // In-memory cache for synced birthday data
 let birthdayCache: { people: any[]; syncedAt: string } | null = null;
 
-ipcMain.handle('churchsuite:sync', async (_event, config: { account: string; apiKey: string; appName: string }) => {
+// Build ChurchSuiteConfig from persisted settings, obtaining a fresh token if needed
+async function buildChurchSuiteConfig(): Promise<import('../../src/types/churchsuite').ChurchSuiteConfig> {
+  const clientId = settings.get('churchSuiteClientId') ?? '';
+  const clientSecret = settings.get('churchSuiteClientSecret') ?? '';
+
+  if (!clientId || !clientSecret) {
+    throw new Error('ChurchSuite Client ID and Client Secret are required.');
+  }
+
+  let accessToken = settings.get('churchSuiteAccessToken') ?? undefined;
+  let tokenExpiresAt = settings.get('churchSuiteTokenExpiresAt') ?? undefined;
+
+  // If token is missing or expired, request a new one via Client Credentials
+  const { isTokenValid, requestAccessToken } = await import('../../src/services/churchsuite-oauth2');
+  const config = { clientId, clientSecret, accessToken, tokenExpiresAt };
+
+  if (!isTokenValid(config)) {
+    const tokens = await requestAccessToken(clientId, clientSecret);
+    accessToken = tokens.accessToken;
+    tokenExpiresAt = tokens.expiresAt;
+    settings.set('churchSuiteAccessToken', accessToken);
+    settings.set('churchSuiteTokenExpiresAt', tokenExpiresAt);
+  }
+
+  return { clientId, clientSecret, accessToken, tokenExpiresAt };
+}
+
+ipcMain.handle('churchsuite:sync', async () => {
   try {
+    const config = await buildChurchSuiteConfig();
+
     const { fetchContacts } = await import('../../src/services/churchsuite-contacts');
     const { fetchChildren } = await import('../../src/services/churchsuite-children');
 
