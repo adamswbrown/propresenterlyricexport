@@ -134,6 +134,7 @@ The app automatically expands all nested playlist folders so you can easily see 
 - 📖 See the [FAQ](./faq) for troubleshooting
 - 🎨 Want to customize your exports? Check the [PPTX Export Guide](./guides/pptx-export)
 - 💻 Using CLI? See the [CLI Command Reference](./guides/cli-guide)
+- 🎂 Birthday slides? See the [Birthday Bucket Guide](./guides/birthday-bucket)
 - 🔄 Want to automate? Try the [Service Generator Guide](./guides/service-generator) (advanced)
 
 ### Basic Commands

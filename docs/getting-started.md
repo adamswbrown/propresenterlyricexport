@@ -205,6 +205,7 @@ See the full [Viewer Guide](./guides/viewer) for detailed setup and usage.
 
 ### Advanced Features (Optional)
 
+- **Birthday Bucket**: See the [Birthday Bucket Guide](./guides/birthday-bucket) to generate birthday blessing slides from ChurchSuite
 - **Service Generator**: Check out the [Service Generator Guide](./guides/service-generator) to automate service playlists from PDFs
 
 ### Need Help?
