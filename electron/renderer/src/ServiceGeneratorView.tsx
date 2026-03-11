@@ -23,14 +23,22 @@ type Notification = {
   type: 'success' | 'error' | 'info';
 };
 
-type Step = 'setup' | 'upload' | 'parse' | 'match' | 'verse' | 'build';
+type Step = 'setup' | 'upload' | 'parse' | 'match' | 'verse' | 'build' | 'plan';
 
-const STEPS: { id: Step; label: string }[] = [
+type WorkflowMode = 'pdf' | 'plan' | null;
+
+const PDF_STEPS: { id: Step; label: string }[] = [
   { id: 'setup', label: 'Setup' },
   { id: 'upload', label: 'Upload PDF' },
   { id: 'parse', label: 'Parse' },
   { id: 'match', label: 'Match Songs' },
   { id: 'verse', label: 'Bible' },
+  { id: 'build', label: 'Build' },
+];
+
+const PLAN_STEPS: { id: Step; label: string }[] = [
+  { id: 'setup', label: 'Setup' },
+  { id: 'plan', label: 'Plan Service' },
   { id: 'build', label: 'Build' },
 ];
 
@@ -89,6 +97,25 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>('');
   const [selectedPlaylistName, setSelectedPlaylistName] = useState<string>('');
 
+  // Workflow mode
+  const [workflowMode, setWorkflowMode] = useState<WorkflowMode>(null);
+
+  // Planned service state
+  type PlannedSlotItem = { uuid: string; name: string; library?: string };
+  type PraiseSlotType = 'praise1' | 'praise2' | 'praise3' | 'kids' | 'reading';
+  const [planName, setPlanName] = useState('');
+  const [planDate, setPlanDate] = useState('');
+  const [planSlots, setPlanSlots] = useState<Record<PraiseSlotType, PlannedSlotItem[]>>({
+    praise1: [], praise2: [], praise3: [], kids: [], reading: [],
+  });
+  const [planNotes, setPlanNotes] = useState('');
+  const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
+  const [savedPlans, setSavedPlans] = useState<any[]>([]);
+  const [planSearchSlot, setPlanSearchSlot] = useState<PraiseSlotType | null>(null);
+  const [planSearchQuery, setPlanSearchQuery] = useState('');
+  const [planSearchResults, setPlanSearchResults] = useState<Array<{ uuid: string; name: string; library: string }>>([]);
+  const [planSearchLoading, setPlanSearchLoading] = useState(false);
+
   // Workflow state
   const [pdfPath, setPdfPath] = useState<string>('');
   const [pdfName, setPdfName] = useState<string>('');
@@ -115,6 +142,14 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
   // Context menu state for worship slot override
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; matchIndex: number } | null>(null);
 
+  // Get the active steps list based on workflow mode
+  const STEPS = workflowMode === 'plan' ? PLAN_STEPS : PDF_STEPS;
+
+  // Load saved plans on mount
+  useEffect(() => {
+    window.api.listPlannedServices().then(plans => setSavedPlans(plans)).catch(() => {});
+  }, []);
+
   // Step validation - check if step is complete
   const isStepComplete = (step: Step): boolean => {
     switch (step) {
@@ -137,6 +172,9 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
         const versesWithMatches = bibleMatches.filter(v => v.matches.length > 0);
         const versesWithSelection = versesWithMatches.filter(v => v.selectedMatch).length;
         return bibleMatches.length === 0 || versesWithSelection === versesWithMatches.length;
+      case 'plan':
+        // Plan is complete if at least one slot has a song assigned
+        return Object.values(planSlots).some(items => items.length > 0);
       case 'build':
         return true; // Final step
       default:
@@ -146,7 +184,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
 
   // Check if user can navigate to a step
   const canNavigateToStep = (targetStep: Step): boolean => {
-    const stepOrder: Step[] = ['setup', 'upload', 'parse', 'match', 'verse', 'build'];
+    const stepOrder = STEPS.map(s => s.id);
     const targetIndex = stepOrder.indexOf(targetStep);
     const currentIndex = stepOrder.indexOf(currentStep);
 
@@ -295,7 +333,7 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
             {/* Selected Working Playlist */}
             {selectedPlaylistName && (
               <div style={{ marginTop: '24px', padding: '16px', background: 'rgba(47, 212, 194, 0.1)', borderRadius: '12px', border: '1px solid rgba(47, 212, 194, 0.3)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
                   <span style={{ fontSize: '20px' }}>✓</span>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 600, color: 'var(--accent)', marginBottom: '4px' }}>Selected Playlist</div>
@@ -311,13 +349,95 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                   >
                     Change
                   </button>
+                </div>
+                <div style={{ display: 'flex', gap: '12px' }}>
                   <button
                     className="primary"
-                    onClick={() => setCurrentStep('upload')}
+                    onClick={() => {
+                      setWorkflowMode('pdf');
+                      setCurrentStep('upload');
+                    }}
                     type="button"
                   >
                     Upload PDF →
                   </button>
+                  <button
+                    className="accent"
+                    onClick={() => {
+                      setWorkflowMode('plan');
+                      setCurrentStep('plan');
+                    }}
+                    type="button"
+                  >
+                    Plan Service →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Saved Plans */}
+            {savedPlans.length > 0 && (
+              <div style={{ marginTop: '24px' }}>
+                <h3 style={{ fontSize: '16px', marginBottom: '12px' }}>Saved Plans</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {savedPlans
+                    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                    .map(plan => {
+                      const totalSongs = Object.values(plan.slots as Record<string, any[]>).reduce((sum: number, items: any[]) => sum + items.length, 0);
+                      return (
+                        <div
+                          key={plan.id}
+                          style={{
+                            padding: '12px 16px',
+                            background: 'rgba(255,255,255,0.03)',
+                            borderRadius: '10px',
+                            border: '1px solid var(--panel-border)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                          }}
+                        >
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 600, marginBottom: '4px' }}>{plan.name}</div>
+                            <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
+                              {plan.date ? new Date(plan.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : 'No date'}
+                              {' '}&middot; {totalSongs} item{totalSongs !== 1 ? 's' : ''}
+                            </div>
+                          </div>
+                          <button
+                            className="primary small"
+                            onClick={() => {
+                              // Load plan into state
+                              setPlanName(plan.name);
+                              setPlanDate(plan.date);
+                              setPlanSlots(plan.slots);
+                              setPlanNotes(plan.notes || '');
+                              setEditingPlanId(plan.id);
+                              setWorkflowMode('plan');
+                              setCurrentStep('plan');
+                              setNotification({ message: `Loaded plan "${plan.name}"`, type: 'success' });
+                            }}
+                            type="button"
+                          >
+                            Load
+                          </button>
+                          <button
+                            className="ghost small"
+                            onClick={async () => {
+                              const result = await window.api.deletePlannedService(plan.id);
+                              if (result.deleted) {
+                                setSavedPlans(prev => prev.filter(p => p.id !== plan.id));
+                                setNotification({ message: `Deleted plan "${plan.name}"`, type: 'success' });
+                              }
+                            }}
+                            type="button"
+                            style={{ color: '#f44336' }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
             )}
@@ -376,13 +496,11 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                               setSelectedPlaylistId(result.playlistId);
                             }
                             setNotification({
-                              message: `Playlist "${playlistName}" created — upload your PDF to continue`,
+                              message: `Playlist "${playlistName}" created — choose your workflow to continue`,
                               type: 'success'
                             });
                             setNewPlaylistName('');
                             setShowCreatePlaylist(false);
-                            // Auto-advance to upload step
-                            setCurrentStep('upload');
                           } else {
                             setNotification({
                               message: result.error || 'Failed to create playlist',
@@ -1931,6 +2049,406 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
           </div>
         );
 
+      case 'plan': {
+        const slotLabels: { key: PraiseSlotType; label: string; icon: string; isKids: boolean }[] = [
+          { key: 'praise1', label: 'Praise 1', icon: '🎵', isKids: false },
+          { key: 'praise2', label: 'Praise 2', icon: '🎵', isKids: false },
+          { key: 'praise3', label: 'Praise 3', icon: '🎵', isKids: false },
+          { key: 'kids', label: 'Kids', icon: '🎬', isKids: true },
+          { key: 'reading', label: 'Reading', icon: '📖', isKids: false },
+        ];
+
+        const totalPlanItems = Object.values(planSlots).reduce((sum, items) => sum + items.length, 0);
+
+        const searchLibraryForSlot = async (query: string) => {
+          if (!query.trim()) return;
+          setPlanSearchLoading(true);
+          try {
+            // Search all configured libraries
+            const libraryIds = [
+              props.settings.worshipLibraryId,
+              props.settings.kidsLibraryId,
+              props.settings.serviceContentLibraryId,
+            ].filter(Boolean) as string[];
+            const result = await window.api.searchPresentations(
+              props.connectionConfig,
+              libraryIds,
+              query.trim()
+            );
+            if (result.success) {
+              setPlanSearchResults(result.results);
+            }
+          } catch (err: any) {
+            setNotification({ message: `Search failed: ${err.message}`, type: 'error' });
+          }
+          setPlanSearchLoading(false);
+        };
+
+        const addItemToSlot = (slot: PraiseSlotType, item: PlannedSlotItem) => {
+          setPlanSlots(prev => ({
+            ...prev,
+            [slot]: [...prev[slot], item],
+          }));
+          setPlanSearchSlot(null);
+          setPlanSearchQuery('');
+          setPlanSearchResults([]);
+          setNotification({ message: `Added "${item.name}" to ${slotLabels.find(s => s.key === slot)?.label}`, type: 'success' });
+        };
+
+        const removeItemFromSlot = (slot: PraiseSlotType, index: number) => {
+          setPlanSlots(prev => ({
+            ...prev,
+            [slot]: prev[slot].filter((_, i) => i !== index),
+          }));
+        };
+
+        const savePlan = async () => {
+          if (!planName.trim()) {
+            setNotification({ message: 'Please enter a service name', type: 'error' });
+            return;
+          }
+          try {
+            const saved = await window.api.savePlannedService({
+              id: editingPlanId || undefined,
+              name: planName.trim(),
+              date: planDate,
+              templatePlaylistId: props.settings.templatePlaylistId,
+              slots: planSlots,
+              notes: planNotes.trim() || undefined,
+            });
+            setEditingPlanId(saved.id);
+            // Refresh saved plans list
+            const plans = await window.api.listPlannedServices();
+            setSavedPlans(plans);
+            setNotification({ message: `Plan "${planName}" saved`, type: 'success' });
+          } catch (err: any) {
+            setNotification({ message: err.message || 'Failed to save plan', type: 'error' });
+          }
+        };
+
+        // Convert plan slots to matchResults format for the build step
+        const convertPlanToBuild = () => {
+          const results: MatchResult[] = [];
+          for (const [slot, items] of Object.entries(planSlots) as [PraiseSlotType, PlannedSlotItem[]][]) {
+            for (const item of items) {
+              results.push({
+                songName: item.name,
+                praiseSlot: slot === 'reading' ? undefined : slot as PraiseSlot,
+                isKidsVideo: slot === 'kids',
+                matches: [{ uuid: item.uuid, name: item.name, library: item.library || '', confidence: 100 }],
+                bestMatch: { uuid: item.uuid, name: item.name, library: item.library || '', confidence: 100 },
+                requiresReview: false,
+                selectedMatch: { uuid: item.uuid, name: item.name },
+              });
+            }
+          }
+          setMatchResults(results);
+
+          // Convert reading items to bible matches
+          const readingItems = planSlots.reading;
+          if (readingItems.length > 0) {
+            setBibleMatches(readingItems.map(item => ({
+              reference: item.name,
+              matches: [{ uuid: item.uuid, name: item.name, confidence: 100 }],
+              bestMatch: { uuid: item.uuid, name: item.name, confidence: 100 },
+              requiresReview: false,
+              selectedMatch: { uuid: item.uuid, name: item.name },
+            })));
+          }
+
+          setVersesSkipped(true);
+          setCurrentStep('build');
+        };
+
+        // Helper: Copy text to clipboard
+        const copyPlanText = async (text: string) => {
+          try {
+            await navigator.clipboard.writeText(text);
+            setNotification({ message: `Copied "${text}" to clipboard`, type: 'success' });
+          } catch {
+            setNotification({ message: 'Failed to copy to clipboard', type: 'error' });
+          }
+        };
+
+        // Helper: Open CCLI SongSelect search
+        const searchCCLIPlan = async (songName: string) => {
+          const searchUrl = `https://songselect.ccli.com/search/results?SearchText=${encodeURIComponent(songName)}`;
+          try {
+            await window.api.openExternal(searchUrl);
+            setNotification({ message: 'Opening CCLI SongSelect in browser...', type: 'info' });
+          } catch {
+            setNotification({ message: 'Failed to open browser', type: 'error' });
+          }
+        };
+
+        // Helper: Open YouTube search
+        const searchYouTubePlan = async (songName: string) => {
+          const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(songName)}`;
+          try {
+            await window.api.openExternal(searchUrl);
+            setNotification({ message: 'Opening YouTube search in browser...', type: 'info' });
+          } catch {
+            setNotification({ message: 'Failed to open browser', type: 'error' });
+          }
+        };
+
+        return (
+          <div className="service-step-content">
+            <h2>Plan Service</h2>
+            <p className="hint">Pre-plan your service by assigning songs to each section</p>
+
+            {/* Service details */}
+            <div className="form-grid" style={{ marginBottom: '24px' }}>
+              <label>
+                Service Name
+                <input
+                  type="text"
+                  placeholder="e.g., St Andrews - 25th September"
+                  value={planName}
+                  onChange={(e) => setPlanName(e.target.value)}
+                />
+              </label>
+              <label>
+                Service Date
+                <input
+                  type="date"
+                  value={planDate}
+                  onChange={(e) => setPlanDate(e.target.value)}
+                />
+              </label>
+            </div>
+
+            {/* Notes */}
+            <div style={{ marginBottom: '24px' }}>
+              <label>
+                <span style={{ fontSize: '13px', color: 'var(--muted)' }}>Notes (optional)</span>
+                <textarea
+                  placeholder="Any notes about this service..."
+                  value={planNotes}
+                  onChange={(e) => setPlanNotes(e.target.value)}
+                  rows={2}
+                  style={{ width: '100%', resize: 'vertical', marginTop: '4px' }}
+                />
+              </label>
+            </div>
+
+            {/* Template Slots */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+              {slotLabels.map(({ key, label, icon, isKids }) => (
+                <div
+                  key={key}
+                  style={{
+                    padding: '16px',
+                    background: 'rgba(255,255,255,0.03)',
+                    borderRadius: '12px',
+                    border: `1px solid ${planSlots[key].length > 0 ? 'rgba(47, 212, 194, 0.3)' : 'var(--panel-border)'}`,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '16px' }}>{icon}</span>
+                    <span style={{ fontWeight: 600 }}>{label}</span>
+                    {planSlots[key].length > 0 && (
+                      <span style={{ fontSize: '12px', color: 'var(--accent)' }}>
+                        ({planSlots[key].length} item{planSlots[key].length !== 1 ? 's' : ''})
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Assigned items */}
+                  {planSlots[key].map((item, idx) => (
+                    <div
+                      key={`${item.uuid}-${idx}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 12px',
+                        background: 'rgba(47, 212, 194, 0.08)',
+                        borderRadius: '8px',
+                        marginBottom: '6px',
+                      }}
+                    >
+                      <span style={{ flex: 1 }}>{item.name}</span>
+                      {item.library && (
+                        <span style={{ fontSize: '11px', color: 'var(--muted)' }}>{item.library}</span>
+                      )}
+                      <button
+                        className="ghost small"
+                        onClick={() => removeItemFromSlot(key, idx)}
+                        type="button"
+                        style={{ color: '#f44336', fontSize: '12px', padding: '4px 8px' }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Search/Add UI */}
+                  {planSearchSlot === key ? (
+                    <div style={{ marginTop: '8px' }}>
+                      <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                        <input
+                          type="text"
+                          placeholder="Search libraries..."
+                          value={planSearchQuery}
+                          onChange={(e) => setPlanSearchQuery(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') searchLibraryForSlot(planSearchQuery);
+                          }}
+                          style={{
+                            flex: 1,
+                            padding: '8px 12px',
+                            borderRadius: '6px',
+                            border: '1px solid var(--panel-border)',
+                            background: 'var(--bg)',
+                            color: 'var(--text)',
+                            fontSize: '13px',
+                          }}
+                          autoFocus
+                        />
+                        <button
+                          className="ghost small"
+                          type="button"
+                          disabled={!planSearchQuery.trim() || planSearchLoading}
+                          onClick={() => searchLibraryForSlot(planSearchQuery)}
+                          style={{ fontSize: '12px', padding: '8px 14px' }}
+                        >
+                          {planSearchLoading ? '...' : 'Search'}
+                        </button>
+                        <button
+                          className="ghost small"
+                          type="button"
+                          onClick={() => {
+                            setPlanSearchSlot(null);
+                            setPlanSearchQuery('');
+                            setPlanSearchResults([]);
+                          }}
+                          style={{ fontSize: '12px', padding: '8px 14px' }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+
+                      {/* Quick action buttons */}
+                      <div style={{ display: 'flex', gap: '6px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                        {planSearchQuery.trim() && (
+                          <>
+                            <button
+                              className="ghost small"
+                              onClick={() => copyPlanText(planSearchQuery)}
+                              type="button"
+                              style={{ fontSize: '11px', padding: '4px 10px' }}
+                            >
+                              Copy Name
+                            </button>
+                            {isKids ? (
+                              <button
+                                className="ghost small"
+                                onClick={() => searchYouTubePlan(planSearchQuery)}
+                                type="button"
+                                style={{ fontSize: '11px', padding: '4px 10px' }}
+                              >
+                                Search YouTube
+                              </button>
+                            ) : (
+                              <button
+                                className="ghost small"
+                                onClick={() => searchCCLIPlan(planSearchQuery)}
+                                type="button"
+                                style={{ fontSize: '11px', padding: '4px 10px' }}
+                              >
+                                Search CCLI
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      {/* Search results */}
+                      {planSearchResults.length > 0 && (
+                        <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                          {planSearchResults.map((pres) => (
+                            <div
+                              key={pres.uuid}
+                              onClick={() => addItemToSlot(key, { uuid: pres.uuid, name: pres.name, library: pres.library })}
+                              style={{
+                                padding: '8px 12px',
+                                cursor: 'pointer',
+                                borderRadius: '6px',
+                                fontSize: '13px',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                transition: 'background 0.15s',
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+                              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                            >
+                              <span>{pres.name}</span>
+                              <span style={{ fontSize: '11px', color: 'var(--muted)' }}>{pres.library}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {planSearchResults.length === 0 && planSearchQuery && !planSearchLoading && (
+                        <div style={{ fontSize: '12px', color: 'var(--muted)', padding: '8px 0' }}>
+                          Press Enter or click Search to find presentations. If not found, try importing into ProPresenter first.
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      className="ghost small"
+                      onClick={() => {
+                        setPlanSearchSlot(key);
+                        setPlanSearchQuery('');
+                        setPlanSearchResults([]);
+                      }}
+                      type="button"
+                      style={{ marginTop: '4px', fontSize: '12px' }}
+                    >
+                      + Add {label === 'Reading' ? 'Scripture' : 'Song'}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <button
+                className="ghost"
+                onClick={() => {
+                  setWorkflowMode(null);
+                  setCurrentStep('setup');
+                }}
+                type="button"
+              >
+                ← Back
+              </button>
+              <button
+                className="primary"
+                onClick={savePlan}
+                type="button"
+                disabled={!planName.trim()}
+              >
+                Save Plan
+              </button>
+              <button
+                className="accent"
+                onClick={convertPlanToBuild}
+                disabled={totalPlanItems === 0}
+                type="button"
+              >
+                {totalPlanItems > 0
+                  ? `Build Playlist (${totalPlanItems} item${totalPlanItems !== 1 ? 's' : ''}) →`
+                  : 'Add items to build'}
+              </button>
+            </div>
+          </div>
+        );
+      }
+
       case 'build':
         const selectedSongs = matchResults.filter(r => r.selectedMatch);
         const skippedSongs = matchResults.filter(r => !r.selectedMatch);
@@ -2083,8 +2601,12 @@ export function ServiceGeneratorView(props: ServiceGeneratorViewProps) {
                   <button
                     className="ghost"
                     onClick={() => {
-                      setVersesSkipped(false);
-                      setCurrentStep('verse');
+                      if (workflowMode === 'plan') {
+                        setCurrentStep('plan');
+                      } else {
+                        setVersesSkipped(false);
+                        setCurrentStep('verse');
+                      }
                     }}
                     type="button"
                   >

@@ -61,13 +61,14 @@ Core Engine (shared by all apps):
   PptxExporter (src/pptx-exporter.ts)             - Generate PowerPoint files
 
 Shared Services (src/services/):
-  alias-store.ts       - Song alias persistence (~/.propresenter-words/aliases.json)
-  song-matcher.ts      - Fuzzy matching with Fuse.js + alias support
-  pdf-parser.ts        - Parse order-of-service PDFs
-  playlist-builder.ts  - Build playlists from matched songs
-  playlist-exporter.ts - Export lyrics from playlists
-  bible-fetcher.ts     - Fetch Bible verses
-  logo.ts              - Logo handling for PPTX
+  alias-store.ts              - Song alias persistence (~/.propresenter-words/aliases.json)
+  planned-service-store.ts    - Pre-planned service persistence (~/.propresenter-words/planned-services.json)
+  song-matcher.ts             - Fuzzy matching with Fuse.js + alias support
+  pdf-parser.ts               - Parse order-of-service PDFs
+  playlist-builder.ts         - Build playlists from matched songs
+  playlist-exporter.ts        - Export lyrics from playlists
+  bible-fetcher.ts            - Fetch Bible verses
+  logo.ts                     - Logo handling for PPTX
 
 Web Server (src/server/):
   index.ts             - Express app definition (startServer)
@@ -263,6 +264,7 @@ git push origin main && git push origin vX.Y.Z
 
 All stored in `~/.propresenter-words/`:
 - `aliases.json` - Song alias/override mappings
+- `planned-services.json` - Pre-planned service configurations (songs, slots, dates)
 - `users.json` - Email allowlist for web proxy
 - `web-auth.json` - Bearer token and session secret
 - `sessions/` - File-based session store (6-hour TTL, auto-pruned)
@@ -303,7 +305,7 @@ src/
   services/                       # Shared business logic
     alias-store.ts, song-matcher.ts, pdf-parser.ts,
     playlist-builder.ts, playlist-exporter.ts,
-    bible-fetcher.ts, logo.ts
+    bible-fetcher.ts, logo.ts, planned-service-store.ts
   types/                          # TypeScript type definitions
     bible.ts, playlist.ts, service-order.ts, song-match.ts
   utils/

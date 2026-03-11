@@ -441,6 +441,27 @@ ipcMain.handle('aliases:remove', async (_event, songTitle: string) => {
   return { removed, aliases: loadAliases() };
 });
 
+// Planned Service management
+ipcMain.handle('planned-services:list', async () => {
+  const { loadPlannedServices } = await import('../../src/services/planned-service-store');
+  return loadPlannedServices();
+});
+
+ipcMain.handle('planned-services:get', async (_event, id: string) => {
+  const { getPlannedService } = await import('../../src/services/planned-service-store');
+  return getPlannedService(id) || null;
+});
+
+ipcMain.handle('planned-services:save', async (_event, service: any) => {
+  const { savePlannedService } = await import('../../src/services/planned-service-store');
+  return savePlannedService(service);
+});
+
+ipcMain.handle('planned-services:delete', async (_event, id: string) => {
+  const { deletePlannedService } = await import('../../src/services/planned-service-store');
+  return { deleted: deletePlannedService(id) };
+});
+
 // Search presentations across libraries (for manual song override)
 ipcMain.handle('library:search-presentations', async (_event, config: ConnectionConfig, libraryIds: string[], query: string) => {
   try {

@@ -139,6 +139,15 @@ const api = {
     ipcRenderer.invoke('playlist:build-service', config, playlistId, items),
   focusPlaylistItem: (config: ConnectionConfig, playlistId: string, headerName: string): Promise<{ success: boolean; error?: string; index?: number }> =>
     ipcRenderer.invoke('playlist:focus-item', config, playlistId, headerName),
+  // Planned Services
+  listPlannedServices: (): Promise<any[]> =>
+    ipcRenderer.invoke('planned-services:list'),
+  getPlannedService: (id: string): Promise<any> =>
+    ipcRenderer.invoke('planned-services:get', id),
+  savePlannedService: (service: any): Promise<any> =>
+    ipcRenderer.invoke('planned-services:save', service),
+  deletePlannedService: (id: string): Promise<{ deleted: boolean }> =>
+    ipcRenderer.invoke('planned-services:delete', id),
   // Birthday Bucket
   churchSuiteSync: (): Promise<{ success: boolean; contacts: number; children: number; syncedAt: string; error?: string }> =>
     ipcRenderer.invoke('churchsuite:sync'),
