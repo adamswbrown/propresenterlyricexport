@@ -348,6 +348,9 @@ export class ProPresenterClient extends EventEmitter {
         is_pco: item.is_pco || false,
       };
 
+      // Include target_uuid (required by ProPresenter for deserialization)
+      cleaned.target_uuid = item.target_uuid || '';
+
       // For headers, include color
       if (item.type === 'header') {
         if (item.header_color) {

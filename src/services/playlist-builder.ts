@@ -191,6 +191,7 @@ export class PlaylistBuilder {
       type: 'header',
       is_hidden: false,
       is_pco: false,
+      target_uuid: '',
       presentation_info: {
         presentation_uuid: '',
         arrangement_name: '',
@@ -213,6 +214,7 @@ export class PlaylistBuilder {
       type: 'presentation',
       is_hidden: false,
       is_pco: false,
+      target_uuid: uuid,
       presentation_info: {
         presentation_uuid: uuid, // This is the actual presentation UUID
         arrangement_name: '',

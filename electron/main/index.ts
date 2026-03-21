@@ -1288,6 +1288,7 @@ ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig
               type: 'presentation',
               is_hidden: false,
               is_pco: false,
+              target_uuid: songItem.uuid,
               presentation_info: {
                 presentation_uuid: songItem.uuid,
                 arrangement_name: '',
@@ -1346,6 +1347,9 @@ ipcMain.handle('playlist:build-service', async (_event, config: ConnectionConfig
         is_hidden: item.is_hidden || false,
         is_pco: item.is_pco || false,
       };
+
+      // Include target_uuid (required by ProPresenter for deserialization)
+      cleaned.target_uuid = item.target_uuid || '';
 
       // For headers, include color
       if (item.type === 'header') {
