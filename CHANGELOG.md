@@ -5,6 +5,11 @@ All notable changes to ProPresenter Lyrics Export will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.1] - 2026-03-21
+
+### Fixed
+- **Playlist deserialization error** — Fixed `missing field 'target_uuid'` error when building service playlists via the ProPresenter API. The required `target_uuid` field is now preserved from existing items and included on newly created items.
+
 ## [3.3.0] - 2026-03-11
 
 ### Added
