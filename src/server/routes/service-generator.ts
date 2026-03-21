@@ -363,6 +363,7 @@ serviceGeneratorRoutes.post('/service/build-playlist', async (req: Request, res:
               type: 'presentation',
               is_hidden: false,
               is_pco: false,
+              target_uuid: songItem.uuid,
               presentation_info: {
                 presentation_uuid: songItem.uuid,
                 arrangement_name: '',
@@ -396,6 +397,9 @@ serviceGeneratorRoutes.post('/service/build-playlist', async (req: Request, res:
         is_hidden: item.is_hidden || false,
         is_pco: item.is_pco || false,
       };
+
+      // Include target_uuid (required by ProPresenter for deserialization)
+      cleaned.target_uuid = item.target_uuid || '';
 
       if (item.type === 'header' && item.header_color) {
         cleaned.header_color = item.header_color;

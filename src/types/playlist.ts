@@ -20,6 +20,7 @@ export interface PlaylistItem {
   type: 'header' | 'presentation';
   is_hidden: boolean;
   is_pco: boolean;
+  target_uuid?: string;
   presentation_info: PresentationInfo;
   destination: 'presentation' | 'announcement';
 }
